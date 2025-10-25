@@ -1,9 +1,9 @@
 package com.shantanu.projectstatustracker.controllers;
 
+import com.shantanu.projectstatustracker.dtos.AddMemberRequestDTO;
 import com.shantanu.projectstatustracker.dtos.ProjectRequestDTO;
 import com.shantanu.projectstatustracker.dtos.ProjectUpdateRequestDTO;
 import com.shantanu.projectstatustracker.services.ProjectService;
-import lombok.Data;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -51,11 +51,17 @@ public class ProjectController {
         return projectService.addMemberToProject(projectId,userId,email);
     }
 
+    @PostMapping("/{projectId}/project-members/add-user")
+    public ResponseEntity<Object> addMemberToProjectUsingEmail(@PathVariable(name = "projectId") Long projectId,
+                                                               @RequestBody AddMemberRequestDTO addMemberRequestDTO,
+                                                               @RequestAttribute(name = "email") String email){
+        return projectService.addMemberToProjectUsingEmail(projectId,addMemberRequestDTO,email);
+    }
+
     @DeleteMapping("/{projectId}/project-members/{userId}")
     public ResponseEntity<Object> deleteMemberFromProject(@PathVariable(name = "projectId") Long projectId,
                                                           @PathVariable(name = "userId") Long userId){
         return projectService.deleteMemberFromProject(projectId,userId);
     }
-
 
 }

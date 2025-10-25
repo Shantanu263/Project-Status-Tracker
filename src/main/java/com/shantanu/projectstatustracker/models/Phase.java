@@ -7,7 +7,6 @@ import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
-import org.springframework.boot.context.properties.bind.DefaultValue;
 
 import java.time.LocalDateTime;
 import java.util.Date;
@@ -41,6 +40,10 @@ public class Phase {
     @JoinColumn(name = "project_id")
     @JsonBackReference
     private Project project;
+
+    @ManyToOne
+    @JoinColumn(name = "projectMember_id")
+    private ProjectMember assignedTo;
 
     @PrePersist
     protected void onCreate() {

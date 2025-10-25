@@ -9,6 +9,7 @@ import com.shantanu.projectstatustracker.repositories.UserRepo;
 import com.shantanu.projectstatustracker.services.EmailService;
 import com.shantanu.projectstatustracker.services.ForgotPasswordService;
 import com.shantanu.projectstatustracker.services.JwtService;
+import jakarta.mail.MessagingException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -39,10 +40,13 @@ public class ForgotPasswordServiceImpl implements ForgotPasswordService {
 
         int otp = new Random().nextInt(100_000, 999_999);
 
+        // Generate HTML content using template
+        String htmlContent = emailService.getOtpEmailTemplate(user.getName(), String.valueOf(otp));
+
         MailBody mailBody = MailBody.builder()
                 .to(email)
-                .text("Hello, " + user.getName() + " this is the OTP for Password Reset: " + otp)
-                .subject("OTP for Password Reset")
+                .text(htmlContent)  // add HTML template
+                .subject("Password Reset OTP - Secure Your Account")
                 .build();
 
         ForgotPasswordOTP forgotPasswordOTP = forgotPasswordOTPRepo.findByUser(user)
@@ -51,10 +55,13 @@ public class ForgotPasswordServiceImpl implements ForgotPasswordService {
         forgotPasswordOTP.setOtp(otp);
         forgotPasswordOTP.setExpirationTime(new Date(System.currentTimeMillis() + 90 * 1000));
 
-        emailService.sendSimpleMessage(mailBody);                               // Send mail to user
-        forgotPasswordOTPRepo.save(forgotPasswordOTP);                          //save new OTP
-
-        return ResponseEntity.ok(Map.of("message","Email sent for verification"));
+        try {
+            emailService.sendHtmlMessage(mailBody);  // Use HTML email method
+            forgotPasswordOTPRepo.save(forgotPasswordOTP);
+            return ResponseEntity.ok(Map.of("message", "Email sent for verification"));
+        } catch (MessagingException e) {
+            throw new RuntimeException("Failed to send email", e);
+        }
     }
 
     @Override

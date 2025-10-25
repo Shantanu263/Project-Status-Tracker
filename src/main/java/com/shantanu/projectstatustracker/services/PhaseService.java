@@ -8,4 +8,7 @@ public interface PhaseService {
     ResponseEntity<Object> getProjectPhases(Long id);
 
     ResponseEntity<Object> addProjectPhase(Long id, PhaseRequestDTO phaseRequestDTO);
+
+    ResponseEntity<Object> getProjectPhaseByPhaseId(Long projectId,Long phaseId);
+
 }

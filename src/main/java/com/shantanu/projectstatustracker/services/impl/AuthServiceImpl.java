@@ -2,9 +2,12 @@ package com.shantanu.projectstatustracker.services.impl;
 
 import com.shantanu.projectstatustracker.dtos.UserLoginRequestDTO;
 import com.shantanu.projectstatustracker.dtos.UserRequestDTO;
+import com.shantanu.projectstatustracker.dtos.mappers.ProjectMemberMapper;
 import com.shantanu.projectstatustracker.globalExceptionHandlers.ResourceNotFoundException;
+import com.shantanu.projectstatustracker.models.InvitedMembers;
+import com.shantanu.projectstatustracker.models.Project;
 import com.shantanu.projectstatustracker.models.User;
-import com.shantanu.projectstatustracker.repositories.UserRepo;
+import com.shantanu.projectstatustracker.repositories.*;
 import com.shantanu.projectstatustracker.services.AuthService;
 import com.shantanu.projectstatustracker.services.JwtService;
 import lombok.RequiredArgsConstructor;
@@ -14,8 +17,9 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
-import java.time.LocalDateTime;
+import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 
 @RequiredArgsConstructor
 @Service
@@ -23,6 +27,11 @@ public class AuthServiceImpl implements AuthService {
     private final UserRepo userRepo;
     private final PasswordEncoder passwordEncoder;
     private final JwtService jwtService;
+    private final InvitedMembersRepo invitedMembersRepo;
+    private final ProjectMemberRepo projectMemberRepo;
+    private final ProjectMemberMapper projectMemberMapper;
+    private final ProjectRepo projectRepo;
+    private final RoleRepo roleRepo;
 
     @Value("${jwt.accessTokenTime}")
     private long accessTokenTime;
@@ -32,17 +41,33 @@ public class AuthServiceImpl implements AuthService {
 
     @Override
     public ResponseEntity<Object> signUp(UserRequestDTO userRequestDTO) {
-        if (userRepo.existsByEmail(userRequestDTO.getEmail())) return ResponseEntity.badRequest().body(Map.of("message","User Email Id taken"));
+
+        if (userRepo.existsByEmail(userRequestDTO.getEmail())){
+            return ResponseEntity.badRequest().body(Map.of("message","User Email Id taken"));
+        }
+
         User user = User.builder()
                 .name(userRequestDTO.getName())
                 .email(userRequestDTO.getEmail())
                 .password(passwordEncoder.encode(userRequestDTO.getPassword()))
-                .createdAt(LocalDateTime.now())
-                .updatedAt(LocalDateTime.now())
                 .status("PENDING")
                 .build();
 
         userRepo.save(user);
+
+        if (invitedMembersRepo.existsByEmail(userRequestDTO.getEmail())){
+            List<InvitedMembers> assignments = invitedMembersRepo.findAllByEmail(userRequestDTO.getEmail());
+            user.setStatus("ACTIVE");
+            for (InvitedMembers assignment : assignments){
+                user.setRole(roleRepo.findByName(assignment.getRole()).orElseThrow(() -> new ResourceNotFoundException("Role not found")));
+                Project project = projectRepo.findById(assignment.getProjectId())
+                        .orElseThrow(()->new ResourceNotFoundException("Project with id("+assignment.getProjectId()+") not found"));
+
+                projectMemberRepo.save(projectMemberMapper.mapRequestToProjectMember(project,user,assignment.getAssignedBy()));
+                invitedMembersRepo.delete(assignment);
+            }
+        }
+
         return ResponseEntity.ok(Map.of("message","User signed up successfully"));
     }
 
@@ -51,7 +76,8 @@ public class AuthServiceImpl implements AuthService {
         User user = userRepo.findByEmail(userLoginRequestDTO.getEmail())
                 .orElseThrow(() -> new ResourceNotFoundException("User not found with email: " + userLoginRequestDTO.getEmail()));
 
-        if (user.getRole() == null) return new ResponseEntity<>(Map.of("message","Role not assigned to user"), HttpStatus.UNAUTHORIZED);
+        if (user.getRole() == null && !Objects.equals(user.getStatus(), "INVITED")) return new ResponseEntity<>(Map.of("message","Role not assigned to user"), HttpStatus.UNAUTHORIZED);
+
 
 
         if (!passwordEncoder.matches(userLoginRequestDTO.getPassword(), user.getPassword())) {

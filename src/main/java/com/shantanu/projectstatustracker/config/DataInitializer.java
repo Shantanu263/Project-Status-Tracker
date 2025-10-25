@@ -43,9 +43,9 @@ public class DataInitializer implements CommandLineRunner {
             userRepository.save(superAdmin);
 
             System.out.println("Super Admin user created with email: superadmin@cybernxt.com");
-        } else {
-            System.out.println("Super Admin already exists, skipping creation.");
         }
+        //else System.out.println("Super Admin already exists, skipping creation.");
+
     }
 
     private void createRoleIfNotFound(String roleName) {

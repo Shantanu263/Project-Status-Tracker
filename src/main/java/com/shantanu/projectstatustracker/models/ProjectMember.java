@@ -33,4 +33,11 @@ public class ProjectMember {
     @ManyToOne
     @JoinColumn(name = "assigned_by_user_id", nullable = false)
     private User assignedBy;
+
+    private String memberStatus;  //remove this -> not required
+
+    @PrePersist
+    public void onCreate(){
+        this.memberStatus = "ACTIVE";
+    }
 }

@@ -13,4 +13,6 @@ public interface PhaseRepo extends JpaRepository<Phase,Long> {
     List<Phase> findAllByProject_ProjectId(Long projectProjectId);
 
     List<Phase> findAllByProject(Project project);
+
+    Phase findByPhaseIdAndProject_ProjectId(Long phaseId, Long projectProjectId);
 }

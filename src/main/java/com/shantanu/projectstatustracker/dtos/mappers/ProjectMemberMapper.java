@@ -16,16 +16,18 @@ public interface ProjectMemberMapper {
     @Mapping(source = "projectMember.project.projectName",target = "project")
     @Mapping(source = "projectMember.user.role.name",target = "role")
     @Mapping(source = "projectMember.assignedBy", target = "assignedBy")
+    @Mapping(source = "projectMember.memberStatus", target = "memberStatus")
     ProjectMemberResponseDTO mapProjectMember(ProjectMember projectMember);
 
     @Mapping(source = "projectMember.user.name",target = "user")
     @Mapping(source = "projectMember.project.projectName",target = "project")
     @Mapping(source = "projectMember.user.role.name",target = "role")
     @Mapping(source = "projectMember.assignedBy", target = "assignedBy")
+    @Mapping(source = "projectMember.memberStatus", target = "memberStatus")
     List<ProjectMemberResponseDTO> mapProjectMembers(List<ProjectMember> projectMembers);
 
     @Mapping(source = "user" , target = "user")
     @Mapping(source = "user.role.name", target = "role")
-    ProjectMember mapResponseToProjectMember(Project project, User user, User assignedBy);
+    ProjectMember mapRequestToProjectMember(Project project, User user, User assignedBy);
 
 }

@@ -11,4 +11,7 @@ public class ProjectMemberResponseDTO {
     private String role;
 
     private UserResponseDTO assignedBy;
+
+    private String memberStatus;
+
 }

@@ -50,6 +50,10 @@ public class Project {
     @ManyToOne
     private User createdBySuperAdmin;
 
+    @ManyToOne
+    @JoinColumn(name = "projectTemplate_id")
+    private ProjectTemplate projectTemplate;
+
     @OneToMany(mappedBy = "project", cascade = CascadeType.ALL, orphanRemoval = true)
     @JsonManagedReference
     private List<Phase> phases;

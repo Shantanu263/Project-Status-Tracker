@@ -1,5 +1,6 @@
 package com.shantanu.projectstatustracker.dtos.mappers;
 
+import com.shantanu.projectstatustracker.dtos.UserRequestDTO;
 import com.shantanu.projectstatustracker.dtos.UserResponseDTO;
 import com.shantanu.projectstatustracker.models.User;
 import org.mapstruct.Mapper;
@@ -13,4 +14,6 @@ public interface UserMapper {
 
     @Mapping(source = "user.role.name",target = "role")
     List<UserResponseDTO> mapUsers(List<User> users);
+
+    User mapRequestToUser(UserRequestDTO userRequestDTO);
 }
