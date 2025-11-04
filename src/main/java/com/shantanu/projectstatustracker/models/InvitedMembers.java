@@ -22,7 +22,8 @@ public class InvitedMembers {
 
     private Long projectId;
 
-    private String role;
+    @Enumerated(EnumType.STRING)
+    private ProjectRole role;
 
     @ManyToOne
     private User assignedBy;

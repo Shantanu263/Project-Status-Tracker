@@ -15,6 +15,7 @@ import org.springframework.security.authentication.UsernamePasswordAuthenticatio
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.web.authentication.WebAuthenticationDetailsSource;
 import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
@@ -24,10 +25,10 @@ import java.util.List;
 
 @RequiredArgsConstructor
 @Component
-public class JwtFilter extends OncePerRequestFilter{
+public class JwtFilter extends OncePerRequestFilter {
+
     private final JwtService jwtService;
     private final UserRepo userRepo;
-
 
     @Override
     protected void doFilterInternal(HttpServletRequest request,
@@ -39,9 +40,8 @@ public class JwtFilter extends OncePerRequestFilter{
         String jwtToken = null;
         String role = null;
 
-        // Check if Authorization header is present and starts with Bearer
         if (authHeader != null && authHeader.startsWith("Bearer ")) {
-            jwtToken = authHeader.substring(7); // remove "Bearer "
+            jwtToken = authHeader.substring(7);
 
             try {
                 email = jwtService.extractEmail(jwtToken);
@@ -57,29 +57,35 @@ public class JwtFilter extends OncePerRequestFilter{
                 response.sendError(HttpServletResponse.SC_UNAUTHORIZED, "Token expired");
                 return;
             } catch (Exception e) {
-                logger.warn("Unable to parse JWT Token");
+                logger.warn("Unable to parse JWT Token: {}"+e.getMessage());
                 response.sendError(HttpServletResponse.SC_UNAUTHORIZED, "Invalid token");
                 return;
             }
         }
 
-        // If username is found and not already authenticated
         if (email != null && SecurityContextHolder.getContext().getAuthentication() == null) {
-            //final String finalUser = username;
-            User user = userRepo.findByEmail(email).orElseThrow(() -> new ResourceNotFoundException("User not found"));
 
-            request.setAttribute("userId", user.getUserId());
+            User user = userRepo.findByEmail(email)
+                    .orElseThrow(() -> new ResourceNotFoundException("User not found"));
 
             if (jwtService.validateToken(jwtToken, user)) {
-                List<GrantedAuthority> authorities = List.of(new SimpleGrantedAuthority("ROLE_" + role));
+                List<GrantedAuthority> authorities =
+                        List.of(new SimpleGrantedAuthority("ROLE_" + role));
+
+                UserDetails userDetails = org.springframework.security.core.userdetails.User
+                        .withUsername(email)
+                        .password("") // no password needed
+                        .authorities(authorities)
+                        .build();
 
                 UsernamePasswordAuthenticationToken authentication =
-                        new UsernamePasswordAuthenticationToken(user, null, authorities);
+                        new UsernamePasswordAuthenticationToken(userDetails, null, userDetails.getAuthorities());
 
                 authentication.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
-
-                // Set the authentication in the SecurityContext
                 SecurityContextHolder.getContext().setAuthentication(authentication);
+
+                System.out.println("Authentication set for: " + email);
+                System.out.println("Authorities: " + authorities);
             }
         }
 

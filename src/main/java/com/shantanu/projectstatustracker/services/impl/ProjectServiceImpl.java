@@ -9,6 +9,7 @@ import com.shantanu.projectstatustracker.globalExceptionHandlers.ResourceNotFoun
 import com.shantanu.projectstatustracker.models.*;
 import com.shantanu.projectstatustracker.repositories.*;
 import com.shantanu.projectstatustracker.services.ProjectService;
+import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -27,10 +28,25 @@ public class ProjectServiceImpl implements ProjectService {
     private final InvitedMembersRepo invitedMembersRepo;
     private final ProjectTemplateRepo projectTemplateRepo;
     private final PhaseRepo phaseRepo;
+    private final HttpServletRequest request;
 
     @Override
     public ResponseEntity<Object> getProjects() {
-        return ResponseEntity.ok(projectMapper.mapProjects(projectRepo.findAll()));
+        String role = (String) request.getAttribute("role");
+        String email = (String) request.getAttribute("email");
+
+        if (role == null || email == null) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Invalid user context");
+        }
+        List<Project> projects;
+
+        if (role.equalsIgnoreCase("SUPER_ADMIN")) {
+            projects = projectRepo.findAll();
+        } else {
+            projects = projectRepo.findAllByMemberEmail(email);
+        }
+
+        return ResponseEntity.ok(projectMapper.mapProjects(projects));
     }
 
     @Override
@@ -79,7 +95,7 @@ public class ProjectServiceImpl implements ProjectService {
 
         ProjectMember projectMember = ProjectMember.builder()
                 .project(project)
-                .role("PROJECT HEAD")
+                .role(ProjectRole.PROJECT_HEAD)
                 .user(userRepo.findById(projectRequestDTO.getProjectHeadId()).orElseThrow())
                 .assignedBy(userRepo.findByName("Admin").orElseThrow(() -> new ResourceNotFoundException("Admin not found")))
                 .build();
@@ -131,7 +147,7 @@ public class ProjectServiceImpl implements ProjectService {
         User user = userRepo.findById(userId).orElseThrow(() -> new ResourceNotFoundException("User not found"));
         User assignedBy = userRepo.findByEmail(email).orElseThrow(() -> new ResourceNotFoundException("User not found"));
 
-        ProjectMember newMember = projectMemberMapper.mapRequestToProjectMember(project,user,assignedBy);
+        ProjectMember newMember = projectMemberMapper.mapRequestToProjectMember(project,user,assignedBy,ProjectRole.PROJECT_VIEWER);
         projectMemberRepo.save(newMember);
 
         return ResponseEntity.ok("User with id:"+userId+" added to project (id: "+projectId+")");
@@ -157,7 +173,7 @@ public class ProjectServiceImpl implements ProjectService {
             User user  = userRepo.findByEmail(addMemberRequestDTO.getEmail())
                     .orElseThrow(() -> new ResourceNotFoundException("User not found"));
 
-            ProjectMember newMember = projectMemberMapper.mapRequestToProjectMember(project,user,assignedBy);
+            ProjectMember newMember = projectMemberMapper.mapRequestToProjectMember(project,user,assignedBy,addMemberRequestDTO.getRoleInProject());
             projectMemberRepo.save(newMember);
         }
         else {

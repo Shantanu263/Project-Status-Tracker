@@ -30,4 +30,27 @@ public class PhaseController {
                                                   @RequestBody PhaseRequestDTO phaseRequestDTO){
         return phaseService.addProjectPhase(id,phaseRequestDTO);
     }
+
+    @PutMapping("/project/{projectId}/phase/{phaseId}")
+    public ResponseEntity<Object> updateProjectPhase(@PathVariable(name = "projectId") Long projectId,
+                                                     @PathVariable(name = "phaseId") Long phaseId,
+                                                     @RequestBody PhaseRequestDTO phaseRequestDTO){
+        return phaseService.updateProjectPhase(projectId,phaseId,phaseRequestDTO);
+    }
+
+    @DeleteMapping("/project/{projectId}/phase/{phaseId}")
+    public ResponseEntity<Object> deleteProjectPhase(@PathVariable(name = "projectId") Long projectId,
+                                                     @PathVariable(name = "phaseId") Long phaseId){
+        return phaseService.deleteProjectPhase(projectId,phaseId);
+
+    }
+
+    @PatchMapping("/project/{projectId}/phase/{phaseId}/status")
+    public ResponseEntity<Object> updateStatus(
+            @PathVariable Long projectId,
+            @PathVariable Long phaseId,
+            @RequestParam(name = "status") String status) {
+        return phaseService.updatePhaseStatus(projectId, phaseId, status);
+    }
+
 }

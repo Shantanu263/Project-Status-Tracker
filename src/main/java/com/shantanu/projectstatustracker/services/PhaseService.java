@@ -11,4 +11,11 @@ public interface PhaseService {
 
     ResponseEntity<Object> getProjectPhaseByPhaseId(Long projectId,Long phaseId);
 
+    ResponseEntity<Object> updateProjectPhase(Long projectId, Long phaseId, PhaseRequestDTO phaseRequestDTO);
+
+    ResponseEntity<Object> deleteProjectPhase(Long projectId,Long phaseId);
+
+    ResponseEntity<Object> updatePhaseStatus(Long projectId, Long phaseId, String status);
+
+
 }

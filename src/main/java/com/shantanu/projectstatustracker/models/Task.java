@@ -1,15 +1,29 @@
 package com.shantanu.projectstatustracker.models;
 
 
+import com.fasterxml.jackson.annotation.JsonBackReference;
 import com.fasterxml.jackson.annotation.JsonFormat;
-import jakarta.persistence.Column;
-import jakarta.persistence.ManyToOne;
+import com.fasterxml.jackson.annotation.JsonIgnore;
+import jakarta.persistence.*;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Data;
+import lombok.NoArgsConstructor;
 
-import java.time.LocalDateTime;
+import java.time.LocalDate;
 import java.util.Date;
 
+@Entity
+@Table(name = "tasks")
+@Data
+@Builder
+@NoArgsConstructor
+@AllArgsConstructor
 public class Task {
-    private Long id;
+
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long taskId;
 
     private String taskName;
 
@@ -17,17 +31,20 @@ public class Task {
     private String description;
 
     @ManyToOne
+    @JsonBackReference
     private Phase projectPhase;
 
-    @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "dd-MM-yyyy")
+    //@JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "dd-MM-yyyy")
     private Date startDate;
 
-    @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "dd-MM-yyyy")
-    private Date endDate;
+    //@JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "dd-MM-yyyy")
+    private LocalDate endDate;
 
     private String status;
 
     private String priority;
 
-    private ProjectMember projectMember;
+    @ManyToOne
+    @JsonIgnore
+    private ProjectMember assignedTo;
 }

@@ -9,17 +9,17 @@ import org.mapstruct.Mapping;
 import java.util.List;
 import java.util.Set;
 
-@Mapper(componentModel = "spring")
+@Mapper(componentModel = "spring",uses = {ProjectMemberMapper.class, RoleMapper.class})
 public interface ProjectMapper {
 
-    ProjectResponseDTO mapProjectToProjectResponseDTO(Project project, UserResponseDTO projectHead, UserResponseDTO superAdmin, Set<PhaseResponseDTO> phases);
-
-
+    @Mapping(source = "project.projectMembers", target = "projectMembers")
     ProjectResponseDTO mapProjectResponse(Project project);
 
+    @Mapping(source = "project.projectMembers",target = "projectMembers")
     List<ProjectResponseDTO> mapProjects(List<Project> projects);
 
     Project mapProjectRequestDTOToProject(ProjectRequestDTO projectRequestDTO);
 
     Project mapUpdateRequestToProject(ProjectUpdateRequestDTO projectUpdateRequestDTO);
+
 }

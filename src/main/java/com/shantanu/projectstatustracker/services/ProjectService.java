@@ -3,6 +3,7 @@ package com.shantanu.projectstatustracker.services;
 import com.shantanu.projectstatustracker.dtos.AddMemberRequestDTO;
 import com.shantanu.projectstatustracker.dtos.ProjectRequestDTO;
 import com.shantanu.projectstatustracker.dtos.ProjectUpdateRequestDTO;
+import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.http.ResponseEntity;
 
 public interface ProjectService {

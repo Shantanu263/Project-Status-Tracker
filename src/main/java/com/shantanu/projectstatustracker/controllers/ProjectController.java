@@ -4,8 +4,10 @@ import com.shantanu.projectstatustracker.dtos.AddMemberRequestDTO;
 import com.shantanu.projectstatustracker.dtos.ProjectRequestDTO;
 import com.shantanu.projectstatustracker.dtos.ProjectUpdateRequestDTO;
 import com.shantanu.projectstatustracker.services.ProjectService;
+import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 @RequiredArgsConstructor
@@ -29,11 +31,14 @@ public class ProjectController {
         return projectService.getProjectById(id);
     }
 
-    @PutMapping("/{id}")
-    public ResponseEntity<Object> updateProject(@PathVariable(name = "id") Long id, @RequestBody ProjectUpdateRequestDTO projectUpdateRequestDTO){
-        return projectService.updateProject(id,projectUpdateRequestDTO);
+    @PreAuthorize("@auth.canManageProject(#projectId) or @auth.isSuperAdmin()")
+    @PutMapping("/{projectId}")
+    public ResponseEntity<Object> updateProject(@PathVariable(name = "projectId") Long projectId, @RequestBody ProjectUpdateRequestDTO projectUpdateRequestDTO){
+        System.out.println(projectId);
+        return projectService.updateProject(projectId,projectUpdateRequestDTO);
     }
 
+    @PreAuthorize("@auth.isSuperAdmin()")
     @DeleteMapping("/{id}")
     public ResponseEntity<Object> deleteProject(@PathVariable(name = "id") Long id){
         return projectService.deleteProject(id);
@@ -51,6 +56,7 @@ public class ProjectController {
         return projectService.addMemberToProject(projectId,userId,email);
     }
 
+    @PreAuthorize("@auth.isProjectHeadOfProject(#projectId) or @auth.isSuperAdmin()")
     @PostMapping("/{projectId}/project-members/add-user")
     public ResponseEntity<Object> addMemberToProjectUsingEmail(@PathVariable(name = "projectId") Long projectId,
                                                                @RequestBody AddMemberRequestDTO addMemberRequestDTO,
@@ -58,6 +64,7 @@ public class ProjectController {
         return projectService.addMemberToProjectUsingEmail(projectId,addMemberRequestDTO,email);
     }
 
+    @PreAuthorize("@auth.isProjectHeadOfProject(#projectId) or @auth.isSuperAdmin()")
     @DeleteMapping("/{projectId}/project-members/{userId}")
     public ResponseEntity<Object> deleteMemberFromProject(@PathVariable(name = "projectId") Long projectId,
                                                           @PathVariable(name = "userId") Long userId){

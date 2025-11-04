@@ -7,6 +7,7 @@ import org.springframework.security.core.parameters.P;
 import org.springframework.stereotype.Repository;
 
 import java.util.List;
+import java.util.Optional;
 
 @Repository
 public interface PhaseRepo extends JpaRepository<Phase,Long> {
@@ -14,5 +15,6 @@ public interface PhaseRepo extends JpaRepository<Phase,Long> {
 
     List<Phase> findAllByProject(Project project);
 
-    Phase findByPhaseIdAndProject_ProjectId(Long phaseId, Long projectProjectId);
+    Optional<Phase> findByPhaseIdAndProject_ProjectId(Long phaseId, Long projectProjectId);
+
 }

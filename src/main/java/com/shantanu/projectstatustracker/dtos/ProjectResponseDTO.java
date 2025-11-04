@@ -5,8 +5,10 @@ import com.shantanu.projectstatustracker.models.Phase;
 import lombok.Builder;
 import lombok.Data;
 
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.Date;
+import java.util.List;
 import java.util.Set;
 
 @Data
@@ -19,10 +21,10 @@ public class ProjectResponseDTO {
     private String description;
 
     @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "dd-MM-yyyy")
-    private Date startDate;
+    private LocalDate startDate;
 
     @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "dd-MM-yyyy")
-    private Date endDate;
+    private LocalDate endDate;
 
     private String status;
 
@@ -39,4 +41,6 @@ public class ProjectResponseDTO {
     private UserResponseDTO createdBySuperAdmin;
 
     private Set<PhaseResponseDTO> phases;
+
+    private List<ProjectMemberResponseDTO> projectMembers;
 }

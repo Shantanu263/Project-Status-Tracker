@@ -20,7 +20,8 @@ public class Notification {
     private Long id;
 
     @ManyToOne
-    private ProjectMember projectMember;
+    @JoinColumn(name = "user_id")
+    private User user;
 
     @Column(length = 500)
     private String message;

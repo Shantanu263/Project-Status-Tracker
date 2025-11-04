@@ -6,6 +6,7 @@ import java.util.Date;
 
 @Data
 public class PhaseRequestDTO {
+
     String phaseName;
 
     String description;
@@ -15,4 +16,7 @@ public class PhaseRequestDTO {
     Date endDate;
 
     String status;
+
+    Long projectMemberId;
+
 }

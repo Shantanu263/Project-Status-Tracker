@@ -1,9 +1,8 @@
 package com.shantanu.projectstatustracker.models;
 
-public enum ProjectStatus {
+public enum Status {
     NOT_STARTED,
     IN_PROGRESS,
     ON_HOLD,
-    COMPLETED,
-    CANCELLED
+    COMPLETED
 }

@@ -1,8 +1,7 @@
 package com.shantanu.projectstatustracker.models;
 
-public enum ProjectPriority {
+public enum Priority {
     LOW,
     MEDIUM,
-    HIGH,
-    CRITICAL
+    HIGH
 }

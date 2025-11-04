@@ -1,12 +1,14 @@
 package com.shantanu.projectstatustracker.dtos;
 
+import com.shantanu.projectstatustracker.models.ProjectRole;
 import lombok.Data;
 
 @Data
 public class AddMemberRequestDTO {
 
     String email;
-    String roleInProject;
+
+    ProjectRole roleInProject;
 
 }
 

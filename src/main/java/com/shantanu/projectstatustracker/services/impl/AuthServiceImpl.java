@@ -59,11 +59,12 @@ public class AuthServiceImpl implements AuthService {
             List<InvitedMembers> assignments = invitedMembersRepo.findAllByEmail(userRequestDTO.getEmail());
             user.setStatus("ACTIVE");
             for (InvitedMembers assignment : assignments){
-                user.setRole(roleRepo.findByName(assignment.getRole()).orElseThrow(() -> new ResourceNotFoundException("Role not found")));
+                //user.setRole(roleRepo.findByName(assignment.getRole()).orElseThrow(() -> new ResourceNotFoundException("Role not found")));
+                user.setRole(roleRepo.findByName("PROJECT HANDLER").orElseThrow(() -> new ResourceNotFoundException("Role not found")));
                 Project project = projectRepo.findById(assignment.getProjectId())
                         .orElseThrow(()->new ResourceNotFoundException("Project with id("+assignment.getProjectId()+") not found"));
 
-                projectMemberRepo.save(projectMemberMapper.mapRequestToProjectMember(project,user,assignment.getAssignedBy()));
+                projectMemberRepo.save(projectMemberMapper.mapRequestToProjectMember(project,user,assignment.getAssignedBy(),assignment.getRole()));
                 invitedMembersRepo.delete(assignment);
             }
         }

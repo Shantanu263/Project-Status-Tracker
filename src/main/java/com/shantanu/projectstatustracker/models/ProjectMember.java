@@ -1,5 +1,6 @@
 package com.shantanu.projectstatustracker.models;
 
+import com.fasterxml.jackson.annotation.JsonBackReference;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -21,6 +22,7 @@ public class ProjectMember {
 
     @ManyToOne
     @JoinColumn(name = "project_project_id", nullable = false)
+    @JsonBackReference
     private Project project;
 
     @ManyToOne
@@ -28,7 +30,8 @@ public class ProjectMember {
     private User user;
 
     @Column(name = "role", nullable = false)
-    private String role;
+    @Enumerated(EnumType.STRING)
+    private ProjectRole role;
 
     @ManyToOne
     @JoinColumn(name = "assigned_by_user_id", nullable = false)
@@ -40,4 +43,5 @@ public class ProjectMember {
     public void onCreate(){
         this.memberStatus = "ACTIVE";
     }
+
 }
