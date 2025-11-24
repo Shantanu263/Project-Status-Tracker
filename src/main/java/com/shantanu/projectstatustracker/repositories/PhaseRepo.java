@@ -17,4 +17,5 @@ public interface PhaseRepo extends JpaRepository<Phase,Long> {
 
     Optional<Phase> findByPhaseIdAndProject_ProjectId(Long phaseId, Long projectProjectId);
 
+    int countByProject_ProjectId(Long projectProjectId);
 }

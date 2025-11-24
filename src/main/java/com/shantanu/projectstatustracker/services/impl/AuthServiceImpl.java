@@ -8,6 +8,7 @@ import com.shantanu.projectstatustracker.models.InvitedMembers;
 import com.shantanu.projectstatustracker.models.Project;
 import com.shantanu.projectstatustracker.models.User;
 import com.shantanu.projectstatustracker.repositories.*;
+import com.shantanu.projectstatustracker.services.ActivityLogService;
 import com.shantanu.projectstatustracker.services.AuthService;
 import com.shantanu.projectstatustracker.services.JwtService;
 import lombok.RequiredArgsConstructor;
@@ -32,6 +33,7 @@ public class AuthServiceImpl implements AuthService {
     private final ProjectMemberMapper projectMemberMapper;
     private final ProjectRepo projectRepo;
     private final RoleRepo roleRepo;
+    private final ActivityLogService activityLogService;
 
     @Value("${jwt.accessTokenTime}")
     private long accessTokenTime;
@@ -65,6 +67,13 @@ public class AuthServiceImpl implements AuthService {
                         .orElseThrow(()->new ResourceNotFoundException("Project with id("+assignment.getProjectId()+") not found"));
 
                 projectMemberRepo.save(projectMemberMapper.mapRequestToProjectMember(project,user,assignment.getAssignedBy(),assignment.getRole()));
+
+                activityLogService.log(
+                        project.getProjectId(),
+                        assignment.getAssignedBy().getEmail(),
+                        assignment.getAssignedBy().getName() + "added new member " + userRequestDTO.getName() + " to the project."
+                );
+
                 invitedMembersRepo.delete(assignment);
             }
         }

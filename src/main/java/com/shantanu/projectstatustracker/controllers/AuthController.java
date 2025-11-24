@@ -2,18 +2,17 @@ package com.shantanu.projectstatustracker.controllers;
 
 import com.shantanu.projectstatustracker.dtos.UserLoginRequestDTO;
 import com.shantanu.projectstatustracker.dtos.UserRequestDTO;
+import com.shantanu.projectstatustracker.services.ActivityLogService;
 import com.shantanu.projectstatustracker.services.AuthService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 import java.util.Map;
 
 @RequiredArgsConstructor
 @RestController
+@CrossOrigin(origins = "http://localhost:4200")
 @RequestMapping("/api/auth")
 
 public class AuthController {

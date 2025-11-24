@@ -1,10 +1,7 @@
 package com.shantanu.projectstatustracker.dtos;
 
-import com.fasterxml.jackson.annotation.JsonBackReference;
-import com.fasterxml.jackson.annotation.JsonFormat;
-import com.shantanu.projectstatustracker.models.Phase;
-import com.shantanu.projectstatustracker.models.ProjectMember;
-import jakarta.persistence.*;
+
+import com.shantanu.projectstatustracker.models.Status;
 import lombok.Data;
 
 import java.util.Date;
@@ -20,7 +17,7 @@ public class TaskRequestDTO {
 
     private Date endDate;
 
-    private String status;
+    private Status status;
 
     private String priority;
 

@@ -38,9 +38,12 @@ public class Task {
     private Date startDate;
 
     //@JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "dd-MM-yyyy")
-    private LocalDate endDate;
+    private Date endDate;
 
-    private String status;
+    //private Date completed_at;
+
+    @Enumerated(EnumType.STRING)
+    private Status status;
 
     private String priority;
 

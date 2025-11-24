@@ -24,4 +24,8 @@ public interface ProjectService {
     ResponseEntity<Object> deleteMemberFromProject(Long projectId,Long userId);
 
     ResponseEntity<Object> addMemberToProjectUsingEmail(Long projectId, AddMemberRequestDTO addMemberRequestDTO, String assignedByEmail);
+
+    ResponseEntity<Object> getProjectMembersPaginated(Long id, int pageNumber, int pageSize, String sortBy, String order, String search);
+
+    ResponseEntity<Object> getDashboardData(Long projectId);
 }

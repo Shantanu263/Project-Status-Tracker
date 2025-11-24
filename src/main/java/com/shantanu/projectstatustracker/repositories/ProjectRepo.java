@@ -17,4 +17,6 @@ public interface ProjectRepo extends JpaRepository<Project,Long> {
     List<Project> findAllByMemberEmail(@Param("email") String email);
 
     List<Project> findAllByProjectMembers(List<ProjectMember> projectMembers);
+
+    Project findByProjectName(String projectName);
 }

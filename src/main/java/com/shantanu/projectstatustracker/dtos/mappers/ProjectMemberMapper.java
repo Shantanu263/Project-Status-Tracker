@@ -7,6 +7,7 @@ import com.shantanu.projectstatustracker.models.ProjectRole;
 import com.shantanu.projectstatustracker.models.User;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
+import org.springframework.data.domain.Page;
 
 import java.util.List;
 
@@ -31,5 +32,9 @@ public interface ProjectMemberMapper {
     @Mapping(source = "user" , target = "user")
     @Mapping(source = "role", target = "role")
     ProjectMember mapRequestToProjectMember(Project project, User user, User assignedBy, ProjectRole role);
+
+//    default Page<ProjectMemberResponseDTO> toDtoPage(Page<ProjectMember> page) {
+//        return page.map(this::mapProjectMember);
+//    }
 
 }

@@ -49,6 +49,16 @@ public class ProjectController {
         return projectService.getProjectMembers(id);
     }
 
+    @GetMapping("/{id}/get-project-members")
+    public ResponseEntity<Object> getProjectMembersPaginated(@PathVariable(name = "id") Long id,
+                                                             @RequestParam(value = "page", defaultValue = "0", required = false) int pageNumber,
+                                                             @RequestParam(value = "size", defaultValue = "5", required = false) int pageSize,
+                                                             @RequestParam(value = "sortBy", defaultValue = "id", required = false) String sortBy,
+                                                             @RequestParam(value = "order", defaultValue = "asc", required = false) String order,
+                                                             @RequestParam(value = "search", required = false) String search){
+        return projectService.getProjectMembersPaginated(id,pageNumber,pageSize,sortBy,order,search);
+    }
+
     @PostMapping("/{projectId}/project-members/{userId}")
     public ResponseEntity<Object> addMemberToProject(@PathVariable(name = "projectId") Long projectId,
                                                      @PathVariable(name = "userId") Long userId,
@@ -69,6 +79,11 @@ public class ProjectController {
     public ResponseEntity<Object> deleteMemberFromProject(@PathVariable(name = "projectId") Long projectId,
                                                           @PathVariable(name = "userId") Long userId){
         return projectService.deleteMemberFromProject(projectId,userId);
+    }
+
+    @GetMapping("{projectId}/dashboard")
+    public ResponseEntity<Object> getDashboardData(@PathVariable(name = "projectId") Long projectId){
+        return projectService.getDashboardData(projectId);
     }
 
 }

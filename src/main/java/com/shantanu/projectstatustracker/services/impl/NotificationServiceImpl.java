@@ -20,6 +20,7 @@ public class NotificationServiceImpl implements NotificationService {
 
     @Override
     public ResponseEntity<Object> getUserNotifications(String email) {
+        System.out.println("running");
         User user = userRepo.findByEmail(email)
                 .orElseThrow(() -> new RuntimeException("User not found"));
         //List<Notification> notifications = notificationRepo.findByUserOrderByTimestampDesc(user);

@@ -1,6 +1,7 @@
 package com.shantanu.projectstatustracker.controllers;
 
 import com.shantanu.projectstatustracker.dtos.TaskRequestDTO;
+import com.shantanu.projectstatustracker.models.Status;
 import com.shantanu.projectstatustracker.services.TaskService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
@@ -9,6 +10,7 @@ import org.springframework.web.bind.annotation.*;
 @RequiredArgsConstructor
 @RestController
 @RequestMapping("/api/project/{projectId}/phases/{phaseId}/tasks")
+//@CrossOrigin(origins = "http://localhost:4200")
 public class TaskController {
 
     private final TaskService taskService;
@@ -50,14 +52,15 @@ public class TaskController {
 //            @PathVariable Long taskId) {
 //        return taskService.deleteTask(projectId, phaseId, taskId);
 //    }
-//
-//    @PatchMapping("/{taskId}/status")
-//    public ResponseEntity<Object> updateTaskStatus(
-//            @PathVariable Long projectId,
-//            @PathVariable Long phaseId,
-//            @PathVariable Long taskId,
-//            @RequestParam Status status) {
-//        return taskService.updateTaskStatus(projectId, phaseId, taskId, status);
-//    }
+    
+    @PatchMapping("/{taskId}/status")
+    public ResponseEntity<Object> updateTaskStatus(
+            @PathVariable Long projectId,
+            @PathVariable Long phaseId,
+            @PathVariable Long taskId,
+            @RequestParam Status status) {
+        return taskService.updateTaskStatus(projectId, phaseId, taskId, status);
+    }
+
 }
 

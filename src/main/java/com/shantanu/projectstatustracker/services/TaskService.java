@@ -1,9 +1,8 @@
 package com.shantanu.projectstatustracker.services;
 
 import com.shantanu.projectstatustracker.dtos.TaskRequestDTO;
+import com.shantanu.projectstatustracker.models.Status;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.RequestBody;
 
 public interface TaskService {
     ResponseEntity<Object> getPhaseTasks(Long projectId, Long phaseId);
@@ -13,4 +12,6 @@ public interface TaskService {
     ResponseEntity<Object> createTask(Long projectId, Long phaseId, TaskRequestDTO taskRequestDTO);
 
     ResponseEntity<Object> updateTask(Long projectId, Long phaseId, Long taskId, TaskRequestDTO dto);
+
+    ResponseEntity<Object> updateTaskStatus(Long projectId, Long phaseId, Long taskId, Status status);
 }

@@ -1,6 +1,7 @@
 package com.shantanu.projectstatustracker.repositories;
 
 import com.shantanu.projectstatustracker.models.InvitedMembers;
+import com.shantanu.projectstatustracker.models.User;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 
@@ -11,4 +12,6 @@ public interface InvitedMembersRepo extends JpaRepository<InvitedMembers,Long> {
     boolean existsByEmail(String email);
 
     List<InvitedMembers> findAllByEmail(String email);
+
+    String findByAssignedBy(User assignedBy);
 }
