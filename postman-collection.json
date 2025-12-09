@@ -1,0 +1,947 @@
+{
+	"info": {
+		"_postman_id": "ff0340a0-09a2-4f2e-968c-6706c5a0e196",
+		"name": "Project Status Tracker",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+		"_exporter_id": "46434149",
+		"_collection_link": "https://shantanu-2098243.postman.co/workspace/Shantanu's-Workspace~65307014-0529-4ef6-80cd-5b176fa131bf/collection/46434149-ff0340a0-09a2-4f2e-968c-6706c5a0e196?action=share&source=collection_link&creator=46434149"
+	},
+	"item": [
+		{
+			"name": "Authentication",
+			"item": [
+				{
+					"name": "Forgot Password",
+					"item": [
+						{
+							"name": "Request OTP",
+							"request": {
+								"method": "POST",
+								"header": [],
+								"body": {
+									"mode": "raw",
+									"raw": "{\r\n    \"email\" : \"tommykedi62@gmail.com\"\r\n}",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "{{base_url}}/forgot-password/verifyMail",
+									"host": [
+										"{{base_url}}"
+									],
+									"path": [
+										"forgot-password",
+										"verifyMail"
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "Verify OTP",
+							"request": {
+								"method": "POST",
+								"header": [],
+								"body": {
+									"mode": "raw",
+									"raw": "{\r\n    \"otp\" : 203824,\r\n    \"email\" : \"tommykedi62@gmail.com\"\r\n}",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "{{base_url}}/forgot-password/verifyOtp",
+									"host": [
+										"{{base_url}}"
+									],
+									"path": [
+										"forgot-password",
+										"verifyOtp"
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "Reset Password",
+							"request": {
+								"auth": {
+									"type": "bearer",
+									"bearer": [
+										{
+											"key": "token",
+											"value": "eyJhbGciOiJIUzUxMiJ9.eyJzdWIiOiJ0b21teWtlZGk2MkBnbWFpbC5jb20iLCJyb2xlIjoiUFJPSkVDVCBIQU5ETEVSIiwibmFtZSI6IlRlc3QgVXNlciIsImlhdCI6MTc2MDU5MzQ4NiwiZXhwIjoxNzYwNTkzNjY2fQ.0XaG7nUuVXL2v7F1fOB9dcWyE5hvvfT1xZeovUrYtlYonWF7zsLhSGGZEPn24w2LzWpejrQ4NPicFYLKKaE2UQ",
+											"type": "string"
+										}
+									]
+								},
+								"method": "POST",
+								"header": [],
+								"body": {
+									"mode": "raw",
+									"raw": "{\r\n    \"newPassword\":\"tommy123\"\r\n}",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "{{base_url}}/forgot-password/reset-password",
+									"host": [
+										"{{base_url}}"
+									],
+									"path": [
+										"forgot-password",
+										"reset-password"
+									]
+								}
+							},
+							"response": []
+						}
+					]
+				},
+				{
+					"name": "Sign Up",
+					"request": {
+						"auth": {
+							"type": "noauth"
+						},
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\r\n  \"name\": \"John\",\r\n  \"email\": \"alice.alt@example.com\",\r\n  \"password\": \"john123\"\r\n}\r\n",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{base_url}}/auth/signup",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"auth",
+								"signup"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Login",
+					"request": {
+						"auth": {
+							"type": "noauth"
+						},
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\r\n  \"email\": \"shantanu@example.com\",\r\n  \"password\": \"shantanu\"\r\n}\r\n",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{base_url}}/auth/login",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"auth",
+								"login"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "refresh Token",
+					"request": {
+						"auth": {
+							"type": "noauth"
+						},
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\r\n  \"refreshToken\" : \"eyJhbGciOiJIUzUxMiJ9.eyJzdWIiOiJzaGFudGFudUBleGFtcGxlLmNvbSIsInJvbGUiOiJQUk9KRUNUIEhFQUQiLCJpYXQiOjE3NjA1NTI0NjcsImV4cCI6MTc2MTE1NzI2N30.0Pnw5amgvDcw35e39mHT-tay1BFZSxm7g9T1SdajIn0BILUTBlIQMazVAb1tc4h0J3OEnZKbY3ZCBbqr0gv83Q\"\r\n}\r\n",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{base_url}}/auth/refresh-token",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"auth",
+								"refresh-token"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "New Request",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "eyJhbGciOiJIUzUxMiJ9.eyJzdWIiOiJ0b21teWtlZGk2MkBnbWFpbC5jb20iLCJyb2xlIjoiUFJPSkVDVCBIRUFEIiwibmFtZSI6IlRlc3QgVXNlciIsImlhdCI6MTc2MTYzMTg4MSwiZXhwIjoxNzYyMjM2NjgxfQ.rxIhU2N1gRh15jEWFbqCLNccO0c-4u_6g60BaOJfE8zGSu4dLhkQoCBXesjdv_QYCIBeXGDF4hZy03ilyfbkLg",
+									"type": "string"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\r\n  \"projectRole\": \"dkmfkdmfkdfmdfk\"\r\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{base_url}}/home/test-enum",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"home",
+								"test-enum"
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "User Management",
+			"item": [
+				{
+					"name": "Get Users",
+					"request": {
+						"method": "GET",
+						"header": []
+					},
+					"response": []
+				},
+				{
+					"name": "Get Pending Role Requests",
+					"protocolProfileBehavior": {
+						"disableBodyPruning": true
+					},
+					"request": {
+						"method": "GET",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\r\n  \"name\": \"Admin\",\r\n  \"email\": \"admin@example.com\",\r\n  \"password\": \"admin\"\r\n}\r\n"
+						},
+						"url": {
+							"raw": "localhost:8080/api/admin/pending-users",
+							"host": [
+								"localhost"
+							],
+							"port": "8080",
+							"path": [
+								"api",
+								"admin",
+								"pending-users"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Assign Role to User",
+					"request": {
+						"method": "PUT",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\r\n   \"roleName\" : \"HANDLER\" \r\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{base_url}}/admin/approve-user/2",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"admin",
+								"approve-user",
+								"2"
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "Projects",
+			"item": [
+				{
+					"name": "Get Projects",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "eyJhbGciOiJIUzUxMiJ9.eyJzdWIiOiJ0b21teWtlZGk2MkBnbWFpbC5jb20iLCJyb2xlIjoiUFJPSkVDVF9IRUFEIiwibmFtZSI6IlRlc3QgVXNlciIsImlhdCI6MTc2MTY0MzUyMywiZXhwIjoxNzYyMjQ4MzIzfQ._I_mQ5SBetzjpAT6p64teC8eO4vQ6NJcJn4--vNgA5cPG-zxaWa7Icz3x8ZX6DVf6Eq5BHeXgqt4Z1Nd5jMznA",
+									"type": "string"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/project",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"project"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Create Project",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\r\n  \"projectName\": \"Software Development Lifecycle Project\",\r\n  \"description\": \"SDLC\",\r\n  \"startDate\": \"2025-10-15\",\r\n  \"endDate\": \"2026-01-01\",\r\n  \"priority\": \"Low\",\r\n  \"projectHeadId\": \"7\",\r\n  \"templateId\" : 1  \r\n}\r\n",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{base_url}}/project",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"project"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Update Project",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "eyJhbGciOiJIUzUxMiJ9.eyJzdWIiOiJ0b21teWtlZGk2MkBnbWFpbC5jb20iLCJyb2xlIjoiUFJPSkVDVF9IRUFEIiwibmFtZSI6IlRlc3QgVXNlciIsImlhdCI6MTc2MTY0MzUyMywiZXhwIjoxNzYyMjQ4MzIzfQ._I_mQ5SBetzjpAT6p64teC8eO4vQ6NJcJn4--vNgA5cPG-zxaWa7Icz3x8ZX6DVf6Eq5BHeXgqt4Z1Nd5jMznA",
+									"type": "string"
+								}
+							]
+						},
+						"method": "PUT",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\r\n  \"projectName\": \"Test project\",\r\n  \"description\": \"Updated description right now\",\r\n  \"startDate\": \"2025-10-15\",\r\n  \"endDate\": \"2026-01-01\",\r\n  \"priority\": \"Low\",\r\n  \"status\": \"ON HOLD\"\r\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{base_url}}/project/10",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"project",
+								"10"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Delete Project",
+					"request": {
+						"method": "DELETE",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\r\n  \"projectName\": \"Test project\",\r\n  \"description\": \"Updated description\",\r\n  \"startDate\": \"2025-10-15\",\r\n  \"endDate\": \"2026-01-01\",\r\n  \"priority\": \"Low\",\r\n  \"status\": \"ON HOLD\"\r\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/project/10",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"project",
+								"10"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Get Project by Id",
+					"request": {
+						"method": "GET",
+						"header": []
+					},
+					"response": []
+				},
+				{
+					"name": "Get Project Members of a Project",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/project/10/project-members",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"project",
+								"10",
+								"project-members"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Add member to a Project",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/project/10/project-members/6",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"project",
+								"10",
+								"project-members",
+								"6"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Remove member from a Project",
+					"request": {
+						"method": "DELETE",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/project/10/project-members/5",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"project",
+								"10",
+								"project-members",
+								"5"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Add member to a Project using email",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\r\n    \"email\": \"harry@example.com\",\r\n    \"roleInProject\":\"PROJECT HANDLER\"\r\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{base_url}}/project/10/project-members/add-user",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"project",
+								"10",
+								"project-members",
+								"add-user"
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "Phases",
+			"item": [
+				{
+					"name": "Get Phases of a Project",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/project/14/phases",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"project",
+								"14",
+								"phases"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Get Project Phase by Phase Id",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/project/10/phase/25",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"project",
+								"10",
+								"phase",
+								"25"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Add Phases to Projects",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\r\n    \"phaseName\": \"Development\",\r\n    \"startDate\": \"2025-10-23\",\r\n    \"endDate\": \"2025-11-11\",\r\n    \"status\": \"ongoing\"\r\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{base_url}}/project/10/phases",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"project",
+								"10",
+								"phases"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Update Phase",
+					"request": {
+						"method": "PUT",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\r\n    \"phaseName\": \"This will work is updated again\",\r\n    \"description\" : \"This will work\",\r\n    \"startDate\": \"2025-10-23\",\r\n    \"endDate\": \"2025-11-11\",\r\n    \"status\": \"delayed\",\r\n    \"projectMemberId\": 1\r\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{base_url}}/project/10/phase/25",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"project",
+								"10",
+								"phase",
+								"25"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Change Status of a Phase",
+					"request": {
+						"method": "PATCH",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/project/10/phase/24/status?status=completed",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"project",
+								"10",
+								"phase",
+								"24",
+								"status"
+							],
+							"query": [
+								{
+									"key": "status",
+									"value": "completed"
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Delete Phase of a Project",
+					"request": {
+						"method": "DELETE",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/project/10/phase/25",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"project",
+								"10",
+								"phase",
+								"25"
+							]
+						}
+					},
+					"response": []
+				}
+			],
+			"event": [
+				{
+					"listen": "prerequest",
+					"script": {
+						"type": "text/javascript",
+						"packages": {},
+						"requests": {},
+						"exec": [
+							""
+						]
+					}
+				},
+				{
+					"listen": "test",
+					"script": {
+						"type": "text/javascript",
+						"packages": {},
+						"requests": {},
+						"exec": [
+							""
+						]
+					}
+				}
+			]
+		},
+		{
+			"name": "Tasks",
+			"item": [
+				{
+					"name": "Get all Tasks of a Project",
+					"request": {
+						"method": "GET",
+						"header": []
+					},
+					"response": []
+				},
+				{
+					"name": "Get Tasks of a Phase",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/project/10/phases/25/tasks",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"project",
+								"10",
+								"phases",
+								"25",
+								"tasks"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Get Task by Task Id",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/project/10/phases/24/tasks/6",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"project",
+								"10",
+								"phases",
+								"24",
+								"tasks",
+								"6"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Add Task",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\r\n    \"taskName\": \"Some task\",\r\n    \"description\": \"This is a task\",\r\n    \"startDate\": \"2025-10-23\",\r\n    \"endDate\": \"2025-11-11\",\r\n    \"status\": \"ongoing\",\r\n    \"priority\": \"Medium\",\r\n    \"assignedTo\": 1\r\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{base_url}}/project/10/phases/25/tasks",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"project",
+								"10",
+								"phases",
+								"25",
+								"tasks"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Update Task",
+					"request": {
+						"method": "PUT",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\r\n    \"taskName\": \"Fourth task\",\r\n    \"description\": \"This is a task updated\"\r\n    // \"startDate\": \"2025-10-23\",\r\n    // \"endDate\": \"2025-11-11\",\r\n    // \"status\": \"ongoing\",\r\n    // \"priority\": \"Medium\",\r\n    // \"assignedTo\": 1\r\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{base_url}}/project/10/phases/24/tasks/6",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"project",
+								"10",
+								"phases",
+								"24",
+								"tasks",
+								"6"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Change Status of a Task",
+					"request": {
+						"method": "PATCH",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/project/10/phase/24/tasks/6/status?status=completed",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"project",
+								"10",
+								"phase",
+								"24",
+								"tasks",
+								"6",
+								"status"
+							],
+							"query": [
+								{
+									"key": "status",
+									"value": "completed"
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Delete Task",
+					"request": {
+						"method": "DELETE",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/project/10/phase/24/tasks/6",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"project",
+								"10",
+								"phase",
+								"24",
+								"tasks",
+								"6"
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "Notifications",
+			"item": [
+				{
+					"name": "Get Notifications for User",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/notifications?email=tommykedi62@gmail.com",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"notifications"
+							],
+							"query": [
+								{
+									"key": "email",
+									"value": "tommykedi62@gmail.com"
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Notification Mark Read",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/notifications/mark-read/7",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"notifications",
+								"mark-read",
+								"7"
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		}
+	],
+	"auth": {
+		"type": "bearer",
+		"bearer": [
+			{
+				"key": "token",
+				"value": "eyJhbGciOiJIUzUxMiJ9.eyJzdWIiOiJ0b21teWtlZGk2MkBnbWFpbC5jb20iLCJyb2xlIjoiUFJPSkVDVF9IRUFEIiwibmFtZSI6IlRlc3QgVXNlciIsImlhdCI6MTc2MjQyMTI1NiwiZXhwIjoxNzYzMDI2MDU2fQ.ZigKiQbICcW-JZVjpaNkvH729BGSGbPZG2dnRoPzfOchBAsjdBZyLcDu0ibZjk-m8G0kLFoitm9RRq5RFPSUIg",
+				"type": "string"
+			}
+		]
+	},
+	"event": [
+		{
+			"listen": "prerequest",
+			"script": {
+				"type": "text/javascript",
+				"packages": {},
+				"requests": {},
+				"exec": [
+					""
+				]
+			}
+		},
+		{
+			"listen": "test",
+			"script": {
+				"type": "text/javascript",
+				"packages": {},
+				"requests": {},
+				"exec": [
+					""
+				]
+			}
+		}
+	],
+	"variable": [
+		{
+			"key": "base_url",
+			"value": ""
+		}
+	]
+}

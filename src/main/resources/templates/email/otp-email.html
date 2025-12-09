@@ -1,0 +1,170 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Password Reset OTP</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            line-height: 1.6;
+            background-color: #f4f7fa;
+            padding: 20px;
+        }
+        .email-container {
+            max-width: 600px;
+            margin: 0 auto;
+            background-color: #ffffff;
+            border-radius: 12px;
+            overflow: hidden;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            padding: 40px 20px;
+            text-align: center;
+            color: #ffffff;
+        }
+        .header h1 {
+            font-size: 28px;
+            font-weight: 600;
+            margin-bottom: 8px;
+        }
+        .header p {
+            font-size: 16px;
+            opacity: 0.9;
+        }
+        .content {
+            padding: 40px 30px;
+        }
+        .greeting {
+            font-size: 18px;
+            color: #333333;
+            margin-bottom: 20px;
+        }
+        .message {
+            font-size: 15px;
+            color: #666666;
+            margin-bottom: 30px;
+            line-height: 1.8;
+        }
+        .otp-container {
+            background: linear-gradient(135deg, #f5f7fa 0%, #e4e9f2 100%);
+            border-radius: 10px;
+            padding: 30px;
+            text-align: center;
+            margin: 30px 0;
+            border: 2px dashed #667eea;
+        }
+        .otp-label {
+            font-size: 14px;
+            color: #666666;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-bottom: 12px;
+            font-weight: 600;
+        }
+        .otp-code {
+            font-size: 36px;
+            font-weight: 700;
+            color: #667eea;
+            letter-spacing: 8px;
+            font-family: 'Courier New', monospace;
+        }
+        .otp-expiry {
+            font-size: 13px;
+            color: #999999;
+            margin-top: 12px;
+        }
+        .warning {
+            background-color: #fff3cd;
+            border-left: 4px solid #ffc107;
+            padding: 15px;
+            margin: 25px 0;
+            border-radius: 4px;
+        }
+        .warning p {
+            font-size: 14px;
+            color: #856404;
+            margin: 0;
+        }
+        .footer {
+            background-color: #f8f9fa;
+            padding: 25px 30px;
+            text-align: center;
+            border-top: 1px solid #e9ecef;
+        }
+        .footer p {
+            font-size: 13px;
+            color: #999999;
+            margin: 5px 0;
+        }
+        .footer a {
+            color: #667eea;
+            text-decoration: none;
+        }
+        .divider {
+            height: 1px;
+            background: linear-gradient(to right, transparent, #e0e0e0, transparent);
+            margin: 30px 0;
+        }
+    </style>
+</head>
+<body>
+<div class="email-container">
+    <div class="header">
+        <h1>🔐 Password Reset</h1>
+        <p>Secure your account with OTP verification</p>
+    </div>
+
+    <div class="content">
+        <p class="greeting">Hello <strong>[USER_NAME]</strong>,</p>
+
+        <p class="message">
+            We received a request to reset your password. To proceed with resetting your password,
+            please use the One-Time Password (OTP) provided below.
+        </p>
+
+        <div class="otp-container">
+            <div class="otp-label">Your OTP Code</div>
+            <div class="otp-code">[OTP_CODE]</div>
+            <div class="otp-expiry">⏱️ This code will expire in <strong>90 seconds</strong></div>
+        </div>
+
+        <p class="message">
+            Enter this code on the password reset page to continue. If you didn't request a password reset,
+            please ignore this email or contact our support team if you have concerns.
+        </p>
+
+        <div class="warning">
+            <p>
+                <strong>⚠️ Security Notice:</strong> Never share this OTP with anyone. Our team will never
+                ask for your OTP via email, phone, or any other communication channel.
+            </p>
+        </div>
+
+        <div class="divider"></div>
+
+        <p class="message" style="font-size: 13px;">
+            If you're having trouble with password reset, feel free to reach out to our support team at
+            <a href="mailto:support@yourcompany.com" style="color: #667eea; text-decoration: none;">support@yourcompany.com</a>
+        </p>
+    </div>
+
+    <div class="footer">
+        <p><strong>Your Company Name</strong></p>
+        <p>© 2025 Your Company. All rights reserved.</p>
+        <p style="margin-top: 10px;">
+            <a href="[WEBSITE_URL]">Visit our website</a> |
+            <a href="[PRIVACY_URL]">Privacy Policy</a> |
+            <a href="[SUPPORT_URL]">Support</a>
+        </p>
+    </div>
+</div>
+</body>
+</html>
