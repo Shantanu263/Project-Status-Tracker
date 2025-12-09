@@ -1,0 +1,59 @@
+/* Phases component styles */
+
+/* Ensure full width layout */
+:host {
+  display: block;
+  width: 100%;
+}
+
+/* Smooth transitions for expandable phases */
+:host ::ng-deep {
+  .phase-transition {
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+
+  /* Loading spinner animation */
+  @keyframes spin {
+    from {
+      transform: rotate(0deg);
+    }
+
+    to {
+      transform: rotate(360deg);
+    }
+  }
+
+  .animate-spin {
+    animation: spin 1s linear infinite;
+  }
+
+  /* Status badge animations */
+  .status-badge {
+    transition: background-color 0.2s ease, color 0.2s ease;
+  }
+
+  /* Task card hover effect */
+  .task-card {
+    transition: box-shadow 0.2s ease, transform 0.2s ease;
+
+    &:hover {
+      transform: translateY(-2px);
+    }
+  }
+
+  /* Progress percentage color coding */
+  .progress-high {
+    color: #10b981;
+    /* Green */
+  }
+
+  .progress-medium {
+    color: #3b82f6;
+    /* Blue */
+  }
+
+  .progress-low {
+    color: #f59e0b;
+    /* Amber */
+  }
+}

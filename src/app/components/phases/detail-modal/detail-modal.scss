@@ -1,0 +1,119 @@
+// Minimal styles for custom animations
+.modal-enter {
+    animation: modalFadeIn 0.3s ease-out;
+}
+
+@keyframes modalFadeIn {
+    from {
+        opacity: 0;
+        transform: scale(0.95);
+    }
+
+    to {
+        opacity: 1;
+        transform: scale(1);
+    }
+}
+
+// Custom dropdown styles (for member, status, and priority selectors)
+.member-selector,
+.status-selector,
+.priority-selector {
+    position: relative;
+}
+
+.selected-member {
+    padding: 0.625rem 0.875rem;
+    border: 1px solid #d1d5db;
+    border-radius: 0.5rem;
+    cursor: pointer;
+    transition: all 0.2s;
+    background-color: white;
+    min-height: 2.5rem;
+    display: flex;
+    align-items: center;
+
+    &:hover {
+        border-color: #8c2d1b;
+        background-color: #f9fafb;
+    }
+
+    &:focus-within {
+        outline: none;
+        border-color: #8c2d1b;
+        box-shadow: 0 0 0 3px rgba(140, 45, 27, 0.1);
+    }
+}
+
+.member-display {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    flex: 1;
+}
+
+.avatar {
+    width: 2rem;
+    height: 2rem;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    font-size: 0.75rem;
+    font-weight: 600;
+    flex-shrink: 0;
+}
+
+.member-name {
+    font-size: 0.875rem;
+    font-weight: 500;
+    color: #1f2937;
+}
+
+.member-role {
+    font-size: 0.75rem;
+    color: #6b7280;
+}
+
+.placeholder {
+    color: #9ca3af;
+    font-size: 0.875rem;
+}
+
+.member-list {
+    position: absolute;
+    top: 100%;
+    left: 0;
+    right: 0;
+    background-color: white;
+    border: 1px solid #d1d5db;
+    border-top: none;
+    border-radius: 0 0 0.5rem 0.5rem;
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+    z-index: 10;
+    max-height: 300px;
+    overflow-y: auto;
+}
+
+.member-list-item {
+    padding: 0.75rem 0.875rem;
+    cursor: pointer;
+    transition: background-color 0.2s;
+
+    &:hover {
+        background-color: #f3f4f6;
+    }
+
+    .member-display {
+        gap: 0.75rem;
+    }
+
+    .member-name {
+        font-size: 0.875rem;
+    }
+
+    .member-role {
+        font-size: 0.75rem;
+    }
+}

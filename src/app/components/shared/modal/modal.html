@@ -1,0 +1,23 @@
+@if (isOpen()) {
+<div class="modal-backdrop" (click)="onBackdropClick($event)">
+    <div class="modal-container">
+        <!-- Modal Header -->
+        <div class="modal-header">
+            <h2 class="modal-title">{{ title() }}</h2>
+            @if (showCloseButton()) {
+            <button type="button" class="close-button" (click)="onCloseClick()" aria-label="Close modal">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12">
+                    </path>
+                </svg>
+            </button>
+            }
+        </div>
+
+        <!-- Modal Content -->
+        <div class="modal-content">
+            <ng-content></ng-content>
+        </div>
+    </div>
+</div>
+}

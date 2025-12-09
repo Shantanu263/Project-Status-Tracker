@@ -1,0 +1,80 @@
+<main class="w-full h-screen flex flex-col overflow-hidden bg-gray-100">
+  <!-- Main Content Area -->
+  <div class="flex-1 flex flex-col overflow-hidden bg-white">
+    <!-- Project Header -->
+    <div class="bg-white border-b border-gray-200 px-8 py-2 flex-shrink-0">
+      @if (selectedProject(); as project) {
+      <h1 class="text-3xl font-bold text-gray-900">{{ project.projectName }}</h1>
+      <p class="text-gray-600 mt-2">{{ project.description }}</p>
+      } @else {
+      <div class="text-center py-12">
+        <p class="text-gray-500 text-lg">Select a project from the sidebar to get started</p>
+      </div>
+      }
+    </div>
+
+    <!-- Tabs and Content -->
+    @if (selectedProject()) {
+    <!-- Tab Navigation -->
+    <div class="bg-white border-b border-gray-200 flex-shrink-0">
+      <div class="px-8">
+        <div class="flex space-x-8">
+          @for (tab of tabs; track tab.value) {
+          <button (click)="selectTab(tab.value)" [class.border-b-2]="activeTab() === tab.value"
+            [class.border-[#8c2d1b]]="activeTab() === tab.value" [class.text-[#8c2d1b]]="activeTab() === tab.value"
+            [class.text-gray-600]="activeTab() !== tab.value"
+            class="py-4 font-medium transition-colors duration-200 hover:text-gray-900 whitespace-nowrap">
+            {{ tab.label }}
+          </button>
+          }
+        </div>
+      </div>
+    </div>
+
+    <!-- Tab Content -->
+    <div class="flex-1 overflow-hidden">
+      @switch (activeTab()) {
+      @case ('summary') {
+      <div class="overflow-y-auto px-8 py-6 h-full">
+        <app-dashboard [projectName]="selectedProject().projectName" projectStatus="Active" />
+      </div>
+      }
+      @case ('board') {
+      <div class="overflow-y-auto px-8 py-6 h-full">
+        <app-board />
+      </div>
+      }
+      @case ('phases') {
+      <div class="overflow-y-auto px-8 py-6 h-full">
+        <app-phases [projectId]="selectedProject().projectId" />
+      </div>
+      }
+      @case ('tasks') {
+      <div class="overflow-y-auto px-8 py-6 h-full">
+        <div class="bg-gray-50 border border-gray-200 rounded-lg p-6">
+          <p class="text-gray-600">Task list for {{ selectedProject().projectName }}</p>
+        </div>
+      </div>
+      }
+      @case ('members') {
+      <div class="overflow-y-auto px-8 py-6 h-full">
+        <app-members />
+      </div>
+      }
+      @case ('timeline') {
+      <div class="h-full px-8 py-6">
+        <app-timeline />
+      </div>
+      }
+      @case ('calendar') {
+      <div class="overflow-y-auto px-8 py-6 h-full">
+        <div class="bg-gray-50 border border-gray-200 rounded-lg p-6">
+          <p class="text-gray-600">Project calendar for {{ selectedProject().projectName }}</p>
+        </div>
+      </div>
+      }
+      }
+    </div>
+    }
+  </div>
+</main>

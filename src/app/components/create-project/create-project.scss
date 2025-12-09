@@ -1,0 +1,148 @@
+.modal-content-wrapper {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  min-height: 0;
+}
+
+.modal-header {
+  flex-shrink: 0;
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  background: linear-gradient(to right, #8c2d1b, #6b2115);
+  padding: 1.5rem 2rem;
+  gap: 1rem;
+
+  h2 {
+    margin: 0;
+  }
+
+  button {
+    flex-shrink: 0;
+    padding: 0.5rem;
+    background: none;
+    border: none;
+    cursor: pointer;
+
+    &:hover {
+      opacity: 0.8;
+    }
+  }
+}
+
+.modal-content {
+  flex: 1;
+  overflow-y: auto;
+  overflow-x: hidden;
+  padding: 2rem;
+
+  // Custom scrollbar styling
+  scrollbar-width: thin;
+  scrollbar-color: #d1d5db #f3f4f6;
+
+  &::-webkit-scrollbar {
+    width: 0.5rem;
+  }
+
+  &::-webkit-scrollbar-track {
+    background: #f3f4f6;
+  }
+
+  &::-webkit-scrollbar-thumb {
+    background: #d1d5db;
+    border-radius: 0.25rem;
+
+    &:hover {
+      background: #9ca3af;
+    }
+  }
+}
+
+.modal-footer {
+  flex-shrink: 0;
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.75rem;
+  padding: 1.5rem 2rem;
+  border-top: 1px solid #e5e7eb;
+  background-color: #fafafa;
+
+  button {
+    padding: 0.75rem 1.5rem;
+    border-radius: 0.5rem;
+    font-weight: 500;
+    transition: all 0.2s;
+    cursor: pointer;
+
+    &:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+  }
+}
+
+// Fade-in animation for step transitions
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.animate-fadeIn {
+  animation: fadeIn 0.3s ease-in-out;
+}
+
+// Placeholder text styling with reduced gradient
+input::placeholder,
+textarea::placeholder {
+  background: linear-gradient(90deg, #9ca3af 0%, #d1d5db 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  opacity: 0.8;
+}
+
+// Template card styling for consistent alignment
+.template-card {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  min-height: 140px;
+
+  .template-card-content {
+    display: flex;
+    flex-direction: row;
+    align-items: flex-start;
+    gap: 1rem;
+    flex: 1;
+  }
+
+  .template-icon {
+    flex-shrink: 0;
+  }
+
+  .template-text {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    flex: 1;
+    min-width: 0; // Prevent text overflow
+  }
+
+  h4 {
+    margin: 0;
+    line-height: 1.4;
+  }
+
+  p {
+    margin: 0;
+    line-height: 1.5;
+  }
+}

@@ -1,0 +1,538 @@
+<!-- Modal Dialog Content (handled by MatDialog) -->
+<div class="modal-content-wrapper">
+  <!-- Fixed Header -->
+  <div class="modal-header">
+    <div>
+      <h2 class="text-3xl font-bold text-white">Create New Project</h2>
+      <p class="text-white mt-1 opacity-90">
+        @if (currentStep() === 1) {
+        Fill in the project details to get started
+        } @else if (currentStep() === 2) {
+        Choose a template for your project
+        } @else {
+        Add team members to "{{ projectName() }}"
+        }
+      </p>
+    </div>
+    <button type="button" (click)="close()" class="text-white hover:text-gray-200 transition-colors duration-200"
+      aria-label="Close modal">
+      <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+      </svg>
+    </button>
+  </div>
+
+  <!-- Stepper Indicator -->
+  <div class="px-8 py-6 bg-gray-50 border-b border-gray-200">
+    <div class="flex items-center justify-between max-w-2xl mx-auto">
+      <!-- Step 1 -->
+      <div class="flex items-center flex-1">
+        <div
+          [class]="'flex items-center justify-center w-10 h-10 rounded-full font-semibold transition-all duration-300 ' + (currentStep() >= 1 ? 'bg-[#8c2d1b] text-white' : 'bg-gray-300 text-gray-600')">
+          @if (currentStep() > 1) {
+          <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+          </svg>
+          } @else {
+          1
+          }
+        </div>
+        <div class="ml-3 hidden sm:block">
+          <p [class]="'text-sm font-medium ' + (currentStep() === 1 ? 'text-[#8c2d1b]' : 'text-gray-600')">Project Info
+          </p>
+        </div>
+      </div>
+
+      <!-- Connector Line 1 -->
+      <div
+        [class]="'flex-1 h-1 mx-4 rounded transition-all duration-300 ' + (currentStep() >= 2 ? 'bg-[#8c2d1b]' : 'bg-gray-300')">
+      </div>
+
+      <!-- Step 2 -->
+      <div class="flex items-center flex-1">
+        <div
+          [class]="'flex items-center justify-center w-10 h-10 rounded-full font-semibold transition-all duration-300 ' + (currentStep() >= 2 ? 'bg-[#8c2d1b] text-white' : 'bg-gray-300 text-gray-600')">
+          @if (currentStep() > 2) {
+          <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+          </svg>
+          } @else {
+          2
+          }
+        </div>
+        <div class="ml-3 hidden sm:block">
+          <p [class]="'text-sm font-medium ' + (currentStep() === 2 ? 'text-[#8c2d1b]' : 'text-gray-600')">Template</p>
+        </div>
+      </div>
+
+      <!-- Connector Line 2 -->
+      <div
+        [class]="'flex-1 h-1 mx-4 rounded transition-all duration-300 ' + (currentStep() >= 3 ? 'bg-[#8c2d1b]' : 'bg-gray-300')">
+      </div>
+
+      <!-- Step 3 -->
+      <div class="flex items-center flex-1">
+        <div
+          [class]="'flex items-center justify-center w-10 h-10 rounded-full font-semibold transition-all duration-300 ' + (currentStep() >= 3 ? 'bg-[#8c2d1b] text-white' : 'bg-gray-300 text-gray-600')">
+          3
+        </div>
+        <div class="ml-3 hidden sm:block">
+          <p [class]="'text-sm font-medium ' + (currentStep() === 3 ? 'text-[#8c2d1b]' : 'text-gray-600')">Members</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Scrollable Form Content -->
+  <div class="modal-content">
+    @if (errorMessage()) {
+    <div class="mb-4 p-4 bg-red-50 border border-red-200 rounded-lg text-red-700">
+      {{ errorMessage() }}
+    </div>
+    }
+
+    <!-- STEP 1: PROJECT DETAILS -->
+    @if (currentStep() === 1) {
+    <form [formGroup]="projectForm" (ngSubmit)="onCreateProject()" class="space-y-6 animate-fadeIn">
+      <div>
+        <h3 class="text-lg font-semibold text-gray-800 mb-4 flex items-center">
+          <svg class="w-5 h-5 mr-2 text-[#8c2d1b]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+              d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z">
+            </path>
+          </svg>
+          Project Information
+        </h3>
+
+        <!-- Project Name -->
+        <div class="mb-4">
+          <label class="block text-sm font-medium text-gray-700 mb-2">
+            Project Name <span class="text-red-500">*</span>
+          </label>
+          <input type="text" formControlName="projectName" placeholder="e.g., Website Redesign 2024"
+            class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#8c2d1b] focus:border-transparent transition-all duration-200 outline-none" />
+        </div>
+
+        <!-- Dates -->
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+          <div>
+            <label class="block text-sm font-medium text-gray-700 mb-2">
+              Start Date <span class="text-red-500">*</span>
+            </label>
+            <input type="date" formControlName="startDate"
+              class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#8c2d1b] focus:border-transparent transition-all duration-200 outline-none" />
+          </div>
+
+          <div>
+            <label class="block text-sm font-medium text-gray-700 mb-2">
+              End Date <span class="text-red-500">*</span>
+            </label>
+            <input type="date" formControlName="endDate"
+              class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#8c2d1b] focus:border-transparent transition-all duration-200 outline-none" />
+          </div>
+        </div>
+
+        <!-- Description -->
+        <div>
+          <label class="block text-sm font-medium text-gray-700 mb-2">
+            Description
+          </label>
+          <textarea rows="4" formControlName="description" placeholder="Provide a brief description of your project..."
+            class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#8c2d1b] focus:border-transparent transition-all duration-200 outline-none resize-none"></textarea>
+        </div>
+      </div>
+    </form>
+    }
+
+    <!-- STEP 2: TEMPLATE SELECTION -->
+    @if (currentStep() === 2) {
+    <div class="space-y-6 animate-fadeIn">
+      <div>
+        <h3 class="text-lg font-semibold text-gray-800 mb-4 flex items-center">
+          <svg class="w-5 h-5 mr-2 text-[#8c2d1b]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+              d="M4 5a1 1 0 011-1h14a1 1 0 011 1v2a1 1 0 01-1 1H5a1 1 0 01-1-1V5zM4 13a1 1 0 011-1h6a1 1 0 011 1v6a1 1 0 01-1 1H5a1 1 0 01-1-1v-6zM16 13a1 1 0 011-1h2a1 1 0 011 1v6a1 1 0 01-1 1h-2a1 1 0 01-1-1v-6z">
+            </path>
+          </svg>
+          Choose Project Template
+        </h3>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+          @for (template of templates; track template.id) {
+          <button type="button" (click)="selectTemplate(template.id)" [disabled]="isLoading() || showCustomPhases()"
+            [class]="'template-card relative p-6 border-2 rounded-xl transition-all duration-300 text-left hover:shadow-lg hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed ' + 
+                  (selectedTemplateId() === template.id ? 'border-[#8c2d1b] bg-[#8c2d1b]/5' : 'border-gray-200 hover:border-[#8c2d1b]')">
+
+            <!-- Selected Checkmark -->
+            @if (selectedTemplateId() === template.id) {
+            <div class="absolute top-3 right-3 w-6 h-6 bg-[#8c2d1b] rounded-full flex items-center justify-center">
+              <svg class="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7"></path>
+              </svg>
+            </div>
+            }
+
+            <div class="template-card-content">
+              <!-- Icon -->
+              <div class="template-icon w-12 h-12 bg-[#8c2d1b]/10 rounded-lg flex items-center justify-center">
+                <svg class="w-6 h-6 text-[#8c2d1b]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" [attr.d]="template.icon"></path>
+                </svg>
+              </div>
+
+              <!-- Content -->
+              <div class="template-text">
+                <h4 class="text-lg font-semibold text-gray-800">{{ template.name }}</h4>
+                <p class="text-sm text-gray-600">{{ template.description }}</p>
+              </div>
+            </div>
+          </button>
+          }
+
+          <!-- Add Custom Phases Card -->
+          <button type="button" (click)="toggleCustomPhases()" [disabled]="isLoading() || selectedTemplateId() !== null"
+            [class]="'template-card relative p-6 border-2 rounded-xl transition-all duration-300 text-left hover:shadow-lg hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed ' + 
+                  (showCustomPhases() ? 'border-[#8c2d1b] bg-[#8c2d1b]/5' : 'border-gray-200 hover:border-[#8c2d1b]')">
+
+            <!-- Selected Checkmark -->
+            @if (showCustomPhases()) {
+            <div class="absolute top-3 right-3 w-6 h-6 bg-[#8c2d1b] rounded-full flex items-center justify-center">
+              <svg class="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7"></path>
+              </svg>
+            </div>
+            }
+
+            <div class="template-card-content">
+              <!-- Icon -->
+              <div class="template-icon w-12 h-12 bg-[#8c2d1b]/10 rounded-lg flex items-center justify-center">
+                <svg class="w-6 h-6 text-[#8c2d1b]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6">
+                  </path>
+                </svg>
+              </div>
+
+              <!-- Content -->
+              <div class="template-text">
+                <h4 class="text-lg font-semibold text-gray-800">Add Custom Phases</h4>
+                <p class="text-sm text-gray-600">Create your own project flow</p>
+              </div>
+            </div>
+          </button>
+        </div>
+
+        <!-- Custom Phases Expandable Section -->
+        @if (showCustomPhases()) {
+        <div class="mt-6 p-6 bg-gray-50 border-2 border-[#8c2d1b] rounded-xl animate-fadeIn">
+          <h4 class="text-md font-semibold text-gray-800 mb-4 flex items-center">
+            <svg class="w-5 h-5 mr-2 text-[#8c2d1b]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4">
+              </path>
+            </svg>
+            Custom Phases
+          </h4>
+
+          <!-- Add Phase Form -->
+          <form [formGroup]="customPhaseForm" (ngSubmit)="addCustomPhase()" class="mb-4">
+            <div class="flex gap-3">
+              <input type="text" formControlName="phaseName" placeholder="Enter phase name (e.g., Planning, Execution)"
+                class="flex-1 px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#8c2d1b] focus:border-transparent transition-all duration-200 outline-none bg-white" />
+
+              <button type="submit" [disabled]="customPhaseForm.invalid || isAddingPhase()"
+                class="px-6 py-3 bg-[#8c2d1b] text-white rounded-lg hover:bg-[#6b2115] transition-colors duration-200 font-medium flex items-center justify-center whitespace-nowrap disabled:opacity-50 disabled:cursor-not-allowed">
+                @if (isAddingPhase()) {
+                <svg class="animate-spin h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24">
+                  <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                  <path class="opacity-75" fill="currentColor"
+                    d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z">
+                  </path>
+                </svg>
+                Adding...
+                } @else {
+                <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6">
+                  </path>
+                </svg>
+                Add Phase
+                }
+              </button>
+            </div>
+          </form>
+
+          <!-- Custom Phases List -->
+          @if (customPhases().length > 0) {
+          <div class="space-y-2">
+            @for (phase of customPhases(); track $index; let i = $index) {
+            <div class="flex items-center justify-between p-4 bg-white border border-gray-200 rounded-lg">
+              <div class="flex items-center space-x-3 flex-1">
+                <!-- Status Icon -->
+                @if (phase.status === 'adding') {
+                <svg class="animate-spin h-5 w-5 text-blue-600" fill="none" viewBox="0 0 24 24">
+                  <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                  <path class="opacity-75" fill="currentColor"
+                    d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z">
+                  </path>
+                </svg>
+                } @else if (phase.status === 'success') {
+                <div class="w-5 h-5 bg-green-500 rounded-full flex items-center justify-center">
+                  <svg class="w-3 h-3 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7"></path>
+                  </svg>
+                </div>
+                } @else if (phase.status === 'error') {
+                <div class="w-5 h-5 bg-red-500 rounded-full flex items-center justify-center">
+                  <svg class="w-3 h-3 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12">
+                    </path>
+                  </svg>
+                </div>
+                }
+
+                <div class="flex-1">
+                  <p class="font-medium text-gray-800">{{ phase.name }}</p>
+                  @if (phase.status === 'adding') {
+                  <p class="text-sm text-blue-600">Adding phase...</p>
+                  } @else if (phase.status === 'success') {
+                  <p class="text-sm text-green-600">Phase added successfully</p>
+                  } @else if (phase.status === 'error') {
+                  <p class="text-sm text-red-600">{{ phase.errorMessage || 'Failed to add phase' }}</p>
+                  }
+                </div>
+              </div>
+
+              <!-- Remove Button (only for pending/error phases) -->
+              @if (phase.status !== 'adding') {
+              <button type="button" (click)="removeCustomPhase(i)"
+                class="text-red-500 hover:text-red-700 hover:bg-red-50 p-2 rounded-lg transition-colors duration-200"
+                aria-label="Remove phase">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                    d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16">
+                  </path>
+                </svg>
+              </button>
+              }
+            </div>
+            }
+          </div>
+          } @else {
+          <div class="text-center py-6 bg-white rounded-lg border-2 border-dashed border-gray-300">
+            <svg class="w-10 h-10 mx-auto text-gray-400 mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2">
+              </path>
+            </svg>
+            <p class="text-gray-500 text-sm">No custom phases added yet</p>
+            <p class="text-gray-400 text-xs mt-1">Add phases using the form above</p>
+          </div>
+          }
+        </div>
+        }
+
+        @if (isLoading()) {
+        <div class="mt-6 p-4 bg-blue-50 border border-blue-200 rounded-lg flex items-center">
+          <svg class="animate-spin h-5 w-5 text-blue-600 mr-3" fill="none" viewBox="0 0 24 24">
+            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+            <path class="opacity-75" fill="currentColor"
+              d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z">
+            </path>
+          </svg>
+          <span class="text-sm text-blue-700">Applying template...</span>
+        </div>
+        }
+      </div>
+    </div>
+    }
+
+    <!-- STEP 3: MEMBER ASSIGNMENT -->
+    @if (currentStep() === 3) {
+    <form [formGroup]="memberForm" class="space-y-6 animate-fadeIn">
+      <div>
+        <h3 class="text-lg font-semibold text-gray-800 mb-4 flex items-center">
+          <svg class="w-5 h-5 mr-2 text-[#8c2d1b]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+              d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z">
+            </path>
+          </svg>
+          Assign Team Members
+        </h3>
+
+        <!-- Add Member Form -->
+        <div class="bg-gray-50 p-5 rounded-lg border border-gray-200">
+          <div class="flex flex-col sm:flex-row gap-3">
+            <input type="email" formControlName="memberEmail" placeholder="Enter email"
+              class="flex-1 px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#8c2d1b] focus:border-transparent transition-all duration-200 outline-none" />
+
+            <select formControlName="memberRole"
+              class="px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#8c2d1b] focus:border-transparent transition-all duration-200 outline-none bg-white sm:w-48">
+              <option value="PROJECT_HANDLER">Project Handler</option>
+              <option value="PROJECT_VIEWER">Project Viewer</option>
+            </select>
+
+            <button type="button" (click)="addMember()" [disabled]="isLoading()"
+              class="px-6 py-3 bg-[#8c2d1b] text-white rounded-lg hover:bg-[#6b2115] transition-colors duration-200 font-medium flex items-center justify-center whitespace-nowrap disabled:opacity-50 disabled:cursor-not-allowed">
+              <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6">
+                </path>
+              </svg>
+              Add Member
+            </button>
+          </div>
+        </div>
+
+        <!-- Members List -->
+        @if (members().length > 0) {
+        <div class="mt-5 space-y-2">
+          @for (member of members(); track member.email; let i = $index) {
+          <div
+            class="flex items-center justify-between p-4 bg-white border border-gray-200 rounded-lg hover:border-[#8c2d1b] transition-colors duration-200">
+            <div class="flex items-center space-x-3">
+              <div
+                [class]="'w-10 h-10 bg-gradient-to-br ' + member.color + ' rounded-full flex items-center justify-center text-white font-semibold'">
+                {{ member.initials }}
+              </div>
+              <div>
+                <p class="font-medium text-gray-800">{{ member.email }}</p>
+                <p class="text-sm text-gray-500">{{ member.role }}</p>
+              </div>
+            </div>
+            <button type="button" (click)="removeMember(i)" [disabled]="isLoading()"
+              class="text-red-500 hover:text-red-700 hover:bg-red-50 p-2 rounded-lg transition-colors duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
+              aria-label="Remove member">
+              <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                  d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16">
+                </path>
+              </svg>
+            </button>
+          </div>
+          }
+        </div>
+        } @else {
+        <div class="mt-5 text-center py-8 bg-gray-50 rounded-lg border-2 border-dashed border-gray-300">
+          <svg class="w-12 h-12 mx-auto text-gray-400 mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+              d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z">
+            </path>
+          </svg>
+          <p class="text-gray-500">No team members added yet</p>
+          <p class="text-sm text-gray-400 mt-1">Add members using the form above (optional)</p>
+        </div>
+        }
+
+        <!-- Progress Indicator for Adding Members -->
+        @if (membersBeingAdded() > 0 && isLoading()) {
+        <div class="mt-5 p-4 bg-blue-50 border border-blue-200 rounded-lg">
+          <p class="text-sm text-blue-700">
+            Adding members... {{ membersBeingAdded() }}/{{ members().length }} completed
+          </p>
+          <div class="mt-2 w-full bg-blue-200 rounded-full h-2">
+            <div class="bg-blue-600 h-2 rounded-full transition-all duration-300"
+              [style.width.%]="(membersBeingAdded() / members().length) * 100">
+            </div>
+          </div>
+        </div>
+        }
+      </div>
+    </form>
+    }
+  </div>
+
+  <!-- Fixed Footer with Action Buttons -->
+  <div class="modal-footer">
+    @if (currentStep() === 1) {
+    <button type="button" (click)="close()" [disabled]="isLoading()"
+      class="px-6 py-3 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors duration-200 font-medium disabled:opacity-50 disabled:cursor-not-allowed">
+      Cancel
+    </button>
+    <button type="submit" (click)="onCreateProject()" [disabled]="projectForm.invalid || isLoading()"
+      class="px-8 py-3 bg-gradient-to-r from-[#8c2d1b] to-[#6b2115] text-white rounded-lg hover:from-[#6b2115] hover:to-[#512110] disabled:from-gray-400 disabled:to-gray-400 transition-all duration-200 font-medium shadow-lg shadow-[#8c2d1b]/30 disabled:cursor-not-allowed flex items-center gap-2">
+      @if (isLoading()) {
+      <svg class="animate-spin h-5 w-5" fill="none" viewBox="0 0 24 24">
+        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+        <path class="opacity-75" fill="currentColor"
+          d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z">
+        </path>
+      </svg>
+      <span>Creating...</span>
+      } @else {
+      <span>Next</span>
+      <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
+      </svg>
+      }
+    </button>
+    } @else if (currentStep() === 2) {
+    <button type="button" (click)="previousStep()" [disabled]="isLoading()"
+      class="px-6 py-3 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors duration-200 font-medium disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2">
+      <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path>
+      </svg>
+      Back
+    </button>
+
+    @if (selectedTemplateId()) {
+    <!-- Show Next button when template is selected -->
+    <button type="button" (click)="applySelectedTemplate()" [disabled]="isLoading()"
+      class="px-8 py-3 bg-gradient-to-r from-[#8c2d1b] to-[#6b2115] text-white rounded-lg hover:from-[#6b2115] hover:to-[#512110] disabled:from-gray-400 disabled:to-gray-400 transition-all duration-200 font-medium shadow-lg shadow-[#8c2d1b]/30 disabled:cursor-not-allowed flex items-center gap-2">
+      @if (isLoading()) {
+      <svg class="animate-spin h-5 w-5" fill="none" viewBox="0 0 24 24">
+        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+        <path class="opacity-75" fill="currentColor"
+          d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z">
+        </path>
+      </svg>
+      <span>Applying...</span>
+      } @else {
+      <span>Next</span>
+      <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
+      </svg>
+      }
+    </button>
+    } @else if (showCustomPhases() && hasSuccessfulCustomPhases()) {
+    <!-- Show Next button when custom phases are added -->
+    <button type="button" (click)="proceedWithCustomPhases()" [disabled]="isLoading()"
+      class="px-8 py-3 bg-gradient-to-r from-[#8c2d1b] to-[#6b2115] text-white rounded-lg hover:from-[#6b2115] hover:to-[#512110] disabled:from-gray-400 disabled:to-gray-400 transition-all duration-200 font-medium shadow-lg shadow-[#8c2d1b]/30 disabled:cursor-not-allowed flex items-center gap-2">
+      <span>Next</span>
+      <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
+      </svg>
+    </button>
+    } @else {
+    <!-- Show Skip button when no template/phases are selected -->
+    <button type="button" (click)="skipTemplateSelection()" [disabled]="isLoading()"
+      class="px-6 py-3 text-gray-600 hover:text-gray-800 transition-colors duration-200 font-medium disabled:opacity-50 disabled:cursor-not-allowed">
+      Skip
+    </button>
+    }
+    } @else {
+    <button type="button" (click)="previousStep()" [disabled]="isLoading()"
+      class="px-6 py-3 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors duration-200 font-medium disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2">
+      <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path>
+      </svg>
+      Back
+    </button>
+    <button type="button" (click)="finishAndAddMembers()" [disabled]="isLoading()"
+      class="px-8 py-3 bg-gradient-to-r from-[#8c2d1b] to-[#6b2115] text-white rounded-lg hover:from-[#6b2115] hover:to-[#512110] disabled:from-gray-400 disabled:to-gray-400 transition-all duration-200 font-medium shadow-lg shadow-[#8c2d1b]/30 disabled:cursor-not-allowed flex items-center gap-2">
+      @if (isLoading()) {
+      <svg class="animate-spin h-5 w-5" fill="none" viewBox="0 0 24 24">
+        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+        <path class="opacity-75" fill="currentColor"
+          d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z">
+        </path>
+      </svg>
+      <span>@if (members().length > 0) { Adding Members... } @else { Finishing... }</span>
+      } @else {
+      @if (members().length > 0) {
+      <span>Finish & Add {{ members().length }} Member(s)</span>
+      } @else {
+      <span>Finish</span>
+      }
+      }
+    </button>
+    }
+  </div>
+</div>

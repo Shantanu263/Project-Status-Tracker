@@ -1,0 +1,287 @@
+@if (isOpen()) {
+<div class="fixed inset-0 z-50 overflow-y-auto" aria-labelledby="modal-title" role="dialog" aria-modal="true">
+    <!-- Backdrop -->
+    <div class="fixed inset-0 bg-gray-900 bg-opacity-75 transition-opacity" (click)="onClose()"></div>
+
+    <!-- Modal Container -->
+    <div class="flex min-h-full items-center justify-center p-4">
+        <div class="relative transform overflow-hidden rounded-2xl bg-white shadow-2xl transition-all w-full max-w-2xl">
+
+            <!-- Header (matching create-project color theme) -->
+            <div class="bg-gradient-to-r from-[#8c2d1b] to-[#6b2115] px-6 py-5">
+                <div class="flex items-center justify-between">
+                    <h3 class="text-2xl font-bold text-white" id="modal-title">{{ title }}</h3>
+                    <button (click)="onClose()"
+                        class="text-white hover:text-gray-200 transition-colors duration-200 p-1 rounded-lg hover:bg-white/20">
+                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                d="M6 18L18 6M6 6l12 12"></path>
+                        </svg>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Body -->
+            <div class="px-6 py-6 max-h-[calc(100vh-200px)] overflow-y-auto">
+                @if (isPhase) {
+                <!-- Phase Details Form -->
+                <div class="space-y-5">
+                    <!-- Phase Name -->
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">
+                            Phase Name <span class="text-red-500">*</span>
+                        </label>
+                        <input type="text" [value]="formData().phaseName"
+                            (input)="updateField('phaseName', $any($event.target).value)"
+                            class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#8c2d1b] focus:border-transparent transition-all duration-200 text-gray-900 outline-none"
+                            placeholder="Enter phase name">
+                    </div>
+
+                    <!-- Description -->
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Description</label>
+                        <textarea [value]="formData().description || ''"
+                            (input)="updateField('description', $any($event.target).value)" rows="3"
+                            class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#8c2d1b] focus:border-transparent transition-all duration-200 text-gray-900 resize-none outline-none"
+                            placeholder="Enter phase description"></textarea>
+                    </div>
+
+                    <!-- Date Range -->
+                    <div class="grid grid-cols-2 gap-4">
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">Start Date</label>
+                            <input type="date" [value]="formData().startDate || ''"
+                                (input)="updateField('startDate', $any($event.target).value)"
+                                class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#8c2d1b] focus:border-transparent transition-all duration-200 text-gray-900 outline-none">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">End Date</label>
+                            <input type="date" [value]="formData().endDate || ''"
+                                (input)="updateField('endDate', $any($event.target).value)"
+                                class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#8c2d1b] focus:border-transparent transition-all duration-200 text-gray-900 outline-none">
+                        </div>
+                    </div>
+
+                    <!-- Status -->
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Status</label>
+                        <select [value]="formData().status || ''"
+                            (change)="updateField('status', $any($event.target).value)"
+                            class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#8c2d1b] focus:border-transparent transition-all duration-200 text-gray-900 bg-white outline-none">
+                            <option value="">Select Status</option>
+                            @for (option of statusOptions; track option.value) {
+                            <option [value]="option.value">{{ option.label }}</option>
+                            }
+                        </select>
+                    </div>
+
+                    <!-- Read-only Info -->
+                    <div class="bg-gray-50 rounded-lg p-4 space-y-3 border border-gray-200">
+                        <h4 class="text-sm font-semibold text-gray-700 mb-3">Additional Information</h4>
+
+                        @if (formData().progress !== null && formData().progress !== undefined) {
+                        <div class="flex items-center justify-between">
+                            <span class="text-sm text-gray-600">Progress:</span>
+                            <div class="flex items-center space-x-2">
+                                <div class="w-32 bg-gray-200 rounded-full h-2">
+                                    <div class="bg-[#8c2d1b] h-2 rounded-full transition-all duration-300"
+                                        [style.width.%]="formData().progress"></div>
+                                </div>
+                                <span class="text-sm font-medium text-gray-900">{{ formData().progress }}%</span>
+                            </div>
+                        </div>
+                        }
+
+                        @if (formData().tasks && formData().tasks.length > 0) {
+                        <div class="flex items-center justify-between">
+                            <span class="text-sm text-gray-600">Total Tasks:</span>
+                            <span class="text-sm font-medium text-gray-900">{{ formData().tasks.length }}</span>
+                        </div>
+                        }
+
+                        @if (formData().updatedAt) {
+                        <div class="flex items-center justify-between">
+                            <span class="text-sm text-gray-600">Last Updated:</span>
+                            <span class="text-sm font-medium text-gray-900">{{ formData().updatedAt }}</span>
+                        </div>
+                        }
+                    </div>
+                </div>
+                }
+
+                @if (isTask) {
+                <!-- Task Details Form -->
+                <div class="space-y-5">
+                    <!-- Task Name -->
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">
+                            Task Name <span class="text-red-500">*</span>
+                        </label>
+                        <input type="text" [value]="formData().taskName"
+                            (input)="updateField('taskName', $any($event.target).value)"
+                            class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#8c2d1b] focus:border-transparent transition-all duration-200 text-gray-900 outline-none"
+                            placeholder="Enter task name">
+                    </div>
+
+                    <!-- Description -->
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Description</label>
+                        <textarea [value]="formData().description || ''"
+                            (input)="updateField('description', $any($event.target).value)" rows="3"
+                            class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#8c2d1b] focus:border-transparent transition-all duration-200 text-gray-900 resize-none outline-none"
+                            placeholder="Enter task description"></textarea>
+                    </div>
+
+                    <!-- Date Range -->
+                    <div class="grid grid-cols-2 gap-4">
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">Start Date</label>
+                            <input type="date" [value]="formData().startDate || ''"
+                                (input)="updateField('startDate', $any($event.target).value)"
+                                class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#8c2d1b] focus:border-transparent transition-all duration-200 text-gray-900 outline-none">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">End Date</label>
+                            <input type="date" [value]="formData().endDate || ''"
+                                (input)="updateField('endDate', $any($event.target).value)"
+                                class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#8c2d1b] focus:border-transparent transition-all duration-200 text-gray-900 outline-none">
+                        </div>
+                    </div>
+
+                    <!-- Status with custom dropdown -->
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Status</label>
+                        <div class="status-selector">
+                            <div class="selected-member" (click)="toggleStatusDropdown()">
+                                @if (formData().status) {
+                                <span
+                                    [class]="'px-2.5 py-1 text-xs font-medium rounded-full ' + getStatusBadgeColor(formData().status)">
+                                    {{ getStatusLabel(formData().status) }}
+                                </span>
+                                } @else {
+                                <span class="placeholder">Select Status</span>
+                                }
+                            </div>
+
+                            @if (showStatusDropdown()) {
+                            <div class="member-list">
+                                @for (option of statusOptions; track option.value) {
+                                <div class="member-list-item" (click)="selectStatus(option.value)">
+                                    <span
+                                        [class]="'px-2.5 py-1 text-xs font-medium rounded-full ' + getStatusBadgeColor(option.value)">
+                                        {{ option.label }}
+                                    </span>
+                                </div>
+                                }
+                            </div>
+                            }
+                        </div>
+                    </div>
+
+                    <!-- Priority with custom dropdown -->
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Priority</label>
+                        <div class="priority-selector">
+                            <div class="selected-member" (click)="togglePriorityDropdown()">
+                                @if (formData().priority) {
+                                <span
+                                    [class]="'px-2.5 py-1 text-xs font-medium rounded-full ' + getPriorityBadgeColor(formData().priority)">
+                                    {{ formData().priority }}
+                                </span>
+                                } @else {
+                                <span class="placeholder">Select Priority</span>
+                                }
+                            </div>
+
+                            @if (showPriorityDropdown()) {
+                            <div class="member-list">
+                                @for (option of priorityOptions; track option.value) {
+                                <div class="member-list-item" (click)="selectPriority(option.value)">
+                                    <span
+                                        [class]="'px-2.5 py-1 text-xs font-medium rounded-full ' + getPriorityBadgeColor(option.value)">
+                                        {{ option.label }}
+                                    </span>
+                                </div>
+                                }
+                            </div>
+                            }
+                        </div>
+                    </div>
+
+                    <!-- Assigned To (matching task-form style) -->
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">
+                            Assigned To
+                            @if (getSelectedMember(); as member) {
+                            <span class="ml-2 text-xs text-gray-600">{{ member.user }}</span>
+                            }
+                        </label>
+                        <div class="member-selector">
+                            <div class="selected-member" (click)="toggleMemberDropdown()">
+                                @if (getSelectedMember(); as member) {
+                                <div class="member-display">
+                                    <div [class]="'avatar ' + getAvatarColor(member)">
+                                        {{ getInitials(member) }}
+                                    </div>
+                                    <div>
+                                        <div class="member-name">{{ member.user }}</div>
+                                        <div class="member-role">{{ member.role }}</div>
+                                    </div>
+                                </div>
+                                } @else {
+                                <span class="placeholder">Select a project member (optional)</span>
+                                }
+                            </div>
+
+                            @if (showMemberDropdown()) {
+                            <div class="member-list">
+                                <div class="member-list-item" (click)="clearSelection()">
+                                    <span class="placeholder">No Member</span>
+                                </div>
+                                @for (member of projectMembers(); track member.memberId) {
+                                <div class="member-list-item" (click)="selectMember(member)">
+                                    <div class="member-display">
+                                        <div [class]="'avatar ' + getAvatarColor(member)">
+                                            {{ getInitials(member) }}
+                                        </div>
+                                        <div>
+                                            <div class="member-name">{{ member.user }}</div>
+                                            <div class="member-role">{{ member.role }}</div>
+                                        </div>
+                                    </div>
+                                </div>
+                                }
+                            </div>
+                            }
+                        </div>
+                    </div>
+                </div>
+                }
+            </div>
+
+            <!-- Footer -->
+            <div class="bg-gray-50 px-6 py-4 flex items-center justify-end space-x-3 border-t border-gray-200">
+                <button (click)="onClose()" [disabled]="isSaving()"
+                    class="px-6 py-3 border border-gray-300 text-gray-700 rounded-lg font-medium hover:bg-gray-100 transition-colors duration-200 disabled:opacity-50 disabled:cursor-not-allowed">
+                    Cancel
+                </button>
+                <button (click)="onSave()" [disabled]="isSaving()"
+                    class="px-8 py-3 bg-gradient-to-r from-[#8c2d1b] to-[#6b2115] text-white rounded-lg font-medium hover:from-[#6b2115] hover:to-[#512110] transition-all duration-200 shadow-lg shadow-[#8c2d1b]/30 disabled:opacity-50 disabled:cursor-not-allowed flex items-center">
+                    @if (isSaving()) {
+                    <svg class="animate-spin -ml-1 mr-2 h-4 w-4 text-white" fill="none" viewBox="0 0 24 24">
+                        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4">
+                        </circle>
+                        <path class="opacity-75" fill="currentColor"
+                            d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z">
+                        </path>
+                    </svg>
+                    Saving...
+                    } @else {
+                    Save Changes
+                    }
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+}

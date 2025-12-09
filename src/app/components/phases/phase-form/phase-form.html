@@ -1,0 +1,54 @@
+<form [formGroup]="phaseForm" (ngSubmit)="onSubmit()" class="phase-form">
+    <!-- Phase Name -->
+    <div class="form-group">
+        <label for="phaseName" class="form-label">
+            Phase Name <span class="required">*</span>
+        </label>
+        <input type="text" id="phaseName" formControlName="phaseName" class="form-input"
+            [class.error]="isFieldInvalid('phaseName')" placeholder="Enter phase name" />
+        @if (isFieldInvalid('phaseName')) {
+        <p class="error-message">{{ getErrorMessage('phaseName') }}</p>
+        }
+    </div>
+
+    <!-- Description -->
+    <div class="form-group">
+        <label for="description" class="form-label">Description</label>
+        <textarea id="description" formControlName="description" class="form-input" rows="3"
+            placeholder="Enter phase description (optional)"></textarea>
+    </div>
+
+    <!-- Date Range -->
+    <div class="form-row">
+        <div class="form-group">
+            <label for="startDate" class="form-label">Start Date</label>
+            <input type="date" id="startDate" formControlName="startDate" class="form-input" />
+        </div>
+
+        <div class="form-group">
+            <label for="endDate" class="form-label">End Date</label>
+            <input type="date" id="endDate" formControlName="endDate" class="form-input" />
+        </div>
+    </div>
+
+    <!-- Status -->
+    <div class="form-group">
+        <label for="status" class="form-label">Status</label>
+        <select id="status" formControlName="status" class="form-input">
+            <option value="pending">Pending</option>
+            <option value="ongoing">Ongoing</option>
+            <option value="completed">Completed</option>
+            <option value="delayed">Delayed</option>
+        </select>
+    </div>
+
+    <!-- Form Actions -->
+    <div class="form-actions">
+        <button type="button" class="btn btn-cancel" (click)="onCancel()">
+            Cancel
+        </button>
+        <button type="submit" class="btn btn-primary">
+            {{ phase() ? 'Update Phase' : 'Create Phase' }}
+        </button>
+    </div>
+</form>

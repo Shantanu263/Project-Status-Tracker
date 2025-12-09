@@ -1,0 +1,226 @@
+/**
+ * Timeline Component Styles - Jira-style with Always-Visible Horizontal Scrollbar
+ * 
+ * Key Architecture:
+ * - Separate horizontal scrollbar container (always visible)
+ * - Sticky left column
+ * - Synchronized scrolling between header, body, and scrollbar
+ */
+
+/* ===== Z-Index Hierarchy ===== */
+.timeline-left-header {
+    position: sticky;
+    left: 0;
+    z-index: 40;
+    background: rgb(249 250 251);
+}
+
+.timeline-left-column {
+    position: sticky;
+    left: 0;
+    z-index: 30;
+    background: white;
+    flex-shrink: 0;
+}
+
+.timeline-header-scroll {
+    z-index: 20;
+}
+
+.timeline-grid {
+    z-index: 1;
+}
+
+.timeline-bar {
+    z-index: 10;
+}
+
+/* ===== Timeline Header Scroll (Hidden Scrollbar) ===== */
+.timeline-header-scroll {
+    /* Hide scrollbar but keep scroll functionality */
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+    scroll-behavior: smooth;
+}
+
+.timeline-header-scroll::-webkit-scrollbar {
+    display: none;
+}
+
+/* ===== Vertical Scroll Container ===== */
+.timeline-vertical-scroll {
+    /* Custom scrollbar for vertical scroll */
+    scrollbar-width: thin;
+    scrollbar-color: #cbd5e0 #f7fafc;
+    scroll-behavior: smooth;
+}
+
+.timeline-vertical-scroll::-webkit-scrollbar {
+    width: 12px;
+}
+
+.timeline-vertical-scroll::-webkit-scrollbar-track {
+    background: #f7fafc;
+    border-radius: 6px;
+}
+
+.timeline-vertical-scroll::-webkit-scrollbar-thumb {
+    background: #cbd5e0;
+    border-radius: 6px;
+    border: 2px solid #f7fafc;
+}
+
+.timeline-vertical-scroll::-webkit-scrollbar-thumb:hover {
+    background: #a0aec0;
+}
+
+/* ===== Timeline Body (No Horizontal Scroll) ===== */
+.timeline-body-inner {
+    overflow: hidden;
+    position: relative;
+}
+
+/* ===== Separate Horizontal Scrollbar Container (Always Visible) ===== */
+.timeline-scrollbar-container {
+    min-height: 20px;
+    max-height: 20px;
+    flex-shrink: 0;
+    background: rgb(249 250 251);
+}
+
+.timeline-horizontal-scroll {
+    overflow-x: scroll !important;
+    overflow-y: hidden;
+    scroll-behavior: smooth;
+    height: 100%;
+    min-height: 20px;
+
+    /* Custom scrollbar styling */
+    scrollbar-width: thin;
+    scrollbar-color: #cbd5e0 #f7fafc;
+}
+
+.timeline-horizontal-scroll::-webkit-scrollbar {
+    height: 12px;
+    display: block !important;
+}
+
+.timeline-horizontal-scroll::-webkit-scrollbar-track {
+    background: #000000;
+    border-radius: 6px;
+}
+
+.timeline-horizontal-scroll::-webkit-scrollbar-thumb {
+    background: #070808;
+    border-radius: 6px;
+    border: 2px solid #f7fafc;
+}
+
+.timeline-horizontal-scroll::-webkit-scrollbar-thumb:hover {
+    background: #000000;
+}
+
+.timeline-scrollbar-content {
+    /* Content to create scrollbar - must have minimum height */
+    pointer-events: none;
+    min-height: 10px;
+    height: 10px;
+}
+
+/* ===== Task Row Collapse Transitions ===== */
+.timeline-task-row {
+    transition: height 0.3s ease, opacity 0.3s ease;
+    overflow: hidden;
+}
+
+/* ===== Timeline Content ===== */
+.timeline-content-wrapper {
+    position: relative;
+}
+
+.timeline-row {
+    position: relative;
+}
+
+/* ===== Timeline Bars ===== */
+.timeline-bar {
+    position: absolute;
+    transition: box-shadow 0.2s ease;
+}
+
+.timeline-bar:hover {
+    z-index: 25 !important;
+}
+
+/* ===== Cursor Styles ===== */
+.cursor-move {
+    cursor: move;
+}
+
+.cursor-ew-resize {
+    cursor: ew-resize;
+}
+
+/* ===== Prevent Text Selection During Drag ===== */
+.timeline-body-inner.dragging {
+    user-select: none;
+    -webkit-user-select: none;
+    -moz-user-select: none;
+    -ms-user-select: none;
+}
+
+/* ===== Focus Visible for Accessibility ===== */
+button:focus-visible {
+    outline: 2px solid #8c2d1b;
+    outline-offset: 2px;
+}
+
+/* ===== Animations ===== */
+@keyframes spin {
+    to {
+        transform: rotate(360deg);
+    }
+}
+
+.animate-spin {
+    animation: spin 1s linear infinite;
+}
+
+.group:hover .group-hover\:block {
+    animation: fadeIn 0.2s ease-in;
+}
+
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(-4px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* ===== Details Panel ===== */
+.z-50 {
+    z-index: 50;
+}
+
+/* ===== Responsive Adjustments ===== */
+@media (max-width: 768px) {
+
+    .timeline-left-column,
+    .timeline-left-header {
+        width: 16rem;
+    }
+}
+
+/* ===== Container Positioning ===== */
+.timeline-container {
+    position: relative;
+}
+
+.timeline-wrapper {
+    position: relative;
+}

@@ -1,0 +1,16 @@
+.home-layout {
+  .main-area {
+    margin-left: 0;
+    transition: margin-left 0.3s ease;
+  }
+}
+
+@media (min-width: 768px) {
+  .home-layout.sidebar-open .main-area {
+    margin-left: 16rem;
+  }
+
+  .home-layout.sidebar-closed .main-area {
+    margin-left: 0;
+  }
+}

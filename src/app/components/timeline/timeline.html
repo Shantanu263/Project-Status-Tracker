@@ -1,0 +1,320 @@
+<!-- Timeline Gantt Component Template - Jira-style with Always-Visible Scrollbar -->
+<div class="timeline-container w-full h-full flex flex-col bg-gray-50">
+  <!-- Error Message -->
+  @if (errorMessage()) {
+  <div class="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg mb-4 flex items-center justify-between">
+    <span>{{ errorMessage() }}</span>
+    <button (click)="errorMessage.set('')" class="text-red-700 hover:text-red-900">
+      <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+      </svg>
+    </button>
+  </div>
+  }
+
+  <!-- Loading State -->
+  @if (isLoading()) {
+  <div class="flex-1 flex items-center justify-center">
+    <div class="text-center">
+      <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-[#8c2d1b] mx-auto mb-4"></div>
+      <p class="text-gray-600">Loading timeline...</p>
+    </div>
+  </div>
+  }
+
+  <!-- Empty State -->
+  @else if (phases().length === 0) {
+  <div class="flex-1 flex items-center justify-center">
+    <div class="text-center">
+      <svg class="w-16 h-16 text-gray-400 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+          d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2">
+        </path>
+      </svg>
+      <p class="text-gray-500 text-lg font-medium">No phases available</p>
+      <p class="text-gray-400 text-sm mt-2">Create phases for this project to see the Gantt chart</p>
+    </div>
+  </div>
+  }
+
+  <!-- Main Timeline Content -->
+  @else {
+  <div class="flex flex-col flex-1 min-h-0">
+    <div class="timeline-wrapper flex flex-col bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden"
+      style="height: calc(100vh - 220px);">
+      <!-- Header Row (Fixed at top) -->
+      <div class="timeline-header-row flex border-b border-gray-200 bg-gray-50 flex-shrink-0">
+        <!-- Left Column Header (Sticky - Highest z-index) -->
+        <div
+          class="timeline-left-header w-80 flex-shrink-0 px-6 py-4 border-r border-gray-200 font-semibold text-gray-700 flex items-center bg-gray-50">
+          <span>Phases / Tasks</span>
+        </div>
+
+        <!-- Right Column Header (Timeline Axis) - Scrollable with hidden scrollbar -->
+        <div class="timeline-header-scroll flex-1 overflow-x-scroll overflow-y-hidden bg-gray-50" #timelineHeader>
+          <div class="timeline-header-content flex" [style.width.px]="timelineColumns().length * getColumnWidth()">
+            @for (column of timelineColumns(); track column.id) {
+            <div class="px-4 py-4 border-r border-gray-200 text-center text-sm font-medium text-gray-700 flex-shrink-0"
+              [style.width.px]="getColumnWidth()" [class.bg-blue-50]="column.isCurrent">
+              <div>{{ column.label }}</div>
+              <div class="text-xs text-gray-500 mt-1">
+                {{ formatDate(column.startDate.toISOString()) }} - {{ formatDate(column.endDate.toISOString()) }}
+              </div>
+            </div>
+            }
+          </div>
+        </div>
+      </div>
+
+      <!-- Body Container (Vertical Scroll + Content) -->
+      <div class="timeline-body-container flex-1 flex flex-col overflow-hidden">
+        <!-- Vertical Scroll Area (Reserve space for horizontal scrollbar at bottom) -->
+        <div class="timeline-vertical-scroll overflow-y-auto overflow-x-hidden bg-white"
+          style="flex: 1 1 0; min-height: 0;">
+          <div class="flex">
+            <!-- Left Column (Sticky - Always Visible) -->
+            <div class="timeline-left-column w-80 flex-shrink-0 bg-white border-r border-gray-200 pb-4">
+              @for (phase of phases(); track phase.phaseId) {
+              <!-- Phase Row -->
+              <div class="border-b border-gray-100 hover:bg-gray-50 transition-colors" [style.height.px]="64">
+                <div class="h-full px-6 py-3 flex items-center gap-3">
+                  <!-- Expand/Collapse Button -->
+                  <button (click)="togglePhaseExpansion(phase.phaseId!)"
+                    class="text-gray-400 hover:text-gray-600 transition-colors focus:outline-none focus:ring-2 focus:ring-[#8c2d1b] focus:ring-opacity-50 rounded"
+                    [attr.aria-label]="'Toggle tasks for ' + phase.phaseName"
+                    [attr.aria-expanded]="isPhaseExpanded(phase.phaseId!)">
+                    <svg class="w-5 h-5 transition-transform duration-200"
+                      [class.rotate-90]="isPhaseExpanded(phase.phaseId!)" fill="none" stroke="currentColor"
+                      viewBox="0 0 24 24">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
+                    </svg>
+                  </button>
+
+                  <!-- Phase Info -->
+                  <div class="flex-1 min-w-0">
+                    <div class="font-semibold text-gray-900 truncate">{{ phase.phaseName }}</div>
+                    <div class="text-xs text-gray-500 mt-1 flex items-center gap-2">
+                      <span>{{ formatDate(phase.startDate) }} - {{ formatDate(phase.endDate) }}</span>
+                      <span class="text-gray-400">•</span>
+                      <span>{{ phase.completionPercentage }}%</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Task Rows - Visual-only Collapse -->
+              @for (task of phase.tasks; track task.taskId) {
+              <div class="timeline-task-row border-b border-gray-100 hover:bg-gray-100 transition-all bg-gray-50"
+                [style.height.px]="isPhaseExpanded(phase.phaseId!) ? 48 : 0"
+                [style.opacity]="isPhaseExpanded(phase.phaseId!) ? 1 : 0">
+                <div class="h-12 px-6 py-2 pl-16 flex items-center gap-3">
+                  <!-- Status Dot -->
+                  <div class="w-2 h-2 rounded-full flex-shrink-0" [ngClass]="getStatusClass(task.status)"></div>
+
+                  <!-- Task Info -->
+                  <div class="flex-1 min-w-0 flex items-center gap-2">
+                    <span class="text-sm text-gray-700 truncate">{{ task.taskName }}</span>
+                    @if (task.assignedToName) {
+                    <span class="text-xs text-gray-500 bg-gray-200 px-2 py-0.5 rounded-full flex-shrink-0">
+                      {{ task.assignedToName }}
+                    </span>
+                    }
+                  </div>
+                </div>
+              </div>
+              }
+              }
+            </div>
+
+            <!-- Right Timeline Area (No Scroll - Controlled by separate scrollbar) -->
+            <div class="timeline-body-content flex-1 overflow-hidden pb-4">
+              <div class="timeline-body-inner overflow-x-auto overflow-y-hidden" #timelineBody
+                style="scrollbar-width: none; -ms-overflow-style: none;">
+                <style>
+                  .timeline-body-inner::-webkit-scrollbar {
+                    display: none;
+                  }
+                </style>
+                <div class="timeline-content-wrapper relative"
+                  [style.width.px]="timelineColumns().length * getColumnWidth()"
+                  [style.min-height.px]="getTotalTimelineHeight()">
+
+                  <!-- Timeline Rows (Grid + Bars) -->
+                  @for (phase of phases(); track phase.phaseId; let phaseIndex = $index) {
+                  <!-- Phase Row -->
+                  <div class="border-b border-gray-100 relative timeline-row hover:bg-gray-50" [style.height.px]="64">
+                    <!-- Grid Cells Background -->
+                    <div class="absolute inset-0 flex timeline-grid">
+                      @for (column of timelineColumns(); track column.id) {
+                      <div class="border-r border-gray-100 flex-shrink-0" [style.width.px]="getColumnWidth()"
+                        [class.bg-blue-50]="column.isCurrent" [class.bg-opacity-20]="column.isCurrent">
+                      </div>
+                      }
+                    </div>
+
+                    <!-- Phase Bar -->
+                    @if (phase.startDate && phase.endDate) {
+                    <div class="absolute top-1/2 -translate-y-1/2 group cursor-pointer timeline-bar"
+                      [style.left.px]="calculateBarPosition(phase.startDate, phase.endDate).left + 8"
+                      [style.width.px]="calculateBarPosition(phase.startDate, phase.endDate).width - 16"
+                      (mousedown)="onBarDragStart($event, createTimelineRow(phase, 'phase'))">
+
+                      <div class="rounded-lg shadow-md hover:shadow-lg transition-all relative overflow-hidden"
+                        [style.height.px]="36" [ngClass]="getPhaseColor(phaseIndex)" [class.cursor-move]="!dragState()">
+
+                        <div
+                          class="absolute left-0 top-0 bottom-0 w-2 cursor-ew-resize hover:bg-white hover:bg-opacity-30 transition-colors z-20"
+                          (mousedown)="onBarResizeStart($event, createTimelineRow(phase, 'phase'), 'left')"
+                          (click)="$event.stopPropagation()">
+                        </div>
+                        <div
+                          class="absolute right-0 top-0 bottom-0 w-2 cursor-ew-resize hover:bg-white hover:bg-opacity-30 transition-colors z-20"
+                          (mousedown)="onBarResizeStart($event, createTimelineRow(phase, 'phase'), 'right')"
+                          (click)="$event.stopPropagation()">
+                        </div>
+                      </div>
+
+                      <div
+                        class="hidden group-hover:block absolute top-full mt-2 left-0 bg-gray-900 text-white text-xs rounded-lg px-3 py-2 shadow-lg whitespace-nowrap z-30 pointer-events-none">
+                        <div class="font-semibold mb-1">{{ phase.phaseName }}</div>
+                        <div>{{ formatDateFull(phase.startDate) }} - {{ formatDateFull(phase.endDate) }}</div>
+                        <div class="mt-1">Progress: {{ phase.completionPercentage }}%</div>
+                      </div>
+                    </div>
+                    }
+                  </div>
+
+                  <!-- Task Rows - Visual-only Collapse -->
+                  @for (task of phase.tasks; track task.taskId) {
+                  <div
+                    class="timeline-task-row border-b border-gray-100 relative timeline-row hover:bg-gray-100 bg-gray-50 transition-all"
+                    [style.height.px]="isPhaseExpanded(phase.phaseId!) ? 48 : 0"
+                    [style.opacity]="isPhaseExpanded(phase.phaseId!) ? 1 : 0">
+
+                    <!-- Grid Cells Background -->
+                    <div class="absolute inset-0 flex timeline-grid">
+                      @for (column of timelineColumns(); track column.id) {
+                      <div class="border-r border-gray-100 flex-shrink-0" [style.width.px]="getColumnWidth()"
+                        [class.bg-blue-50]="column.isCurrent" [class.bg-opacity-20]="column.isCurrent">
+                      </div>
+                      }
+                    </div>
+
+                    <!-- Task Bar -->
+                    @if (task.startDate && task.endDate) {
+                    <div class="absolute top-1/2 -translate-y-1/2 group cursor-pointer timeline-bar"
+                      [style.left.px]="calculateBarPosition(task.startDate, task.endDate).left + 8"
+                      [style.width.px]="calculateBarPosition(task.startDate, task.endDate).width - 16"
+                      (mousedown)="onBarDragStart($event, createTimelineRow(task, 'task', phase.phaseId))">
+
+                      <!-- Task Bar Background -->
+                      <div class="shadow-md hover:shadow-lg transition-all relative bg-blue-500" [style.height.px]="28"
+                        [style.border-radius.px]="8" [class.cursor-move]="!dragState()">
+
+                        <!-- Resize Handles -->
+                        <div
+                          class="absolute left-0 top-0 bottom-0 w-2 cursor-ew-resize hover:bg-white hover:bg-opacity-30 transition-colors z-20"
+                          (mousedown)="onBarResizeStart($event, createTimelineRow(task, 'task', phase.phaseId), 'left')"
+                          (click)="$event.stopPropagation()">
+                        </div>
+                        <div
+                          class="absolute right-0 top-0 bottom-0 w-2 cursor-ew-resize hover:bg-white hover:bg-opacity-30 transition-colors z-20"
+                          (mousedown)="onBarResizeStart($event, createTimelineRow(task, 'task', phase.phaseId), 'right')"
+                          (click)="$event.stopPropagation()">
+                        </div>
+                      </div>
+
+                      <div
+                        class="hidden group-hover:block absolute top-full mt-2 left-0 bg-gray-900 text-white text-xs rounded-lg px-3 py-2 shadow-lg whitespace-nowrap z-30 pointer-events-none">
+                        <div class="font-semibold mb-1">{{ task.taskName }}</div>
+                        <div>{{ formatDateFull(task.startDate) }} - {{ formatDateFull(task.endDate) }}</div>
+                        @if (task.assignedToName) {
+                        <div class="mt-1">Assigned to: {{ task.assignedToName }}</div>
+                        }
+                      </div>
+                    </div>
+                    }
+                  </div>
+                  }
+                  }
+
+                  <!-- Today Marker -->
+                  @if (todayPosition() > 0) {
+                  <div class="absolute top-0 w-0.5 bg-red-500 z-30 pointer-events-none"
+                    [style.left.px]="todayPosition()" [style.height.px]="getTotalTimelineHeight()">
+                    <div
+                      class="absolute -top-6 -left-8 bg-red-500 text-white text-xs px-2 py-0.5 rounded whitespace-nowrap">
+                      Today
+                    </div>
+                  </div>
+                  }
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Separate Horizontal Scrollbar Container (Always Visible) -->
+        <div class="timeline-scrollbar-container flex border-t border-gray-200 bg-gray-50 rounded-b-lg">
+          <!-- Left Spacer (matches left column width) -->
+          <div class="w-80 flex-shrink-0 border-r border-gray-200"></div>
+
+          <!-- Horizontal Scrollbar Area -->
+          <div class="timeline-horizontal-scroll flex-1 overflow-x-auto" #horizontalScrollbar
+            (wheel)="onTimelineWheel($event)">
+            <div class="timeline-scrollbar-content" [style.width.px]="timelineColumns().length * getColumnWidth()"
+              [style.height.px]="10"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Time Scale Selector (Floating Bottom-Right) -->
+  <div
+    class="fixed bottom-8 right-8 bg-white rounded-lg shadow-lg border border-gray-200 p-2 flex items-center gap-2 z-40">
+    <button (click)="setTimeScale(TimeScale.WEEK)"
+      class="px-3 py-2 rounded text-sm font-medium transition-colors focus:outline-none focus:ring-2 focus:ring-[#8c2d1b] focus:ring-opacity-50"
+      [class.bg-[#8c2d1b]]="timeScale() === TimeScale.WEEK" [class.text-white]="timeScale() === TimeScale.WEEK"
+      [class.text-gray-700]="timeScale() !== TimeScale.WEEK" [class.hover:bg-gray-100]="timeScale() !== TimeScale.WEEK"
+      [attr.aria-label]="'View by week'" [attr.aria-pressed]="timeScale() === TimeScale.WEEK">
+      Week
+    </button>
+    <button (click)="setTimeScale(TimeScale.MONTH)"
+      class="px-3 py-2 rounded text-sm font-medium transition-colors focus:outline-none focus:ring-2 focus:ring-[#8c2d1b] focus:ring-opacity-50"
+      [class.bg-[#8c2d1b]]="timeScale() === TimeScale.MONTH" [class.text-white]="timeScale() === TimeScale.MONTH"
+      [class.text-gray-700]="timeScale() !== TimeScale.MONTH"
+      [class.hover:bg-gray-100]="timeScale() !== TimeScale.MONTH" [attr.aria-label]="'View by month'"
+      [attr.aria-pressed]="timeScale() === TimeScale.MONTH">
+      Month
+    </button>
+    <button (click)="setTimeScale(TimeScale.QUARTER)"
+      class="px-3 py-2 rounded text-sm font-medium transition-colors focus:outline-none focus:ring-2 focus:ring-[#8c2d1b] focus:ring-opacity-50"
+      [class.bg-[#8c2d1b]]="timeScale() === TimeScale.QUARTER" [class.text-white]="timeScale() === TimeScale.QUARTER"
+      [class.text-gray-700]="timeScale() !== TimeScale.QUARTER"
+      [class.hover:bg-gray-100]="timeScale() !== TimeScale.QUARTER" [attr.aria-label]="'View by quarter'"
+      [attr.aria-pressed]="timeScale() === TimeScale.QUARTER">
+      Quarter
+    </button>
+    <div class="w-px h-6 bg-gray-300 mx-1"></div>
+    <button (click)="fitToContent()"
+      class="px-3 py-2 rounded text-sm font-medium text-gray-700 hover:bg-gray-100 transition-colors focus:outline-none focus:ring-2 focus:ring-[#8c2d1b] focus:ring-opacity-50"
+      [attr.aria-label]="'Fit timeline to content'" title="Fit to content">
+      <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+          d="M4 8V4m0 0h4M4 4l5 5m11-1V4m0 0h-4m4 0l-5 5M4 16v4m0 0h4m-4 0l5-5m11 5l-5-5m5 5v-4m0 4h-4"></path>
+      </svg>
+    </button>
+    <button (click)="scrollToToday()"
+      class="px-3 py-2 rounded text-sm font-medium text-gray-700 hover:bg-gray-100 transition-colors focus:outline-none focus:ring-2 focus:ring-[#8c2d1b] focus:ring-opacity-50"
+      [attr.aria-label]="'Scroll to today'" title="Go to today">
+      <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+          d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
+      </svg>
+    </button>
+  </div>
+  }
+
+
+</div>

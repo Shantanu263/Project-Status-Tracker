@@ -1,0 +1,109 @@
+<form [formGroup]="taskForm" (ngSubmit)="onSubmit()" class="task-form">
+    <!-- Task Name -->
+    <div class="form-group">
+        <label for="taskName" class="form-label">
+            Task Name <span class="required">*</span>
+        </label>
+        <input type="text" id="taskName" formControlName="taskName" class="form-input"
+            [class.error]="isFieldInvalid('taskName')" placeholder="Enter task name" />
+        @if (isFieldInvalid('taskName')) {
+        <p class="error-message">{{ getErrorMessage('taskName') }}</p>
+        }
+    </div>
+
+    <!-- Description -->
+    <div class="form-group">
+        <label for="description" class="form-label">Description</label>
+        <textarea id="description" formControlName="description" class="form-input" rows="3"
+            placeholder="Enter task description (optional)"></textarea>
+    </div>
+
+    <!-- Date Range -->
+    <div class="form-row">
+        <div class="form-group">
+            <label for="startDate" class="form-label">Start Date</label>
+            <input type="date" id="startDate" formControlName="startDate" class="form-input" />
+        </div>
+
+        <div class="form-group">
+            <label for="endDate" class="form-label">End Date</label>
+            <input type="date" id="endDate" formControlName="endDate" class="form-input" />
+        </div>
+    </div>
+
+    <!-- Priority and Status -->
+    <div class="form-row">
+        <div class="form-group">
+            <label for="priority" class="form-label">Priority</label>
+            <select id="priority" formControlName="priority" class="form-input">
+                <option value="Low">Low</option>
+                <option value="Medium">Medium</option>
+                <option value="High">High</option>
+            </select>
+        </div>
+
+        <div class="form-group">
+            <label for="status" class="form-label">Status</label>
+            <select id="status" formControlName="status" class="form-input">
+                <option value="TO_DO">To Do</option>
+                <option value="IN_PROGRESS">In Progress</option>
+                <option value="DONE">Done</option>
+                <option value="REVIEW">Review</option>
+            </select>
+        </div>
+    </div>
+
+    <!-- Assigned To -->
+    <div class="form-group">
+        <label class="form-label">Assigned To</label>
+        <div class="member-selector">
+            <div class="selected-member" (click)="toggleMemberDropdown()">
+                @if (getSelectedMember(); as member) {
+                    <div class="member-display">
+                        <div [class]="'avatar ' + getAvatarColor(member)">
+                            {{ getInitials(member) }}
+                        </div>
+                        <div>
+                            <div class="member-name">{{ member.user }}</div>
+                            <div class="member-role">{{ member.role }}</div>
+                        </div>
+                    </div>
+                } @else {
+                    <span class="placeholder">Select a project member (optional)</span>
+                }
+            </div>
+            
+            @if (showMemberDropdown()) {
+                <div class="member-list">
+                    <div class="member-list-item" (click)="clearSelection()">
+                        <span class="placeholder">No Member</span>
+                    </div>
+                    @for (member of projectMembers(); track member.memberId) {
+                        <div class="member-list-item" (click)="selectMember(member)">
+                            <div class="member-display">
+                                <div [class]="'avatar ' + getAvatarColor(member)">
+                                    {{ getInitials(member) }}
+                                </div>
+                                <div>
+                                    <div class="member-name">{{ member.user }}</div>
+                                    <div class="member-role">{{ member.role }}</div>
+                                </div>
+                            </div>
+                        </div>
+                    }
+                </div>
+            }
+            <input type="hidden" formControlName="assignedTo" />
+        </div>
+    </div>
+
+    <!-- Form Actions -->
+    <div class="form-actions">
+        <button type="button" class="btn btn-cancel" (click)="onCancel()">
+            Cancel
+        </button>
+        <button type="submit" class="btn btn-primary">
+            {{ task() ? 'Update Task' : 'Create Task' }}
+        </button>
+    </div>
+</form>

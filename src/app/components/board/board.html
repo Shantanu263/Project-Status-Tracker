@@ -1,0 +1,188 @@
+<!-- Fixed Header Section -->
+<div class="flex flex-col h-full">
+    <!-- Board Header -->
+    <div class="flex-shrink-0 mb-6">
+        <div class="flex items-center justify-between">
+            <div>
+                <h1 class="text-3xl font-bold text-gray-800">Project Board</h1>
+            </div>
+            <!-- Phase Selector Dropdown -->
+            <div class="relative">
+                <select (change)="onPhaseChange(+$any($event.target).value)"
+                    [value]="selectedPhase()?.phaseId?.toString() || ''"
+                    class="px-6 py-3 bg-[#8c2d1b] text-white rounded-lg hover:bg-[#6b2115] transition-colors duration-200 font-medium shadow-lg appearance-none cursor-pointer pr-10">
+                    <option class="bg-[#ffffff] text-black" value="" disabled selected>Select Phase</option>
+                    @for (phase of phases(); track phase.phaseId) {
+                    <option class="bg-[#ffffff] text-black" [value]="phase.phaseId">{{ phase.phaseName }}</option>
+                    }
+                </select>
+                <svg class="absolute right-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-white pointer-events-none"
+                    fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                        d="M19 14l-7 7m0 0l-7-7m7 7V3"></path>
+                </svg>
+            </div>
+        </div>
+    </div>
+
+    <!-- Error Message -->
+    @if (error()) {
+    <div class="flex-shrink-0 mb-4 p-4 bg-red-50 border border-red-200 rounded-lg text-red-700">
+        {{ error() }}
+    </div>
+    }
+
+    <!-- Loading State -->
+    @if (loading()) {
+    <div class="flex items-center justify-center flex-1">
+        <div class="text-center">
+            <div class="inline-block w-8 h-8 border-4 border-gray-200 border-t-[#8c2d1b] rounded-full animate-spin">
+            </div>
+            <p class="mt-4 text-gray-600">Loading tasks...</p>
+        </div>
+    </div>
+    }
+
+    <!-- Kanban Board -->
+    @if (!loading()) {
+    <div class="flex-1 flex flex-col overflow-hidden">
+        <!-- Scrollable Container with both headers and content -->
+        <div class="flex-1 overflow-y-auto">
+            <div class="min-h-full flex flex-col">
+                <!-- Column Headers (Sticky) -->
+                <div class="sticky top-0 z-10 grid grid-cols-4 gap-4 mb-0">
+                    @for (column of columns(); track column.id) {
+                    <div class="bg-white rounded-t-xl shadow-sm border border-gray-200 border-b-0">
+                        <div class="p-3">
+                            <div class="flex items-center justify-between">
+                                <div class="flex items-center">
+                                    <div class="w-3 h-3 rounded-full mr-2" [ngClass]="colorDotMap[column.colorDot]">
+                                    </div>
+                                    <h3 class="font-semibold text-gray-800 text-sm">{{ column.title }}</h3>
+                                </div>
+                                <span [ngClass]="getTaskCountBadgeColor(column.id)"
+                                    class="text-xs font-semibold px-2 py-0.5 rounded-full">
+                                    {{ column.tasks.length }}
+                                </span>
+                            </div>
+                        </div>
+                    </div>
+                    }
+                </div>
+
+                <!-- Columns Content Area -->
+                <div class="grid grid-cols-4 gap-4 flex-1">
+                    @for (column of columns(); track column.id) {
+                    <div class="bg-white rounded-b-xl shadow-sm border border-gray-200 border-t-0 flex flex-col"
+                        [style.height.px]="(maxTaskCount() * 76) + 80" (dragover)="onDragOver($event)"
+                        (drop)="onDrop(column.id, $event)" (mouseenter)="onColumnHover(column.id)"
+                        (mouseleave)="onColumnLeave()" [class.bg-gray-50]="draggingTask() !== null">
+
+                        <!-- Tasks Container -->
+                        <div class="p-3 space-y-2 flex-1 flex flex-col overflow-hidden">
+                            <!-- Add Task Button (shown on hover) -->
+                            @if (hoveredColumnId() === column.id) {
+                            <button (click)="openAddTaskModal(column)"
+                                class="w-full px-4 py-2 border-2 border-dashed border-gray-300 rounded-lg text-gray-600 hover:border-[#8c2d1b] hover:text-[#8c2d1b] hover:bg-red-50 transition-all duration-200 flex items-center justify-center gap-2 font-medium text-sm">
+                                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                        d="M12 5v14m7-7H5"></path>
+                                </svg>
+                                Add Task
+                            </button>
+                            }
+
+                            <!-- Tasks List -->
+                            <div class="flex-1 space-y-2 overflow-y-auto">
+                                @for (task of column.tasks; track task.id) {
+                                <!-- Compact Task Card -->
+                                <div class="bg-white border border-gray-200 rounded-lg p-3 hover:shadow-md transition-all duration-200 cursor-move group"
+                                    draggable="true" (dragstart)="onDragStart(task, column.id)" (dragend)="onDragEnd()"
+                                    [class.opacity-50]="draggingTask()?.task?.id === task.id"
+                                    [class.ring-2]="draggingTask()?.task?.id === task.id">
+
+                                    <!-- Task Header - Title and Priority in one row -->
+                                    <div class="flex items-start justify-between gap-2 mb-2">
+                                        <h4 class="font-medium text-gray-800 text-sm flex-1 line-clamp-2 group-hover:text-[#8c2d1b] transition-colors"
+                                            [class.line-through]="task.status === 'DONE'"
+                                            [class.text-gray-500]="task.status === 'DONE'">
+                                            {{ task.title }}
+                                        </h4>
+                                        <span [ngClass]="priorityColorMap[task.priority]"
+                                            class="text-xs font-medium px-2 py-0.5 rounded flex-shrink-0">
+                                            {{ task.priority }}
+                                        </span>
+                                    </div>
+
+                                    <!-- Task Details Row - Description (truncated), Assignee, Date -->
+                                    <div class="flex items-center justify-between gap-2">
+                                        <p class="text-xs text-gray-600 flex-1 line-clamp-1"
+                                            [class.line-through]="task.status === 'DONE'"
+                                            [class.text-gray-400]="task.status === 'DONE'">
+                                            {{ task.description }}
+                                        </p>
+
+                                        <div class="flex items-center gap-2 flex-shrink-0">
+                                            <!-- Assignee -->
+                                            @if (task.assignees.length > 0) {
+                                            <div class="flex -space-x-1">
+                                                @for (assignee of task.assignees.slice(0, 2); track assignee.name) {
+                                                <div class="w-6 h-6 bg-gradient-to-br from-indigo-500 to-purple-600 rounded-full border-2 border-white flex items-center justify-center text-white text-xs font-semibold"
+                                                    title="{{ assignee.name }}">
+                                                    {{ assignee.initials }}
+                                                </div>
+                                                }
+                                                @if (task.assignees.length > 2) {
+                                                <div class="w-6 h-6 bg-gray-400 rounded-full border-2 border-white flex items-center justify-center text-white text-xs font-semibold"
+                                                    title="+{{ task.assignees.length - 2 }} more">
+                                                    +{{ task.assignees.length - 2 }}
+                                                </div>
+                                                }
+                                            </div>
+                                            }
+
+                                            <!-- Due Date with Text -->
+                                            @if (task.dueDate) {
+                                            <div class="flex items-center gap-1 text-xs text-gray-500"
+                                                title="{{ task.dueDate | date: 'MMM d, y' }}">
+                                                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor"
+                                                    viewBox="0 0 24 24">
+                                                    <path stroke-linecap="round" stroke-linejoin="round"
+                                                        stroke-width="2"
+                                                        d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z">
+                                                    </path>
+                                                </svg>
+                                                <span class="text-xs whitespace-nowrap">{{ task.dueDate | date: 'MMM d'
+                                                    }}</span>
+                                            </div>
+                                            }
+                                        </div>
+                                    </div>
+                                </div>
+                                }
+
+                                <!-- Empty State -->
+                                @if (column.tasks.length === 0) {
+                                <div class="text-center py-6 text-gray-400">
+                                    <p class="text-xs">No tasks</p>
+                                </div>
+                                }
+                            </div>
+                        </div>
+                    </div>
+                    }
+                </div>
+            </div>
+        </div>
+    </div>
+    }
+</div>
+
+<!-- Task Modal -->
+<app-modal [isOpen]="showTaskModal()" title="Create Task" (close)="closeTaskModal()">
+    @if (showTaskModal() && selectedColumnForTask()) {
+    <app-task-form [projectId]="selectedProject()!.projectId" [task]="getGetPrefilledTask()"
+        (submit)="onTaskSubmit($event)" (cancel)="closeTaskModal()">
+    </app-task-form>
+    }
+</app-modal>

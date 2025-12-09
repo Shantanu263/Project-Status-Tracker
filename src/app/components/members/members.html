@@ -1,0 +1,200 @@
+<!-- Search and Filters -->
+<div class="mb-6 bg-white rounded-lg border border-gray-200 p-6">
+  <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+    <!-- Search Bar -->
+    <div class="md:col-span-1">
+      <label class="block text-sm font-medium text-gray-700 mb-2">Search Members</label>
+      <input type="text" (input)="onSearch($event.target.value)" [value]="searchQuery()"
+        placeholder="Search by name, role..."
+        class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#8c2d1b] transition-colors" />
+    </div>
+
+    <!-- Sort By -->
+    <div>
+      <label class="block text-sm font-medium text-gray-700 mb-2">Sort By</label>
+      <select #sortSelect (change)="onSortChange(sortSelect.value)" [value]="sortBy()"
+        class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#8c2d1b] transition-colors">
+        @for (option of sortOptions; track option.value) {
+        <option [value]="option.value">{{ option.label }}</option>
+        }
+      </select>
+    </div>
+
+    <!-- Order -->
+    <div>
+      <label class="block text-sm font-medium text-gray-700 mb-2">Order</label>
+      <select #orderSelect (change)="onOrderChange(orderSelect.value)" [value]="order()"
+        class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#8c2d1b] transition-colors">
+        @for (option of orderOptions; track option.value) {
+        <option [value]="option.value">{{ option.label }}</option>
+        }
+      </select>
+    </div>
+
+    <!-- Page Size -->
+    <div>
+      <label class="block text-sm font-medium text-gray-700 mb-2">Results Per Page</label>
+      <select #pageSizeSelect (change)="onPageSizeChange(pageSizeSelect.value)" [value]="pageSize()"
+        class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#8c2d1b] transition-colors">
+        <option value="5">5</option>
+        <option value="10">10</option>
+        <option value="20">20</option>
+        <option value="50">50</option>
+      </select>
+    </div>
+  </div>
+</div>
+
+<!-- Loading State -->
+@if (loading()) {
+<div class="flex items-center justify-center py-12">
+  <div class="text-center">
+    <div class="inline-flex items-center justify-center w-12 h-12 rounded-full bg-[#8c2d1b] bg-opacity-10 mb-4">
+      <svg class="w-6 h-6 text-[#8c2d1b] animate-spin" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+          d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z">
+        </path>
+      </svg>
+    </div>
+    <p class="text-gray-600">Loading members...</p>
+  </div>
+</div>
+}
+
+<!-- Error State -->
+@if (error()) {
+<div class="bg-red-50 border border-red-200 rounded-lg p-4 mb-6">
+  <div class="flex">
+    <svg class="w-5 h-5 text-red-600 mr-3" fill="currentColor" viewBox="0 0 20 20">
+      <path fill-rule="evenodd"
+        d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z"
+        clip-rule="evenodd"></path>
+    </svg>
+    <span class="text-red-700">{{ error() }}</span>
+  </div>
+</div>
+}
+
+<!-- Members Table -->
+@if (!loading() && members().length > 0) {
+<div class="bg-white rounded-lg border border-gray-200 overflow-hidden flex flex-col h-full">
+  <div class="overflow-x-auto overflow-y-auto flex-1">
+    <table class="w-full">
+      <thead>
+        <tr class="bg-gray-50 border-b border-gray-200 sticky top-0">
+          <th class="px-6 py-4 text-left text-sm font-semibold text-gray-900">Member</th>
+          <th class="px-6 py-4 text-left text-sm font-semibold text-gray-900">Role</th>
+          <th class="px-6 py-4 text-left text-sm font-semibold text-gray-900">Assigned By</th>
+          <th class="px-6 py-4 text-left text-sm font-semibold text-gray-900">Status</th>
+        </tr>
+      </thead>
+      <tbody class="divide-y divide-gray-200">
+        @for (member of filteredMembers(); track member.memberId) {
+        <tr class="hover:bg-gray-50 transition-colors duration-150">
+          <!-- Member Info -->
+          <td class="px-6 py-4">
+            <div class="flex items-center">
+              <div
+                class="w-10 h-10 bg-gradient-to-br rounded-full border-2 border-white flex items-center justify-center text-white text-xs font-semibold flex-shrink-0"
+                [ngClass]="getAvatarColor(member.memberId)">
+                {{ getInitials(member.user) }}
+              </div>
+              <div class="ml-4">
+                <p class="text-sm font-medium text-gray-900">{{ member.user }}</p>
+                <p class="text-xs text-gray-500">{{ member.email }}</p>
+              </div>
+            </div>
+          </td>
+
+          <!-- Role -->
+          <td class="px-6 py-4">
+            <span [ngClass]="getRoleColor(member.role)"
+              class="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium">
+              {{ getRoleBadgeText(member.role) }}
+            </span>
+          </td>
+
+          <!-- Assigned By -->
+          <td class="px-6 py-4">
+            <div class="text-sm">
+              <p class="font-medium text-gray-900">{{ member.assignedBy.name }}</p>
+              <p class="text-xs text-gray-500">{{ member.assignedBy.role.roleName }}</p>
+            </div>
+          </td>
+
+          <!-- Status -->
+          <td class="px-6 py-4">
+            <span [ngClass]="getStatusColor(member.memberStatus)"
+              class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium">
+              <span class="w-2 h-2 mr-1.5 rounded-full"
+                [class]="member.memberStatus === 'ACTIVE' ? 'bg-green-600' : 'bg-gray-400'"></span>
+              {{ member.memberStatus }}
+            </span>
+          </td>
+        </tr>
+        }
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<!-- Pagination -->
+<div class="mt-6 flex items-center justify-between">
+  <div class="text-sm text-gray-600">
+    Showing <span class="font-medium">{{ (currentPage() * pageSize()) + 1 }}</span> to
+    <span class="font-medium">{{ Math.min((currentPage() + 1) * pageSize(), totalItems()) }}</span> of
+    <span class="font-medium">{{ totalItems() }}</span> members
+  </div>
+
+  <div class="flex items-center space-x-2">
+    <button (click)="goToFirstPage()" [disabled]="currentPage() === 0 || loading()"
+      class="p-2 rounded-lg border border-gray-300 text-gray-700 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+      title="First page">
+      <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path>
+      </svg>
+    </button>
+
+    <button (click)="goToPreviousPage()" [disabled]="currentPage() === 0 || loading()"
+      class="p-2 rounded-lg border border-gray-300 text-gray-700 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+      title="Previous page">
+      <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 12H5M12 19l-7-7 7-7"></path>
+      </svg>
+    </button>
+
+    <div class="flex items-center space-x-1">
+      <span class="text-sm text-gray-600">Page</span>
+      <span class="px-3 py-1 bg-[#8c2d1b] text-white rounded-lg text-sm font-medium">{{ currentPage() + 1 }}</span>
+      <span class="text-sm text-gray-600">of {{ totalPages() }}</span>
+    </div>
+
+    <button (click)="goToNextPage()" [disabled]="currentPage() === totalPages() - 1 || loading()"
+      class="p-2 rounded-lg border border-gray-300 text-gray-700 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+      title="Next page">
+      <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 12h14M12 5l7 7-7 7"></path>
+      </svg>
+    </button>
+
+    <button (click)="goToLastPage()" [disabled]="currentPage() === totalPages() - 1 || loading()"
+      class="p-2 rounded-lg border border-gray-300 text-gray-700 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+      title="Last page">
+      <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
+      </svg>
+    </button>
+  </div>
+</div>
+} @else if (!loading() && !error()) {
+<!-- Empty State -->
+<div class="text-center py-12">
+  <svg class="w-12 h-12 text-gray-400 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+      d="M12 4.354a4 4 0 110 8.048M7 9H5m14 0h-2m3.5 2.5a2.5 2.5 0 01-5 0 2.5 2.5 0 015 0m-5 3c0 .366.15.722.41.978a4.5 4.5 0 007.18 0c.26-.256.41-.612.41-.978">
+    </path>
+  </svg>
+  <p class="text-gray-600 text-lg">No members found</p>
+  <p class="text-gray-500 text-sm mt-1">Try adjusting your search or filters</p>
+</div>
+}
