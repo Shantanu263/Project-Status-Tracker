@@ -3,10 +3,13 @@ import { CommonModule } from '@angular/common';
 import { HttpClient } from '@angular/common/http';
 import { environment } from '../../environments/environment';
 import { SelectedProjectService } from '../../services/selected-project.service';
+import { ProjectService } from '../../services/project.service';
 import { MatIconModule } from '@angular/material/icon';
 import { ModalComponent } from '../shared/modal/modal';
 import { TaskFormComponent } from '../phases/task-form/task-form';
+import { TaskDetailsModalComponent } from '../phases/task-details-modal/task-details-modal';
 import { Task } from '../../models/phase.model';
+import { ProjectMember } from '../../models/project.model';
 
 type TaskStatus = 'TO_DO' | 'IN_PROGRESS' | 'REVIEW' | 'DONE';
 
@@ -23,6 +26,7 @@ interface TaskResponse {
     name: string;
     email: string;
   };
+  //assignedTo: number;
 }
 
 interface PhaseResponse {
@@ -52,7 +56,7 @@ interface Column {
 @Component({
   selector: 'app-board',
   standalone: true,
-  imports: [CommonModule, MatIconModule, ModalComponent, TaskFormComponent],
+  imports: [CommonModule, MatIconModule, ModalComponent, TaskFormComponent, TaskDetailsModalComponent],
   templateUrl: './board.html',
   styleUrl: './board.scss',
   changeDetection: ChangeDetectionStrategy.OnPush
@@ -60,6 +64,7 @@ interface Column {
 export class BoardComponent {
   private readonly http = inject(HttpClient);
   private readonly selectedProjectService = inject(SelectedProjectService);
+  private readonly projectService = inject(ProjectService);
 
   phases = signal<PhaseResponse[]>([]);
   selectedPhase = signal<PhaseResponse | null>(null);
@@ -100,6 +105,9 @@ export class BoardComponent {
   hoveredColumnId = signal<string | null>(null);
   showTaskModal = signal(false);
   selectedColumnForTask = signal<Column | null>(null);
+  showTaskDetailsModal = signal(false);
+  selectedTaskForDetails = signal<{ taskId: number; phaseId: number } | null>(null);
+  projectMembers = signal<ProjectMember[]>([]);
 
   selectedProject = computed(() => this.selectedProjectService.getSelectedProject()());
 
@@ -116,8 +124,23 @@ export class BoardComponent {
       this.resetBoardState();
       if (project) {
         this.loadPhases();
+        this.loadProjectMembers();
       }
     }, { allowSignalWrites: true });
+  }
+
+  loadProjectMembers(): void {
+    const project = this.selectedProject();
+    if (!project) return;
+
+    this.projectService.getProjectMembers(project.projectId).subscribe({
+      next: (members) => {
+        this.projectMembers.set(members);
+      },
+      error: (err) => {
+        console.error('Error loading project members:', err);
+      }
+    });
   }
 
   colorDotMap = {
@@ -206,6 +229,7 @@ export class BoardComponent {
         dueDate: task.endDate,
         status: taskStatus,
         assignees: task.assignedTo ? [{ initials: this.getInitials(task.assignedTo.name), name: task.assignedTo.name }] : []
+        //assignees: [{ initials: "task.assignedTo.name", name: "task.assignedTo.name" }]
       };
 
       const column = columns.find(col => col.statusValue === taskStatus);
@@ -372,6 +396,30 @@ export class BoardComponent {
       status: column.statusValue,
       priority: 'Medium'
     };
+  }
+
+  onTaskCardClick(task: TaskCard): void {
+    const phase = this.selectedPhase();
+    if (!phase) return;
+
+    this.selectedTaskForDetails.set({
+      taskId: task.id as number,
+      phaseId: phase.phaseId
+    });
+    this.showTaskDetailsModal.set(true);
+  }
+
+  closeTaskDetailsModal(): void {
+    this.showTaskDetailsModal.set(false);
+    this.selectedTaskForDetails.set(null);
+  }
+
+  onTaskDetailsUpdated(): void {
+    // Reload tasks for the current phase to reflect changes
+    const phase = this.selectedPhase();
+    if (phase) {
+      this.loadTasksForPhase(phase);
+    }
   }
 
   getPlaceholderArray(currentTaskCount: number): number[] {

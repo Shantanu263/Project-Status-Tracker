@@ -96,8 +96,9 @@
                             <div class="flex-1 space-y-2 overflow-y-auto">
                                 @for (task of column.tasks; track task.id) {
                                 <!-- Compact Task Card -->
-                                <div class="bg-white border border-gray-200 rounded-lg p-3 hover:shadow-md transition-all duration-200 cursor-move group"
-                                    draggable="true" (dragstart)="onDragStart(task, column.id)" (dragend)="onDragEnd()"
+                                <div class="bg-white border border-gray-200 rounded-lg p-3 hover:shadow-md transition-all duration-200 cursor-pointer group"
+                                    (click)="onTaskCardClick(task)" draggable="true"
+                                    (dragstart)="onDragStart(task, column.id)" (dragend)="onDragEnd()"
                                     [class.opacity-50]="draggingTask()?.task?.id === task.id"
                                     [class.ring-2]="draggingTask()?.task?.id === task.id">
 
@@ -182,7 +183,15 @@
 <app-modal [isOpen]="showTaskModal()" title="Create Task" (close)="closeTaskModal()">
     @if (showTaskModal() && selectedColumnForTask()) {
     <app-task-form [projectId]="selectedProject()!.projectId" [task]="getGetPrefilledTask()"
-        (submit)="onTaskSubmit($event)" (cancel)="closeTaskModal()">
+        (taskSubmit)="onTaskSubmit($event)" (cancel)="closeTaskModal()">
     </app-task-form>
     }
 </app-modal>
+
+<!-- Task Details Modal -->
+@if (showTaskDetailsModal() && selectedTaskForDetails() && selectedProject()) {
+<app-task-details-modal [isOpen]="showTaskDetailsModal()" [projectId]="selectedProject()!.projectId"
+    [phaseId]="selectedTaskForDetails()!.phaseId" [taskId]="selectedTaskForDetails()!.taskId"
+    [projectMembers]="projectMembers()" (close)="closeTaskDetailsModal()" (updated)="onTaskDetailsUpdated()">
+</app-task-details-modal>
+}
