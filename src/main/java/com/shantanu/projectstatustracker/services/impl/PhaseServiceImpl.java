@@ -34,7 +34,7 @@ public class PhaseServiceImpl implements PhaseService {
         Project project = projectRepo.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Project not found"));
 
-        return ResponseEntity.ok(phaseRepo.findAllByProject(project));
+        return ResponseEntity.ok(phaseMapper.mapPhasesToPhaseDetailsResponse(phaseRepo.findAllByProject(project)));
     }
 
     @Override
@@ -56,7 +56,9 @@ public class PhaseServiceImpl implements PhaseService {
         activityLogService.log(
                 phase.getProject().getProjectId(),
                 (String) request.getAttribute("email"),
-                request.getAttribute("username") + " created new Phase " + phaseRequestDTO.getPhaseName()
+                request.getAttribute("username") + " created new Phase " + phaseRequestDTO.getPhaseName(),
+                EntityType.PHASE,
+                phase.getPhaseId()
         );
 
         return ResponseEntity.ok(phase);
@@ -68,7 +70,7 @@ public class PhaseServiceImpl implements PhaseService {
         if (!phaseRepo.existsById(phaseId)) return ResponseEntity.ok(Map.of("message","Project Phase not found"));
 
         Phase phase = phaseRepo.findByPhaseIdAndProject_ProjectId(phaseId,projectId).orElseThrow(() -> new ResourceNotFoundException("Phase not found"));
-        return ResponseEntity.ok(phase);
+        return ResponseEntity.ok(phaseMapper.mapPhaseToPhaseDetailsResponse(phase));
     }
 
     @Override
@@ -94,10 +96,12 @@ public class PhaseServiceImpl implements PhaseService {
         activityLogService.log(
                 existingPhase.getProject().getProjectId(),
                 (String) request.getAttribute("email"),
-                request.getAttribute("username") + " updated Phase Details of " + phaseRequestDTO.getPhaseName()
+                request.getAttribute("username") + " updated Phase Details of " + phaseRequestDTO.getPhaseName(),
+                EntityType.PHASE,
+                existingPhase.getPhaseId()
         );
 
-        return ResponseEntity.ok(Map.of("message","Phase updated","update phase",existingPhase));
+        return ResponseEntity.ok(Map.of("message","Phase updated","update phase",phaseMapper.mapPhaseToPhaseDetailsResponse(existingPhase)));
     }
 
     @Override
@@ -113,7 +117,9 @@ public class PhaseServiceImpl implements PhaseService {
         activityLogService.log(
                 phase.getProject().getProjectId(),
                 (String) request.getAttribute("email"),
-                request.getAttribute("username") + " deleted Phase " + phase.getPhaseName()
+                request.getAttribute("username") + " deleted Phase " + phase.getPhaseName(),
+                EntityType.PHASE,
+                phase.getPhaseId()
         );
         
         return ResponseEntity.ok(Map.of("message", "Phase deleted."));

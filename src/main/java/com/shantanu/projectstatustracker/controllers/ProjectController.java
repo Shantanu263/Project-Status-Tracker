@@ -21,7 +21,7 @@ public class ProjectController {
         return projectService.getProjects();
     }
 
-    @PreAuthorize("@auth.isSuperAdmin()")
+    @PreAuthorize("@auth.isSuperAdmin() or @auth.isAdmin()")
     @PostMapping()
     public ResponseEntity<Object> createProject(@RequestBody ProjectRequestDTO projectRequestDTO){
         return projectService.createProject(projectRequestDTO);

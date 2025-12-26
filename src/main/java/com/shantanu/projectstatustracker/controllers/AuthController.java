@@ -29,7 +29,7 @@ public class AuthController {
     }
 
     @PostMapping("/refresh-token")
-    public  ResponseEntity<?> refresh(@RequestBody Map<String,String> refreshToken){
+    public  ResponseEntity<Object> refresh(@RequestBody Map<String,String> refreshToken){
         return authService.refresh(refreshToken);
     }
 

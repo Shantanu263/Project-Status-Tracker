@@ -85,6 +85,7 @@ public class ProjectServiceImpl implements ProjectService {
             ProjectTemplate projectTemplate = projectTemplateRepo.findById(projectRequestDTO.getTemplateId())
                     .orElseThrow(() -> new ResourceNotFoundException("Template does not exist"));
 
+            //need to remove this
             project.setProjectTemplate(projectTemplate);
 
             List<Phase> clonedPhases = projectTemplate.getProjectTemplatePhases().stream().map(templatePhase -> {
@@ -102,6 +103,7 @@ public class ProjectServiceImpl implements ProjectService {
             projectRepo.save(project);
         }
 
+        //project head not required
         ProjectMember projectMember = ProjectMember.builder()
                 .project(project)
                 .role(ProjectRole.PROJECT_HEAD)
@@ -109,6 +111,7 @@ public class ProjectServiceImpl implements ProjectService {
                 .assignedBy(userRepo.findByName("Admin").orElseThrow(() -> new ResourceNotFoundException("Admin not found")))
                 .build();
 
+        //assigned by not required
         ProjectMember admin = ProjectMember.builder()
                 .project(project)
                 .role(ProjectRole.SUPER_ADMIN)
@@ -119,10 +122,13 @@ public class ProjectServiceImpl implements ProjectService {
         projectMemberRepo.save(projectMember);
         projectMemberRepo.save(admin);
 
+        Long projectId = projectRepo.findByProjectName(project.getProjectName()).getProjectId();
         activityLogService.log(
-                projectRepo.findByProjectName(project.getProjectName()).getProjectId(),
+                projectId,
                 (String) request.getAttribute("email"),
-                request.getAttribute("username") + "created Project " + projectRequestDTO.getProjectName()
+                request.getAttribute("username") + "created Project " + projectRequestDTO.getProjectName(),
+                EntityType.PROJECT,
+                projectId
         );
 
         return ResponseEntity.ok(projectMapper.mapProjectResponse(project));
@@ -152,7 +158,9 @@ public class ProjectServiceImpl implements ProjectService {
         activityLogService.log(
                 existingProject.getProjectId(),
                 (String) request.getAttribute("email"),
-                request.getAttribute("username") + "updated Details of Project"
+                request.getAttribute("username") + "updated Details of Project",
+                EntityType.PROJECT,
+                existingProject.getProjectId()
         );
 
         return ResponseEntity.ok("project updated");
@@ -195,7 +203,9 @@ public class ProjectServiceImpl implements ProjectService {
         activityLogService.log(
                 projectId,
                 (String) request.getAttribute("email"),
-                request.getAttribute("username") + "Removed member " + user.getName() + " from the project."
+                request.getAttribute("username") + "Removed member " + user.getName() + " from the project.",
+                EntityType.PROJECT,
+                projectId
         );
 
         return ResponseEntity.ok(Map.of("message","Member removed"));
@@ -216,7 +226,9 @@ public class ProjectServiceImpl implements ProjectService {
             activityLogService.log(
                     projectId,
                     (String) request.getAttribute("email"),
-                    request.getAttribute("username") + "add new member " + user.getName() + " to the project."
+                    request.getAttribute("username") + "add new member " + user.getName() + " to the project.",
+                    EntityType.PROJECT,
+                    projectId
             );
         }
         else {

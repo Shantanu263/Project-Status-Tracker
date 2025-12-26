@@ -20,6 +20,7 @@ public interface ProjectMemberMapper {
     @Mapping(source = "projectMember.assignedBy", target = "assignedBy")
     @Mapping(source = "projectMember.memberStatus", target = "memberStatus")
     @Mapping(source = "projectMember.user.email", target = "email")
+    @Mapping(source = "projectMember.user.userId", target = "userId")
     ProjectMemberResponseDTO mapProjectMember(ProjectMember projectMember);
 
     @Mapping(source = "projectMember.user.name",target = "user")

@@ -1,6 +1,5 @@
 package com.shantanu.projectstatustracker.dtos.mappers;
 
-import com.shantanu.projectstatustracker.dtos.PhaseRequestDTO;
 import com.shantanu.projectstatustracker.dtos.TaskRequestDTO;
 import com.shantanu.projectstatustracker.dtos.TaskResponseDTO;
 import com.shantanu.projectstatustracker.models.Phase;
@@ -10,7 +9,7 @@ import org.mapstruct.*;
 
 import java.util.List;
 
-@Mapper(componentModel = "spring")
+@Mapper(componentModel = "spring", uses = {CommentMapper.class, ActivityLogMapper.class})
 public interface TaskMapper {
 
     @Mapping(source = "phase",target = "projectPhase")
@@ -28,6 +27,7 @@ public interface TaskMapper {
 
     @Mapping(source = "task.assignedTo.memberId",target = "assignedToProjectMemberId")
     @Mapping(source = "task.projectPhase.phaseId",target = "projectPhaseId")
+    @Mapping(source = "task.logs", target = "logs")
     TaskResponseDTO mapTaskToResponse(Task task);
 
     @Mapping(source = "task.assignedTo.memberId",target = "assignedToProjectMemberId")

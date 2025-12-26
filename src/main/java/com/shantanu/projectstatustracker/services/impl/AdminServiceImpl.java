@@ -9,10 +9,15 @@ import com.shantanu.projectstatustracker.repositories.RoleRepo;
 import com.shantanu.projectstatustracker.repositories.UserRepo;
 import com.shantanu.projectstatustracker.services.AdminService;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 
-import java.util.List;
+import java.util.HashMap;
+import java.util.Map;
 
 
 @RequiredArgsConstructor
@@ -23,9 +28,26 @@ public class AdminServiceImpl implements AdminService {
     private final UserMapper userMapper;
 
     @Override
-    public ResponseEntity<Object> getUsers() {
-        List<User> users = userRepo.findAll();
-        return ResponseEntity.ok(userMapper.mapUsers(users));
+    public ResponseEntity<Object> getUsers(int pageNumber, int pageSize, String sortBy, String order, String search) {
+
+        Sort.Direction direction = "desc".equalsIgnoreCase(order) ? Sort.Direction.DESC : Sort.Direction.ASC;
+        String sortProperty = (sortBy == null || sortBy.isBlank()) ? "id" : sortBy;
+        Pageable pageable = PageRequest.of(Math.max(pageNumber, 0), Math.max(pageSize, 1), Sort.by(direction, sortProperty));
+
+        Page<User> page = userRepo.findAll(pageable);
+
+        Map<String, Object> body = new HashMap<>();
+        body.put("content", userMapper.mapUsers(page.getContent()));
+        body.put("page", page.getNumber());
+        body.put("size", page.getSize());
+        body.put("totalElements", page.getTotalElements());
+        body.put("totalPages", page.getTotalPages());
+        body.put("sortBy", sortProperty);
+        body.put("order", direction.name().toLowerCase());
+        body.put("search", search);
+
+        return ResponseEntity.ok(body);
+
     }
 
     @Override
@@ -45,7 +67,7 @@ public class AdminServiceImpl implements AdminService {
         user.setStatus("ACTIVE");
         userRepo.save(user);
 
-        return ResponseEntity.ok("User approved and assigned role: " + req.getRoleName());
+        return ResponseEntity.ok(Map.of("message","Assigned role to user: " + req.getRoleName()));
     }
 
 }

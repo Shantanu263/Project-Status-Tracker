@@ -9,6 +9,7 @@ import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+import org.hibernate.annotations.SQLRestriction;
 
 import java.time.LocalDateTime;
 import java.util.Date;
@@ -23,6 +24,7 @@ public class Phase {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Column(name = "phase_id")
     private Long phaseId;
 
     private String phaseName;
@@ -58,6 +60,13 @@ public class Phase {
     @OneToMany(mappedBy = "projectPhase")
     @JsonManagedReference
     List<Task> tasks;
+
+    @OneToMany
+    @JoinColumn(name = "entity_id", referencedColumnName = "phase_id",
+            insertable = false, updatable = false,
+            foreignKey = @ForeignKey(name = "none"))
+    @SQLRestriction("entity_type = 'PHASE'")
+    private List<ActivityLog> logs;
 
     @PrePersist
     protected void onCreate() {

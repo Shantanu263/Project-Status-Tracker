@@ -109,7 +109,9 @@ public class SubTaskServiceImpl implements SubTaskService {
         activityLogService.log(
                 projectId,
                 (String) request.getAttribute("email"),
-                request.getAttribute("username") + " created new SubTask " + taskRequestDTO.getTaskName()
+                request.getAttribute("username") + " created new SubTask " + taskRequestDTO.getTaskName(),
+                EntityType.SUBTASK,
+                subTask.getSubTaskId()
         );
 
         return ResponseEntity.ok(mapSubTaskToResponse(subTask));
@@ -168,7 +170,9 @@ public class SubTaskServiceImpl implements SubTaskService {
         activityLogService.log(
                 projectId,
                 (String) request.getAttribute("email"),
-                request.getAttribute("username") + " updated SubTask Details of " + existingSubTask.getSubTaskName()
+                request.getAttribute("username") + " updated SubTask Details of " + existingSubTask.getSubTaskName(),
+                EntityType.SUBTASK,
+                existingSubTask.getSubTaskId()
         );
 
         return ResponseEntity.ok(Map.of(
@@ -219,7 +223,9 @@ public class SubTaskServiceImpl implements SubTaskService {
                 projectId,
                 (String) request.getAttribute("email"),
                 request.getAttribute("username") + " changed SubTask status of " + 
-                        existingSubTask.getSubTaskName() + " to " + status
+                        existingSubTask.getSubTaskName() + " to " + status,
+                EntityType.SUBTASK,
+                existingSubTask.getSubTaskId()
         );
 
         return ResponseEntity.ok(Map.of(

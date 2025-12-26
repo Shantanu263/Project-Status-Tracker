@@ -11,9 +11,7 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 import org.hibernate.annotations.SQLRestriction;
-import org.hibernate.annotations.Where;
 
-import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 
@@ -65,6 +63,13 @@ public class Task {
             insertable = false, updatable = false)
     @SQLRestriction("parent_type = 'TASK'")
     private List<Comment> comments;
+
+    @OneToMany
+    @JoinColumn(name = "entity_id", referencedColumnName = "task_id",
+            insertable = false, updatable = false,
+            foreignKey = @ForeignKey(name = "none"))
+    @SQLRestriction("entity_type = 'TASK'")
+    private List<ActivityLog> logs;
 
 }
 

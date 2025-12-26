@@ -22,10 +22,11 @@ public class JwtServiceImpl implements JwtService {
     }
 
     @Override
-    public String generateToken(String email, String name, String role, long time) {
+    public String generateToken(String email, String name, String role, long time, Long userId) {
         return Jwts
                 .builder()
                 .subject(email)
+                .claim("userId",userId)
                 .claim("role",role)
                 .claim("name", name)
                 .issuedAt(new Date())

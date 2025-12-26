@@ -6,9 +6,11 @@ import lombok.Data;
 @Data
 public class ProjectMemberResponseDTO {
 
-    private String memberId;
+    private Long memberId;
 
     private String user;
+
+    private Long userId;
 
     private String email;
 

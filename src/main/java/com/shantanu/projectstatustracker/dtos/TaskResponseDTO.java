@@ -2,7 +2,7 @@ package com.shantanu.projectstatustracker.dtos;
 
 
 import com.fasterxml.jackson.annotation.JsonFormat;
-import com.shantanu.projectstatustracker.models.Comment;
+import com.shantanu.projectstatustracker.models.ActivityLog;
 import com.shantanu.projectstatustracker.models.Status;
 import lombok.Data;
 
@@ -35,6 +35,8 @@ public class TaskResponseDTO {
 
     private Long assignedToProjectMemberId;
 
-    private List<Comment> comments;
+    private List<CommentResponseDTO> comments;
+
+    private List<ActivityLogDTO> logs;
 
 }

@@ -32,8 +32,8 @@ public class AuthorizationServiceImpl implements AuthorizationService {
         String email = getCurrentUserEmail();
         System.out.println(email+"can manageProject");
         if (email == null) return false;
-        System.out.println(memberRepo.existsByProject_ProjectIdAndUser_EmailAndRole(
-                projectId,email,ProjectRole.PROJECT_HEAD));
+//        System.out.println(memberRepo.existsByProject_ProjectIdAndUser_EmailAndRole(
+//                projectId,email,ProjectRole.PROJECT_HEAD));
         return memberRepo.existsByProject_ProjectIdAndUser_EmailAndRole(
                 projectId,email,ProjectRole.PROJECT_HEAD);
     }
@@ -59,6 +59,14 @@ public class AuthorizationServiceImpl implements AuthorizationService {
         if (email == null) return false;
 
         return (request.getAttribute("role").equals("SUPER ADMIN"));
+    }
+
+    @Override
+    public boolean isAdmin() {
+        String email = getCurrentUserEmail();
+        if (email == null) return false;
+
+        return (request.getAttribute("role").equals("ADMIN"));
     }
 
     @Override

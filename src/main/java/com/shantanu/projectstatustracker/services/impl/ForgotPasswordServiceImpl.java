@@ -78,7 +78,7 @@ public class ForgotPasswordServiceImpl implements ForgotPasswordService {
         User user = userRepo.findByEmail(email)
                 .orElseThrow(() -> new ResourceNotFoundException("User with Email Id: " + email + " not found"));
 
-        String resetToken = jWTService.generateToken(user.getEmail(),user.getName(), user.getRole().getName(), 1000 * 180);  //3 mins
+        String resetToken = jWTService.generateToken(user.getEmail(),user.getName(), user.getRole().getName(), 1000 * 180, user.getUserId());  //3 mins
         return ResponseEntity.ok(Map.of("resetToken", resetToken));
     }
 

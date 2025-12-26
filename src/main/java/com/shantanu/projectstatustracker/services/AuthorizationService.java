@@ -18,4 +18,6 @@ public interface AuthorizationService {
 
     boolean debugSpEL();
 
+    boolean isAdmin();
+
 }

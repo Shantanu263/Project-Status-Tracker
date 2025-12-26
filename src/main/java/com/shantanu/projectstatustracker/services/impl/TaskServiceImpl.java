@@ -16,9 +16,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 
-import java.util.Date;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 @RequiredArgsConstructor
 @Service
@@ -74,7 +72,9 @@ public class TaskServiceImpl implements TaskService {
         activityLogService.log(
                 phase.getProject().getProjectId(),
                 (String) request.getAttribute("email"),
-                request.getAttribute("username") + " created new Task " + taskRequestDTO.getTaskName()
+                request.getAttribute("username") + " created new Task " + taskRequestDTO.getTaskName(),
+                EntityType.TASK,
+                task.getTaskId()
         );
 
         //causing problems
@@ -94,7 +94,10 @@ public class TaskServiceImpl implements TaskService {
                     .orElseThrow(() -> new ResourceNotFoundException("Project member not found"));
         }
 
-        Task existingTask = taskRepo.findByTaskIdAndProjectPhase_PhaseId(taskId,phaseId).orElseThrow();
+        Task existingTask = taskRepo.findByTaskIdAndProjectPhase_PhaseId(taskId,phaseId)
+                .orElseThrow(() -> new ResourceNotFoundException("Task not found"));
+
+        TaskSnapshot oldSnapshot = TaskSnapshot.from(existingTask);
 
         taskMapper.updateTaskFromDTO(dto,assignedTo,existingTask);
 
@@ -103,11 +106,16 @@ public class TaskServiceImpl implements TaskService {
         // Update phase progress with respect to Task Status
         phaseService.updatePhaseProgress(phaseId);
 
-        activityLogService.log(
-                projectId,
-                (String) request.getAttribute("email"),
-                request.getAttribute("username") + " updated Task Details of " + existingTask.getTaskName()
-        );
+        List<String> changes = detectChanges(oldSnapshot, existingTask);
+
+        for (String change : changes) {
+            activityLogService.log(
+                    projectId,
+                    (String) request.getAttribute("email"),
+                    request.getAttribute("username") + " " + change,
+                    EntityType.TASK,
+                    existingTask.getTaskId());
+        }
 
         return ResponseEntity.ok(Map.of("message","Task updated","update Task",taskMapper.mapTaskToResponse(existingTask)));
     }
@@ -126,6 +134,7 @@ public class TaskServiceImpl implements TaskService {
             return new ResponseEntity<>(Map.of("message", "This task is assigned to other user."), HttpStatus.BAD_REQUEST);
         }
 
+        Status existingStatus = existingTask.getStatus();
         existingTask.setStatus(status);
         taskRepo.save(existingTask);
         
@@ -135,7 +144,9 @@ public class TaskServiceImpl implements TaskService {
         activityLogService.log(
                 projectId,
                 (String) request.getAttribute("email"),
-                request.getAttribute("username") + " changed Task status of " + existingTask.getTaskName() + " to " + status
+                request.getAttribute("username") + " changed status from " + existingStatus + " to " + status,
+                EntityType.TASK,
+                existingTask.getTaskId()
         );
 
         return ResponseEntity.ok(Map.of("message","Task status updated","updated Task",taskMapper.mapTaskToResponse(existingTask)));
@@ -167,6 +178,62 @@ public class TaskServiceImpl implements TaskService {
         taskRepo.save(existingTask);
 
         return ResponseEntity.ok(Map.of("message","Completion updated"));
+    }
+
+    public static List<String> detectChanges(TaskSnapshot oldTask, Task newTask) {
+        List<String> changes = new ArrayList<>();
+
+        // Task Name
+        if (!Objects.equals(oldTask.taskName(), newTask.getTaskName())) {
+            changes.add("updated task name from '"
+                    + oldTask.taskName() + "' to '" + newTask.getTaskName() + "'");
+        }
+
+        // Description
+        if (!Objects.equals(oldTask.description(), newTask.getDescription())) {
+            changes.add("updated description");
+        }
+
+        // Status
+        if (!Objects.equals(oldTask.status(), newTask.getStatus())) {
+            changes.add("updated status from '"
+                    + oldTask.status() + "' to '" + newTask.getStatus() + "'");
+        }
+
+        // Priority
+        if (!Objects.equals(oldTask.priority(), newTask.getPriority())) {
+            changes.add("updated priority from '"
+                    + oldTask.priority() + "' to '" + newTask.getPriority() + "'");
+        }
+
+        // Assigned To (Assuming assignedTo is a User object)
+        if (oldTask.assignedToId() == null && newTask.getAssignedTo() != null) {
+            changes.add("assigned task to '" + newTask.getAssignedTo().getUser().getName() + "'");
+        }
+        else if (oldTask.assignedToId() != null && newTask.getAssignedTo() == null) {
+            changes.add("unassigned the task from '" + oldTask.assignedToUsername() + "'");
+        }
+        else if (
+                oldTask.assignedToId() != null && !Objects.equals(oldTask.assignedToId(), newTask.getAssignedTo().getUser().getUserId())
+        ) {
+            changes.add("changed assignee from '"
+                    + oldTask.assignedToUsername() + "' to '"
+                    + newTask.getAssignedTo().getUser().getName() + "'");
+        }
+
+        // Start Date
+        if (!Objects.equals(oldTask.startDate(), newTask.getStartDate())) {
+            changes.add("updated start date from "
+                    + oldTask.startDate() + " to " + newTask.getStartDate());
+        }
+
+        // End Date
+        if (!Objects.equals(oldTask.endDate(), newTask.getEndDate())) {
+            changes.add("updated end date from "
+                    + oldTask.endDate() + " to " + newTask.getEndDate());
+        }
+
+        return changes;
     }
 
 }

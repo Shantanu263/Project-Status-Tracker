@@ -1,6 +1,7 @@
 package com.shantanu.projectstatustracker.services.impl;
 
 import com.shantanu.projectstatustracker.models.ActivityLog;
+import com.shantanu.projectstatustracker.models.EntityType;
 import com.shantanu.projectstatustracker.models.Project;
 import com.shantanu.projectstatustracker.models.User;
 import com.shantanu.projectstatustracker.repositories.ActivityLogRepo;
@@ -22,7 +23,7 @@ public class ActivityLogServiceImpl implements ActivityLogService {
     private final ProjectRepo projectRepo;
 
     @Override
-    public void log(Long projectId, String email, String message) {
+    public void log(Long projectId, String email, String message, EntityType entityType, Long entityId) {
         User user = userRepo.findByEmail(email)
                 .orElseThrow(() -> new RuntimeException("User not found"));
 
@@ -34,6 +35,8 @@ public class ActivityLogServiceImpl implements ActivityLogService {
                 .performedBy(user)
                 .message(message)
                 .createdAt(new Timestamp(System.currentTimeMillis()))
+                .entityType(entityType)
+                .entityId(entityId)
                 .build());
     }
 

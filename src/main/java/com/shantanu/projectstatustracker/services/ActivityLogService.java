@@ -1,9 +1,11 @@
 package com.shantanu.projectstatustracker.services;
 
+import com.shantanu.projectstatustracker.models.EntityType;
+
 import java.sql.Timestamp;
 
 public interface ActivityLogService {
-    void log(Long projectId, String email, String message);
+    void log(Long projectId, String email, String message, EntityType entityType, Long entityId);
 
     default String timeAgo(Timestamp ts) {
         long diff = (System.currentTimeMillis() - ts.getTime()) / 1000;

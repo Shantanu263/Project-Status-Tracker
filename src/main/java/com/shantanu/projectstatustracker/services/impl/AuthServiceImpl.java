@@ -4,9 +4,7 @@ import com.shantanu.projectstatustracker.dtos.UserLoginRequestDTO;
 import com.shantanu.projectstatustracker.dtos.UserRequestDTO;
 import com.shantanu.projectstatustracker.dtos.mappers.ProjectMemberMapper;
 import com.shantanu.projectstatustracker.globalExceptionHandlers.ResourceNotFoundException;
-import com.shantanu.projectstatustracker.models.InvitedMembers;
-import com.shantanu.projectstatustracker.models.Project;
-import com.shantanu.projectstatustracker.models.User;
+import com.shantanu.projectstatustracker.models.*;
 import com.shantanu.projectstatustracker.repositories.*;
 import com.shantanu.projectstatustracker.services.ActivityLogService;
 import com.shantanu.projectstatustracker.services.AuthService;
@@ -67,12 +65,15 @@ public class AuthServiceImpl implements AuthService {
                 Project project = projectRepo.findById(assignment.getProjectId())
                         .orElseThrow(()->new ResourceNotFoundException("Project with id("+assignment.getProjectId()+") not found"));
 
-                projectMemberRepo.save(projectMemberMapper.mapRequestToProjectMember(project,user,assignment.getAssignedBy(),assignment.getRole()));
+                ProjectMember projectMember = projectMemberMapper.mapRequestToProjectMember(project,user,assignment.getAssignedBy(),assignment.getRole());
+                projectMemberRepo.save(projectMember);
 
                 activityLogService.log(
                         project.getProjectId(),
                         assignment.getAssignedBy().getEmail(),
-                        assignment.getAssignedBy().getName() + "added new member " + userRequestDTO.getName() + " to the project."
+                        assignment.getAssignedBy().getName() + "added new member " + userRequestDTO.getName() + " to the project.",
+                        EntityType.PROJECT_MEMBER,
+                        projectMember.getMemberId()
                 );
 
                 invitedMembersRepo.delete(assignment);
@@ -95,8 +96,8 @@ public class AuthServiceImpl implements AuthService {
             return new ResponseEntity<>(Map.of("message","Incorrect Password"), HttpStatus.UNAUTHORIZED);
         }
 
-        String accessToken = jwtService.generateToken(user.getEmail(), user.getName(), user.getRole().getName(),accessTokenTime);
-        String refreshToken = jwtService.generateToken(user.getEmail(), user.getName(), user.getRole().getName(),refreshTokenTime);
+        String accessToken = jwtService.generateToken(user.getEmail(), user.getName(), user.getRole().getName(),accessTokenTime, user.getUserId());
+        String refreshToken = jwtService.generateToken(user.getEmail(), user.getName(), user.getRole().getName(),refreshTokenTime, user.getUserId());
 
 
         return ResponseEntity.ok(Map.of("message","User signed in","accessToken",accessToken,"refreshToken",refreshToken));
@@ -118,7 +119,7 @@ public class AuthServiceImpl implements AuthService {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Invalid refresh token");
         }
 
-        String newAccessToken = jwtService.generateToken(email, user.getName(), user.getRole().getName(), accessTokenTime); // generate new Access Token
+        String newAccessToken = jwtService.generateToken(email, user.getName(), user.getRole().getName(), accessTokenTime, user.getUserId()); // generate new Access Token
 
         return ResponseEntity.ok(Map.of("accessToken",newAccessToken));
     }

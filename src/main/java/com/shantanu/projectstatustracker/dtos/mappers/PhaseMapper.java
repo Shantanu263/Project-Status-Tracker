@@ -1,5 +1,6 @@
 package com.shantanu.projectstatustracker.dtos.mappers;
 
+import com.shantanu.projectstatustracker.dtos.PhaseDetailsResponseDTO;
 import com.shantanu.projectstatustracker.dtos.PhaseRequestDTO;
 import com.shantanu.projectstatustracker.dtos.PhaseResponseDTO;
 import com.shantanu.projectstatustracker.models.Phase;
@@ -7,7 +8,9 @@ import com.shantanu.projectstatustracker.models.Project;
 import com.shantanu.projectstatustracker.models.ProjectMember;
 import org.mapstruct.*;
 
-@Mapper(componentModel = "spring")
+import java.util.List;
+
+@Mapper(componentModel = "spring", uses = {TaskMapper.class})
 public interface PhaseMapper {
 
     PhaseResponseDTO mapPhaseToPhaseResponseDTO(Phase phase);
@@ -23,4 +26,11 @@ public interface PhaseMapper {
     @BeanMapping(nullValuePropertyMappingStrategy = NullValuePropertyMappingStrategy.IGNORE)
     @Mapping(source = "assignedTo",target = "phase.assignedTo")
     void updatePhaseFromDTO(PhaseRequestDTO phaseRequestDTO, ProjectMember assignedTo, @MappingTarget Phase phase);
+
+    @Mapping(source = "phase.project.projectId", target = "projectId")
+    @Mapping(source = "phase.assignedTo.memberId", target = "projectMemberId")
+    PhaseDetailsResponseDTO mapPhaseToPhaseDetailsResponse(Phase phase);
+
+    List<PhaseDetailsResponseDTO> mapPhasesToPhaseDetailsResponse(List<Phase> phases);
+
 }

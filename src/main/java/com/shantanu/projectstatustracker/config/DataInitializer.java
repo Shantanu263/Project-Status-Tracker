@@ -25,7 +25,7 @@ public class DataInitializer implements CommandLineRunner {
         // Ensure roles exist
         createRoleIfNotFound("SUPER ADMIN");
         createRoleIfNotFound("MEMBER");
-//        createRoleIfNotFound("PROJECT HANDLER");
+        createRoleIfNotFound("ADMIN");
 //        createRoleIfNotFound("VIEWER");
 
         // Ensure a Super Admin user exists

@@ -1,13 +1,10 @@
 package com.shantanu.projectstatustracker.services;
 
 import com.shantanu.projectstatustracker.dtos.RoleRequestDTO;
-import com.shantanu.projectstatustracker.models.User;
 import org.springframework.http.ResponseEntity;
 
-import java.util.List;
-
 public interface AdminService {
-    ResponseEntity<Object> getUsers();
+    ResponseEntity<Object> getUsers(int pageNumber, int pageSize, String sortBy, String order, String search);
 
     ResponseEntity<Object> getPendingUsers();
 

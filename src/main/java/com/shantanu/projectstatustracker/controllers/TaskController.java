@@ -79,5 +79,14 @@ public class TaskController {
         return taskService.updateCompletion(projectId, phaseId, taskId, completedAt);
     }
 
+    @PutMapping("/phases/{phaseId}/tasks/{taskId}/comment")
+    public ResponseEntity<Object> addComment(
+            @PathVariable Long projectId,
+            @PathVariable Long phaseId,
+            @PathVariable Long taskId,
+            @RequestBody TaskRequestDTO dto) {
+        return taskService.updateTask(projectId, phaseId, taskId, dto);
+    }
+
 }
 
