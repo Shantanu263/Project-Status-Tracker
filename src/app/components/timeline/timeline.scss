@@ -40,7 +40,6 @@
     /* Hide scrollbar but keep scroll functionality */
     scrollbar-width: none;
     -ms-overflow-style: none;
-    scroll-behavior: smooth;
 }
 
 .timeline-header-scroll::-webkit-scrollbar {
@@ -52,7 +51,6 @@
     /* Custom scrollbar for vertical scroll */
     scrollbar-width: thin;
     scrollbar-color: #cbd5e0 #f7fafc;
-    scroll-behavior: smooth;
 }
 
 .timeline-vertical-scroll::-webkit-scrollbar {
@@ -91,7 +89,6 @@
 .timeline-horizontal-scroll {
     overflow-x: scroll !important;
     overflow-y: hidden;
-    scroll-behavior: smooth;
     height: 100%;
     min-height: 20px;
 

@@ -80,18 +80,6 @@
 
                         <!-- Tasks Container -->
                         <div class="p-3 space-y-2 flex-1 flex flex-col overflow-hidden">
-                            <!-- Add Task Button (shown on hover) -->
-                            @if (hoveredColumnId() === column.id) {
-                            <button (click)="openAddTaskModal(column)"
-                                class="w-full px-4 py-2 border-2 border-dashed border-gray-300 rounded-lg text-gray-600 hover:border-[#8c2d1b] hover:text-[#8c2d1b] hover:bg-red-50 transition-all duration-200 flex items-center justify-center gap-2 font-medium text-sm">
-                                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                        d="M12 5v14m7-7H5"></path>
-                                </svg>
-                                Add Task
-                            </button>
-                            }
-
                             <!-- Tasks List -->
                             <div class="flex-1 space-y-2 overflow-y-auto">
                                 @for (task of column.tasks; track task.id) {
@@ -169,6 +157,18 @@
                                 </div>
                                 }
                             </div>
+
+                            <!-- Add Task Button (shown on hover) - Now at bottom -->
+                            @if (hoveredColumnId() === column.id) {
+                            <button (click)="openAddTaskModal(column)"
+                                class="w-full px-4 py-2 border-2 border-dashed border-gray-300 rounded-lg text-gray-600 hover:border-[#8c2d1b] hover:text-[#8c2d1b] hover:bg-red-50 transition-all duration-200 flex items-center justify-center gap-2 font-medium text-sm mt-2">
+                                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                        d="M12 5v14m7-7H5"></path>
+                                </svg>
+                                Add Task
+                            </button>
+                            }
                         </div>
                     </div>
                     }
@@ -180,13 +180,13 @@
 </div>
 
 <!-- Task Modal -->
-<app-modal [isOpen]="showTaskModal()" title="Create Task" (close)="closeTaskModal()">
-    @if (showTaskModal() && selectedColumnForTask()) {
-    <app-task-form [projectId]="selectedProject()!.projectId" [task]="getGetPrefilledTask()"
-        (taskSubmit)="onTaskSubmit($event)" (cancel)="closeTaskModal()">
-    </app-task-form>
-    }
-</app-modal>
+@if (showTaskModal() && selectedColumnForTask()) {
+<app-task-form [isOpen]="showTaskModal()" [projectId]="selectedProject()!.projectId" [task]="getGetPrefilledTask()"
+    [phases]="phases()" (taskSubmit)="onTaskSubmit($event)" (cancel)="closeTaskModal()" (close)="closeTaskModal()">
+</app-task-form>
+}
+
+
 
 <!-- Task Details Modal -->
 @if (showTaskDetailsModal() && selectedTaskForDetails() && selectedProject()) {

@@ -56,8 +56,9 @@ export class MembersComponent {
   totalItems = signal(0);
 
   // Sorting & Filtering
-  sortBy = signal<'user.name' | 'user.role' | 'user.email'>('user.name');
+  sortBy = signal<'memberId' | 'user.name' | 'user.role' | 'user.email'>('user.name');
   order = signal<'asc' | 'desc'>('asc');
+  sortOrder = signal<'asc' | 'desc'>('asc');
   searchQuery = signal('');
 
   sortOptions = [
@@ -219,6 +220,113 @@ export class MembersComponent {
     ];
     const index = parseInt(memberId) % colors.length;
     return colors[index];
+  }
+
+  getAvatarGradient(index: number): string {
+    const gradients = [
+      'from-indigo-500 to-purple-600',
+      'from-blue-500 to-cyan-600',
+      'from-pink-500 to-rose-600',
+      'from-green-500 to-teal-600',
+      'from-orange-500 to-red-600',
+      'from-yellow-500 to-orange-600',
+      'from-emerald-500 to-teal-600'
+    ];
+    return gradients[index % gradients.length];
+  }
+
+  getRoleColorClass(role: string): string {
+    const roleColorMap: Record<string, string> = {
+      'PROJECT_HEAD': 'bg-[#8c2d1b] text-white',
+      'PROJECT_HANDLER': 'bg-blue-100 text-blue-700',
+      'PROJECT_VIEWER': 'bg-gray-100 text-gray-700'
+    };
+    return roleColorMap[role] || 'bg-gray-100 text-gray-700';
+  }
+
+  toggleSort(field: 'memberId' | 'user.name' | 'user.role' | 'user.email'): void {
+    if (this.sortBy() === field) {
+      // Toggle order if same field
+      const newOrder = this.order() === 'asc' ? 'desc' : 'asc';
+      this.order.set(newOrder);
+      this.sortOrder.set(newOrder);
+    } else {
+      // Set new field and default to ascending
+      this.sortBy.set(field);
+      this.order.set('asc');
+      this.sortOrder.set('asc');
+    }
+    this.currentPage.set(0);
+    this.loadMembers();
+  }
+
+  isSortedBy(field: string): boolean {
+    return this.sortBy() === field;
+  }
+
+  get startIndex(): number {
+    return this.currentPage() * this.pageSize() + 1;
+  }
+
+  get endIndex(): number {
+    return Math.min((this.currentPage() + 1) * this.pageSize(), this.totalItems());
+  }
+
+  previousPage(): void {
+    if (this.currentPage() > 0) {
+      this.currentPage.update(p => p - 1);
+      this.loadMembers();
+    }
+  }
+
+  nextPage(): void {
+    if (this.currentPage() < this.totalPages() - 1) {
+      this.currentPage.update(p => p + 1);
+      this.loadMembers();
+    }
+  }
+
+  goToPage(page: number): void {
+    this.currentPage.set(page);
+    this.loadMembers();
+  }
+
+  getPageNumbers(): number[] {
+    const total = this.totalPages();
+    const current = this.currentPage();
+    const pages: number[] = [];
+
+    if (total <= 7) {
+      // Show all pages if 7 or fewer
+      for (let i = 0; i < total; i++) {
+        pages.push(i);
+      }
+    } else {
+      // Always show first page
+      pages.push(0);
+
+      if (current <= 3) {
+        // Near the beginning
+        for (let i = 1; i <= 5; i++) {
+          pages.push(i);
+        }
+        pages.push(total - 1);
+      } else if (current >= total - 4) {
+        // Near the end
+        for (let i = total - 6; i < total - 1; i++) {
+          pages.push(i);
+        }
+        pages.push(total - 1);
+      } else {
+        // In the middle
+        for (let i = current - 2; i <= current + 2; i++) {
+          pages.push(i);
+        }
+        pages.push(total - 1);
+      }
+    }
+
+    return pages;
   }
 
   Math = Math;

@@ -1,5 +1,6 @@
 import { Component, input, inject, signal, computed, effect } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { FormsModule } from '@angular/forms';
 import { ProjectService } from '../../services/project.service';
 import { Phase, Task } from '../../models/phase.model';
 import { ProjectMember } from '../../models/project.model';
@@ -12,7 +13,7 @@ import { DetailModalComponent } from './detail-modal/detail-modal';
 
 @Component({
   selector: 'app-phases',
-  imports: [CommonModule, ModalComponent, ConfirmationDialogComponent, PhaseFormComponent, TaskFormComponent, DetailModalComponent],
+  imports: [CommonModule, FormsModule, ModalComponent, ConfirmationDialogComponent, PhaseFormComponent, TaskFormComponent, DetailModalComponent],
   templateUrl: './phases.html',
   styleUrl: './phases.scss',
   changeDetection: ChangeDetectionStrategy.OnPush
@@ -43,6 +44,54 @@ export class PhasesComponent {
   detailModalMode = signal<'phase' | 'task'>('phase');
   detailModalItem = signal<Phase | Task | null>(null);
   projectMembers = signal<ProjectMember[]>([]);
+
+  // New UI state for list/grid view
+  viewMode = signal<'list' | 'grid'>('list');
+  searchQuery = signal('');
+  statusFilter = signal('All Status');
+  sortBy = signal('Sort by Start Date');
+
+  // Computed filtered and sorted phases
+  filteredPhases = computed(() => {
+    let result = [...this.phases()];
+
+    // Apply search filter
+    const query = this.searchQuery().toLowerCase();
+    if (query) {
+      result = result.filter(phase =>
+        phase.phaseName.toLowerCase().includes(query)
+      );
+    }
+
+    // Apply status filter
+    const status = this.statusFilter();
+    if (status !== 'All Status') {
+      result = result.filter(phase => {
+        const phaseStatus = this.getStatusText(phase.status);
+        return phaseStatus === status;
+      });
+    }
+
+    // Apply sorting
+    const sortType = this.sortBy();
+    if (sortType === 'Sort by Start Date') {
+      result.sort((a, b) => {
+        if (!a.startDate) return 1;
+        if (!b.startDate) return -1;
+        return this.parseDate(a.startDate).getTime() - this.parseDate(b.startDate).getTime();
+      });
+    } else if (sortType === 'Sort by End Date') {
+      result.sort((a, b) => {
+        if (!a.endDate) return 1;
+        if (!b.endDate) return -1;
+        return this.parseDate(a.endDate).getTime() - this.parseDate(b.endDate).getTime();
+      });
+    } else if (sortType === 'Sort by Progress') {
+      result.sort((a, b) => this.getProgressPercentage(b) - this.getProgressPercentage(a));
+    }
+
+    return result;
+  });
 
   constructor() {
     effect(() => {
@@ -158,6 +207,19 @@ export class PhasesComponent {
     event.stopPropagation();
   }
 
+  private parseDate(dateStr: string): Date {
+    // Parse dd-mm-yyyy format
+    const parts = dateStr.split('-');
+    if (parts.length === 3) {
+      const day = parseInt(parts[0], 10);
+      const month = parseInt(parts[1], 10) - 1; // Month is 0-indexed
+      const year = parseInt(parts[2], 10);
+      return new Date(year, month, day);
+    }
+    // Fallback for other formats
+    return new Date(dateStr);
+  }
+
   // Phase CRUD operations
   openAddPhaseModal(): void {
     this.selectedPhase.set(null);
@@ -223,6 +285,11 @@ export class PhasesComponent {
   }
 
   onTaskSubmit(task: Task): void {
+    if (!task || typeof task !== 'object' || 'isTrusted' in task || !task.taskName) {
+      console.warn('Invalid task submission detected and blocked:', task);
+      return;
+    }
+
     const phaseId = this.selectedPhaseIdForTask();
     if (phaseId) {
       this.projectService.createTask(this.projectId(), phaseId, task).subscribe({
@@ -334,5 +401,106 @@ export class PhasesComponent {
       }
     }
   }
-}
 
+  // New UI methods
+  setViewMode(mode: 'list' | 'grid'): void {
+    this.viewMode.set(mode);
+  }
+
+  onSearchChange(query: string): void {
+    // Signal will auto-update via ngModel, computed will react
+  }
+
+  onStatusFilterChange(status: string): void {
+    // Signal will auto-update via ngModel, computed will react
+  }
+
+  onSortChange(sortType: string): void {
+    // Signal will auto-update via ngModel, computed will react
+  }
+
+  getStatusText(status?: string): string {
+    if (!status) return 'Not Started';
+    const statusUpper = status.toUpperCase();
+    if (statusUpper === 'DONE') return 'Completed';
+    if (statusUpper === 'IN_PROGRESS') return 'In Progress';
+    if (statusUpper === 'TO_DO') return 'Not Started';
+    if (statusUpper === 'REVIEW') return 'In Progress';
+    return 'Not Started';
+  }
+
+  getStatusBadgeColorNew(status?: string): string {
+    const statusText = this.getStatusText(status);
+    if (statusText === 'Completed') {
+      return 'bg-green-50 border border-green-200 text-green-700';
+    } else if (statusText === 'In Progress') {
+      return 'bg-blue-50 border border-blue-200 text-blue-600';
+    } else {
+      return 'bg-gray-100 border border-gray-300 text-gray-600';
+    }
+  }
+
+  getProgressBarColor(percentage: number): string {
+    if (percentage === 100) {
+      return 'bg-green-500';
+    } else if (percentage > 0) {
+      return 'bg-blue-500';
+    } else {
+      return 'bg-gray-300';
+    }
+  }
+
+  formatDuration(startDate?: string, endDate?: string): string {
+    if (!startDate || !endDate) return '—';
+
+    const formatDate = (dateStr: string) => {
+      // Parse dd-mm-yyyy format
+      const parts = dateStr.split('-');
+      if (parts.length === 3) {
+        const day = parseInt(parts[0], 10);
+        const month = parseInt(parts[1], 10) - 1; // Month is 0-indexed
+        const year = parseInt(parts[2], 10);
+        const date = new Date(year, month, day);
+        return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+      }
+      // Fallback for other formats
+      const date = new Date(dateStr);
+      return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+    };
+
+    return `${formatDate(startDate)} → ${formatDate(endDate)}`;
+  }
+
+  getLastUpdatedTime(phase: Phase): string {
+    if (!phase.updatedAt) return '—';
+
+    const now = new Date();
+    const updated = new Date(phase.updatedAt);
+    const diffMs = now.getTime() - updated.getTime();
+    const diffMins = Math.floor(diffMs / 60000);
+    const diffHours = Math.floor(diffMins / 60);
+    const diffDays = Math.floor(diffHours / 24);
+
+    if (diffMins < 60) {
+      return `${diffMins}m ago`;
+    } else if (diffHours < 24) {
+      return `${diffHours}h ago`;
+    } else {
+      return `${diffDays}d ago`;
+    }
+  }
+
+  openPhaseActionsMenu(event: Event, phase: Phase): void {
+    event.stopPropagation();
+    // For now, just open delete dialog - can be expanded to show menu
+    this.openDeletePhaseDialog(event, phase);
+  }
+
+  viewPhaseTasks(event: Event, phase: Phase): void {
+    event.stopPropagation();
+    // Toggle phase expansion to show tasks
+    if (phase.phaseId) {
+      this.togglePhase(phase.phaseId);
+    }
+  }
+}

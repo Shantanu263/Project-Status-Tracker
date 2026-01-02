@@ -19,47 +19,59 @@ export class TaskFormComponent implements OnInit {
     private fb = inject(FormBuilder);
     private projectService = inject(ProjectService);
 
+    isOpen = input<boolean>(false);
     task = input<Task | null>(null);
     projectId = input.required<number>();
+    phases = input<any[]>([]);
 
-    submit = output<Task>();
+    taskSubmit = output<Task>();
     cancel = output<void>();
+    close = output<void>();
 
     taskForm!: FormGroup;
     projectMembers = signal<ProjectMember[]>([]);
     selectedMember = signal<ProjectMember | null>(null);
     showMemberDropdown = signal(false);
-    private isSubmitting = false;
+    isSubmittingSignal = signal(false);
+    showPriorityDropdown = signal(false);
+    showStatusDropdown = signal(false);
     private initialized = false;
+    private lastInitializedTaskId: number | undefined = undefined;
 
     constructor() {
-        effect(() => {
-            // Re-initialize form when projectId changes or task input changes
-            const pId = this.projectId();
-            const task = this.task();
-            this.initializeForm(task, pId);
+        // Initialize form immediately to prevent undefined errors
+        this.taskForm = this.fb.group({
+            taskName: ['', [Validators.required, Validators.minLength(3)]],
+            description: [''],
+            projectPhaseId: [''],
+            startDate: [''],
+            endDate: [''],
+            status: ['TO_DO'],
+            priority: ['Medium'],
+            assignedTo: ['']
         });
     }
 
-    private initializeForm(task: Task | null, projectId: number): void {
-        const existingTask = task;
+    ngOnInit(): void {
+        // Initialize form with task data when component loads
+        const task = this.task();
+        const projectId = this.projectId();
 
-        this.taskForm = this.fb.group({
-            taskName: [existingTask?.taskName || '', [Validators.required, Validators.minLength(3)]],
-            description: [existingTask?.description || ''],
-            startDate: [existingTask?.startDate || ''],
-            endDate: [existingTask?.endDate || ''],
-            status: [existingTask?.status || 'TO_DO'],
-            priority: [existingTask?.priority || 'Medium'],
-            assignedTo: [existingTask?.assignedTo || '']
-        });
+        if (task) {
+            this.lastInitializedTaskId = task.taskId;
+            this.taskForm.patchValue({
+                taskName: task.taskName || '',
+                description: task.description || '',
+                projectPhaseId: task.projectPhaseId || '',
+                startDate: task.startDate || '',
+                endDate: task.endDate || '',
+                status: task.status || 'TO_DO',
+                priority: task.priority || 'Medium',
+                assignedTo: task.assignedTo || ''
+            }, { emitEvent: false });
+        }
 
-        // Mark form as pristine to avoid triggering change detection issues
-        this.taskForm.markAsPristine();
-        this.taskForm.markAsUntouched();
-        this.isSubmitting = false;
-
-        // Load project members only once
+        // Load project members
         if (projectId && !this.initialized) {
             this.initialized = true;
             this.projectService.getProjectMembers(projectId).subscribe({
@@ -73,12 +85,8 @@ export class TaskFormComponent implements OnInit {
         }
     }
 
-    ngOnInit(): void {
-        // ngOnInit is kept for Angular lifecycle, but initialization is done in effect
-    }
-
     onSubmit(): void {
-        if (this.isSubmitting) {
+        if (this.isSubmittingSignal()) {
             return;
         }
 
@@ -87,6 +95,7 @@ export class TaskFormComponent implements OnInit {
             const task: Task = {
                 taskName: formValue.taskName,
                 description: formValue.description || '',
+                projectPhaseId: formValue.projectPhaseId ? Number(formValue.projectPhaseId) : undefined,
                 startDate: formValue.startDate || '',
                 endDate: formValue.endDate || '',
                 status: formValue.status || 'TO_DO',
@@ -95,12 +104,8 @@ export class TaskFormComponent implements OnInit {
             };
             // Only emit if the task has required fields
             if (task.taskName && task.taskName.trim()) {
-                this.isSubmitting = true;
-                this.submit.emit(task);
-                // Reset flag after emit
-                setTimeout(() => {
-                    this.isSubmitting = false;
-                }, 100);
+                this.isSubmittingSignal.set(true);
+                this.taskSubmit.emit(task);
             }
         } else {
             this.taskForm.markAllAsTouched();
@@ -151,14 +156,54 @@ export class TaskFormComponent implements OnInit {
     onDocumentClick(event: Event): void {
         const target = event.target as HTMLElement;
         const selector = target.closest('.member-selector');
+        const prioritySelector = target.closest('.priority-selector');
+        const statusSelector = target.closest('.status-selector');
+
         if (!selector) {
             this.showMemberDropdown.set(false);
         }
+        if (!prioritySelector) {
+            this.showPriorityDropdown.set(false);
+        }
+        if (!statusSelector) {
+            this.showStatusDropdown.set(false);
+        }
+    }
+
+    togglePriorityDropdown(): void {
+        this.showPriorityDropdown.update(value => !value);
+        this.showStatusDropdown.set(false);
+    }
+
+    toggleStatusDropdown(): void {
+        this.showStatusDropdown.update(value => !value);
+        this.showPriorityDropdown.set(false);
+    }
+
+    selectPriority(priority: string): void {
+        this.taskForm.patchValue({ priority });
+        this.showPriorityDropdown.set(false);
+    }
+
+    selectStatus(status: string): void {
+        this.taskForm.patchValue({ status });
+        this.showStatusDropdown.set(false);
     }
 
     onCancel(): void {
-        this.isSubmitting = false;
+        this.isSubmittingSignal.set(false);
         this.cancel.emit();
+    }
+
+    onClose(): void {
+        this.isSubmittingSignal.set(false);
+        this.close.emit();
+    }
+
+    onBackdropClick(event: Event): void {
+        if (event.target === event.currentTarget) {
+            this.onClose();
+        }
     }
 
     isFieldInvalid(fieldName: string): boolean {
@@ -175,5 +220,57 @@ export class TaskFormComponent implements OnInit {
             return 'Minimum length is 3 characters';
         }
         return '';
+    }
+
+    getPriorityColor(priority: string): string {
+        const colors: Record<string, string> = {
+            'Low': 'bg-green-100 text-green-700 border-green-300',
+            'Medium': 'bg-yellow-100 text-yellow-700 border-yellow-300',
+            'High': 'bg-red-100 text-red-700 border-red-300'
+        };
+        return colors[priority] || 'bg-gray-100 text-gray-700 border-gray-300';
+    }
+
+    getStatusColor(status: string): string {
+        const colors: Record<string, string> = {
+            'TO_DO': 'bg-gray-100 text-gray-700 border-gray-300',
+            'IN_PROGRESS': 'bg-blue-100 text-blue-700 border-blue-300',
+            'DONE': 'bg-green-100 text-green-700 border-green-300',
+            'REVIEW': 'bg-purple-100 text-purple-700 border-purple-300'
+        };
+        return colors[status] || 'bg-gray-100 text-gray-700 border-gray-300';
+    }
+
+    getPriorityColorBox(priority: string): string {
+        const colors: Record<string, string> = {
+            'Low': 'bg-green-500',
+            'Medium': 'bg-yellow-500',
+            'High': 'bg-red-500'
+        };
+        return colors[priority] || 'bg-gray-500';
+    }
+
+    getStatusColorBox(status: string): string {
+        const colors: Record<string, string> = {
+            'TO_DO': 'bg-gray-500',
+            'IN_PROGRESS': 'bg-blue-500',
+            'DONE': 'bg-green-500',
+            'REVIEW': 'bg-purple-500'
+        };
+        return colors[status] || 'bg-gray-500';
+    }
+
+    getPriorityLabel(priority: string): string {
+        return priority || 'Medium';
+    }
+
+    getStatusLabel(status: string): string {
+        const labels: Record<string, string> = {
+            'TO_DO': 'To Do',
+            'IN_PROGRESS': 'In Progress',
+            'DONE': 'Done',
+            'REVIEW': 'Review'
+        };
+        return labels[status] || status;
     }
 }

@@ -1,85 +1,121 @@
-<form [formGroup]="taskForm" (ngSubmit)="onSubmit()" class="task-form">
-    <!-- Task Name -->
-    <div class="form-group">
-        <label for="taskName" class="form-label">
-            Task Name <span class="required">*</span>
-        </label>
-        <input type="text" id="taskName" formControlName="taskName" class="form-input"
-            [class.error]="isFieldInvalid('taskName')" placeholder="Enter task name" />
-        @if (isFieldInvalid('taskName')) {
-        <p class="error-message">{{ getErrorMessage('taskName') }}</p>
-        }
-    </div>
-
-    <!-- Description -->
-    <div class="form-group">
-        <label for="description" class="form-label">Description</label>
-        <textarea id="description" formControlName="description" class="form-input" rows="3"
-            placeholder="Enter task description (optional)"></textarea>
-    </div>
-
-    <!-- Date Range -->
-    <div class="form-row">
-        <div class="form-group">
-            <label for="startDate" class="form-label">Start Date</label>
-            <input type="date" id="startDate" formControlName="startDate" class="form-input" />
+@if (isOpen()) {
+<div class="modal-backdrop" (click)="onBackdropClick($event)">
+    <div class="modal-container" (click)="$event.stopPropagation()">
+        <!-- Modal Header -->
+        <div class="modal-header">
+            <h2 class="modal-title">{{ task()?.taskId ? 'Update Task' : 'Create Task' }}</h2>
+            <button type="button" class="close-button" (click)="onClose()" aria-label="Close modal">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12">
+                    </path>
+                </svg>
+            </button>
         </div>
 
-        <div class="form-group">
-            <label for="endDate" class="form-label">End Date</label>
-            <input type="date" id="endDate" formControlName="endDate" class="form-input" />
-        </div>
-    </div>
+        <!-- Modal Content (Scrollable) -->
+        <div class="modal-content">
+            <form [formGroup]="taskForm" (ngSubmit)="onSubmit()" class="task-form">
+                <!-- Task Name -->
+                <div class="form-group">
+                    <label for="taskName" class="form-label">
+                        Task Name <span class="required">*</span>
+                    </label>
+                    <input type="text" id="taskName" formControlName="taskName" class="form-input"
+                        [class.error]="isFieldInvalid('taskName')" placeholder="Enter task name" />
+                    @if (isFieldInvalid('taskName')) {
+                    <p class="error-message">{{ getErrorMessage('taskName') }}</p>
+                    }
+                </div>
 
-    <!-- Priority and Status -->
-    <div class="form-row">
-        <div class="form-group">
-            <label for="priority" class="form-label">Priority</label>
-            <select id="priority" formControlName="priority" class="form-input">
-                <option value="Low">Low</option>
-                <option value="Medium">Medium</option>
-                <option value="High">High</option>
-            </select>
-        </div>
+                <!-- Description -->
+                <div class="form-group">
+                    <label for="description" class="form-label">Description</label>
+                    <textarea id="description" formControlName="description" class="form-input" rows="3"
+                        placeholder="Enter task description (optional)"></textarea>
+                </div>
 
-        <div class="form-group">
-            <label for="status" class="form-label">Status</label>
-            <select id="status" formControlName="status" class="form-input">
-                <option value="TO_DO">To Do</option>
-                <option value="IN_PROGRESS">In Progress</option>
-                <option value="DONE">Done</option>
-                <option value="REVIEW">Review</option>
-            </select>
-        </div>
-    </div>
+                <!-- Phase -->
+                <div class="form-group">
+                    <label for="projectPhaseId" class="form-label">Phase</label>
+                    <select id="projectPhaseId" class="form-input" formControlName="projectPhaseId">
+                        <option value="" disabled selected hidden
+                            class="bg-clip-text text-transparent bg-gradient-to-r from-gray-300 to-gray-400">
+                            Select phase
+                        </option>
+                        @for (phase of phases(); track phase.phaseId) {
+                        <option [value]="phase.phaseId">{{ phase.phaseName }}</option>
+                        }
+                    </select>
+                </div>
 
-    <!-- Assigned To -->
-    <div class="form-group">
-        <label class="form-label">Assigned To</label>
-        <div class="member-selector">
-            <div class="selected-member" (click)="toggleMemberDropdown()">
-                @if (getSelectedMember(); as member) {
-                    <div class="member-display">
-                        <div [class]="'avatar ' + getAvatarColor(member)">
-                            {{ getInitials(member) }}
-                        </div>
-                        <div>
-                            <div class="member-name">{{ member.user }}</div>
-                            <div class="member-role">{{ member.role }}</div>
+                <!-- Date Range -->
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="startDate" class="form-label">Start Date</label>
+                        <input type="date" id="startDate" formControlName="startDate" class="form-input" />
+                    </div>
+
+                    <div class="form-group">
+                        <label for="endDate" class="form-label">End Date</label>
+                        <input type="date" id="endDate" formControlName="endDate" class="form-input" />
+                    </div>
+                </div>
+
+                <!-- Priority and Status -->
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="priority" class="form-label">Priority</label>
+                        <div class="custom-select-wrapper">
+                            <select id="priority" formControlName="priority" class="form-input custom-select">
+                                <option value="Low">
+                                    <span class="color-indicator low"></span>Low
+                                </option>
+                                <option value="Medium">
+                                    <span class="color-indicator medium"></span>Medium
+                                </option>
+                                <option value="High">
+                                    <span class="color-indicator high"></span>High
+                                </option>
+                            </select>
+                            <div class="select-color-indicator" [class.low]="taskForm.get('priority')?.value === 'Low'"
+                                [class.medium]="taskForm.get('priority')?.value === 'Medium'"
+                                [class.high]="taskForm.get('priority')?.value === 'High'">
+                            </div>
                         </div>
                     </div>
-                } @else {
-                    <span class="placeholder">Select a project member (optional)</span>
-                }
-            </div>
-            
-            @if (showMemberDropdown()) {
-                <div class="member-list">
-                    <div class="member-list-item" (click)="clearSelection()">
-                        <span class="placeholder">No Member</span>
+
+                    <div class="form-group">
+                        <label for="status" class="form-label">Status</label>
+                        <div class="custom-select-wrapper">
+                            <select id="status" formControlName="status" class="form-input custom-select">
+                                <option value="TO_DO">
+                                    <span class="color-indicator todo"></span>To Do
+                                </option>
+                                <option value="IN_PROGRESS">
+                                    <span class="color-indicator in-progress"></span>In Progress
+                                </option>
+                                <option value="DONE">
+                                    <span class="color-indicator done"></span>Done
+                                </option>
+                                <option value="REVIEW">
+                                    <span class="color-indicator review"></span>Review
+                                </option>
+                            </select>
+                            <div class="select-color-indicator" [class.todo]="taskForm.get('status')?.value === 'TO_DO'"
+                                [class.in-progress]="taskForm.get('status')?.value === 'IN_PROGRESS'"
+                                [class.review]="taskForm.get('status')?.value === 'REVIEW'"
+                                [class.done]="taskForm.get('status')?.value === 'DONE'">
+                            </div>
+                        </div>
                     </div>
-                    @for (member of projectMembers(); track member.memberId) {
-                        <div class="member-list-item" (click)="selectMember(member)">
+                </div>
+
+                <!-- Assigned To -->
+                <div class="form-group">
+                    <label class="form-label">Assigned To</label>
+                    <div class="member-selector">
+                        <div class="selected-member" (click)="toggleMemberDropdown()">
+                            @if (getSelectedMember(); as member) {
                             <div class="member-display">
                                 <div [class]="'avatar ' + getAvatarColor(member)">
                                     {{ getInitials(member) }}
@@ -89,21 +125,47 @@
                                     <div class="member-role">{{ member.role }}</div>
                                 </div>
                             </div>
+                            } @else {
+                            <span class="placeholder">Select a project member (optional)</span>
+                            }
                         </div>
-                    }
+
+                        @if (showMemberDropdown()) {
+                        <div class="member-list">
+                            <div class="member-list-item" (click)="clearSelection()">
+                                <span class="placeholder">No Member</span>
+                            </div>
+                            @for (member of projectMembers(); track member.memberId) {
+                            <div class="member-list-item" (click)="selectMember(member)">
+                                <div class="member-display">
+                                    <div [class]="'avatar ' + getAvatarColor(member)">
+                                        {{ getInitials(member) }}
+                                    </div>
+                                    <div>
+                                        <div class="member-name">{{ member.user }}</div>
+                                        <div class="member-role">{{ member.role }}</div>
+                                    </div>
+                                </div>
+                            </div>
+                            }
+                        </div>
+                        }
+                        <input type="hidden" formControlName="assignedTo" />
+                    </div>
                 </div>
-            }
-            <input type="hidden" formControlName="assignedTo" />
+            </form>
+        </div>
+
+        <!-- Modal Footer (Fixed) -->
+        <div class="modal-footer">
+            <button type="button" class="btn btn-cancel" (click)="onClose()">
+                Cancel
+            </button>
+            <button type="submit" class="btn btn-primary" (click)="onSubmit()"
+                [disabled]="taskForm.invalid || isSubmittingSignal()">
+                {{ task()?.taskId ? 'Update Task' : 'Create Task' }}
+            </button>
         </div>
     </div>
-
-    <!-- Form Actions -->
-    <div class="form-actions">
-        <button type="button" class="btn btn-cancel" (click)="onCancel()">
-            Cancel
-        </button>
-        <button type="submit" class="btn btn-primary">
-            {{ task() ? 'Update Task' : 'Create Task' }}
-        </button>
-    </div>
-</form>
+</div>
+}

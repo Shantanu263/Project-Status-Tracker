@@ -48,3 +48,39 @@ export interface RecentActivity {
     message: string;
     timeAgo: string;
 }
+
+// Projects Dashboard Interfaces
+export interface ProjectsDashboardData {
+    totalProjects: number;
+    activeProjects: number;
+    completedProjects: number;
+    delayedProjects: number;
+    averageProgress: number;
+    projectCardDTOS: ProjectCard[];
+    projectProgressChart: ProjectProgress[];
+    projectStatusChart: ProjectStatusCount[];
+}
+
+export interface ProjectCard {
+    projectId: number;
+    projectName: string;
+    status: string;
+    progress: number;
+    startDate: string;
+    endDate: string;
+    phaseCount: number;
+    totalTasks: number;
+    overdueTasks: number;
+}
+
+export interface ProjectProgress {
+    projectId: number;
+    projectName: string;
+    progress: number;
+}
+
+export interface ProjectStatusCount {
+    status: string;
+    count: number;
+}
+

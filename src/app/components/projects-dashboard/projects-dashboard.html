@@ -1,0 +1,389 @@
+<!-- Main Content Container with White Background and Scrolling -->
+<div class="h-full overflow-y-auto bg-white">
+    <div class="px-4 sm:px-6 lg:px-8 py-8 w-full">
+        @if (isLoading()) {
+        <!-- Loading State -->
+        <div class="flex items-center justify-center h-96">
+            <div class="text-center">
+                <div class="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-[#8c2d1b]"></div>
+                <p class="mt-4 text-gray-600">Loading dashboard data...</p>
+            </div>
+        </div>
+        } @else {
+        <!-- KPI / Summary Cards Section -->
+        <div class="mb-6 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-5">
+            <!-- Total Projects Card -->
+            <div class="rounded-xl border border-gray-200 bg-white p-5 shadow-sm transition-shadow hover:shadow-md">
+                <div class="flex items-center justify-between">
+                    <div class="flex-1">
+                        <p class="text-sm font-medium text-gray-600">Total Projects</p>
+                        <p class="mt-2 text-3xl font-bold text-gray-900">{{ kpis().totalProjects }}</p>
+                    </div>
+                    <div class="flex h-12 w-12 items-center justify-center rounded-lg bg-[#8c2d1b]/10">
+                        <svg class="h-7 w-7 text-[#8c2d1b]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10">
+                            </path>
+                        </svg>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Active Projects Card -->
+            <div class="rounded-xl border border-gray-200 bg-white p-5 shadow-sm transition-shadow hover:shadow-md">
+                <div class="flex items-center justify-between">
+                    <div class="flex-1">
+                        <p class="text-sm font-medium text-gray-600">Active Projects</p>
+                        <p class="mt-2 text-3xl font-bold text-gray-900">{{ kpis().activeProjects }}</p>
+                    </div>
+                    <div class="flex h-12 w-12 items-center justify-center rounded-lg bg-blue-50">
+                        <svg class="h-7 w-7 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                d="M13 10V3L4 14h7v7l9-11h-7z"></path>
+                        </svg>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Completed Projects Card -->
+            <div class="rounded-xl border border-gray-200 bg-white p-5 shadow-sm transition-shadow hover:shadow-md">
+                <div class="flex items-center justify-between">
+                    <div class="flex-1">
+                        <p class="text-sm font-medium text-gray-600">Completed</p>
+                        <p class="mt-2 text-3xl font-bold text-gray-900">{{ kpis().completedProjects }}</p>
+                    </div>
+                    <div class="flex h-12 w-12 items-center justify-center rounded-lg bg-green-50">
+                        <svg class="h-7 w-7 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                        </svg>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Delayed Projects Card -->
+            <div class="rounded-xl border border-gray-200 bg-white p-5 shadow-sm transition-shadow hover:shadow-md">
+                <div class="flex items-center justify-between">
+                    <div class="flex-1">
+                        <p class="text-sm font-medium text-gray-600">At Risk / Delayed</p>
+                        <p class="mt-2 text-3xl font-bold text-gray-900">{{ kpis().delayedProjects }}</p>
+                    </div>
+                    <div class="flex h-12 w-12 items-center justify-center rounded-lg bg-red-50">
+                        <svg class="h-7 w-7 text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                        </svg>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Average Progress Card -->
+            <div class="rounded-xl border border-gray-200 bg-white p-5 shadow-sm transition-shadow hover:shadow-md">
+                <div class="flex items-center justify-between">
+                    <div class="flex-1">
+                        <p class="text-sm font-medium text-gray-600">Average Progress</p>
+                        <p class="mt-2 text-3xl font-bold text-gray-900">{{ kpis().averageProgress }}%</p>
+                    </div>
+                    <div class="flex h-12 w-12 items-center justify-center rounded-lg bg-purple-50">
+                        <svg class="h-7 w-7 text-purple-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z">
+                            </path>
+                        </svg>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Project Analytics Section -->
+        <section class="mb-6">
+            <div class="mb-8">
+                <h2 class="mb-2 text-2xl font-bold text-gray-900">Project Analytics</h2>
+                <!-- <p class="text-gray-600">Real-time insights into project performance and status</p> -->
+            </div>
+
+            <!-- Charts Grid: 2x2 Layout -->
+            <div class="grid grid-cols-1 gap-6 md:grid-cols-2">
+                <!-- Row 1, Col 1: Project Status Distribution (Doughnut) -->
+                <div
+                    class="rounded-2xl border border-gray-100 bg-white p-8 shadow-lg transition-shadow duration-300 hover:shadow-xl h-[465px] flex flex-col">
+                    <div class="mb-6">
+                        <h3 class="mb-1 text-lg font-semibold text-gray-900">Project Status Distribution</h3>
+                        <p class="text-sm text-gray-500">Overview of all project statuses</p>
+                    </div>
+                    <!-- Chart and Legend Container -->
+                    <div class="relative flex-1 flex items-center gap-6">
+                        <!-- Chart Container (Left) -->
+                        <div class="flex-1 flex items-center justify-center">
+                            <canvas #statusChart></canvas>
+                        </div>
+                        <!-- Legend Container (Right) -->
+                        <div class="flex flex-col gap-3 min-w-[140px]">
+                            <div class="flex items-center gap-2" id="legend-ongoing">
+                                <div class="h-3 w-3 rounded-full bg-blue-500 flex-shrink-0"></div>
+                                <span class="text-sm text-gray-700 font-medium">Ongoing: <span
+                                        id="count-ongoing">0</span></span>
+                            </div>
+                            <div class="flex items-center gap-2" id="legend-delayed">
+                                <div class="h-3 w-3 rounded-full bg-amber-500 flex-shrink-0"></div>
+                                <span class="text-sm text-gray-700 font-medium">Delayed: <span
+                                        id="count-delayed">0</span></span>
+                            </div>
+                            <div class="flex items-center gap-2" id="legend-onhold">
+                                <div class="h-3 w-3 rounded-full bg-gray-400 flex-shrink-0"></div>
+                                <span class="text-sm text-gray-700 font-medium">On Hold: <span
+                                        id="count-onhold">0</span></span>
+                            </div>
+                            <div class="flex items-center gap-2" id="legend-completed">
+                                <div class="h-3 w-3 rounded-full bg-green-500 flex-shrink-0"></div>
+                                <span class="text-sm text-gray-700 font-medium">Completed: <span
+                                        id="count-completed">0</span></span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Row 1, Col 2: Project Progress Distribution (Vertical Bar) -->
+                <div
+                    class="rounded-2xl border border-gray-100 bg-white p-8 shadow-lg transition-shadow duration-300 hover:shadow-xl h-[465px] flex flex-col">
+                    <div class="mb-6">
+                        <h3 class="mb-1 text-lg font-semibold text-gray-900">Project Progress Distribution</h3>
+                        <p class="text-sm text-gray-500">Distribution of projects across progress ranges</p>
+                    </div>
+                    <div class="relative flex-1">
+                        <canvas #progressDistributionChart></canvas>
+                    </div>
+                </div>
+
+                <!-- Row 2, Col 1: Project Priority Distribution (Horizontal Bar) -->
+                <div
+                    class="rounded-2xl border border-gray-100 bg-white p-8 shadow-lg transition-shadow duration-300 hover:shadow-xl h-[465px] flex flex-col">
+                    <div class="mb-6">
+                        <h3 class="mb-1 text-lg font-semibold text-gray-900">Project Priority Distribution</h3>
+                        <p class="text-sm text-gray-500">Breakdown of projects by priority level</p>
+                    </div>
+                    <div class="relative flex-1">
+                        <canvas #priorityChart></canvas>
+                    </div>
+                </div>
+
+                <!-- Row 2, Col 2: Project Performance Radar -->
+                <div
+                    class="rounded-2xl border border-gray-100 bg-white p-8 shadow-lg transition-shadow duration-300 hover:shadow-xl h-[465px] flex flex-col">
+                    <div class="mb-6">
+                        <h3 class="mb-1 text-lg font-semibold text-gray-900">Project Performance Radar</h3>
+                        <p class="text-sm text-gray-500">Multi-dimensional performance view</p>
+                    </div>
+                    <div class="relative flex-1 flex items-center justify-center">
+                        <canvas #radarChart></canvas>
+                    </div>
+                    <!-- Legend -->
+                    <div class="mt-6 flex items-center justify-center gap-6">
+                        <div class="flex items-center gap-2">
+                            <div class="h-3 w-3 rounded-full bg-indigo-500"></div>
+                            <span class="text-xs text-gray-600">Current</span>
+                        </div>
+                        <div class="flex items-center gap-2">
+                            <div class="h-3 w-3 rounded-full bg-gray-300"></div>
+                            <span class="text-xs text-gray-600">Target</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Projects Overview Section -->
+        <section class="mb-[-47px]">
+            <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-6 mt-[47px]">
+                <h2 class="text-2xl font-bold text-gray-900 mb-4 sm:mb-0">Projects</h2>
+
+                <!-- View Toggle Buttons -->
+                <div class="flex items-center space-x-2">
+                    <button (click)="toggleView('grid')" [class.bg-[#8c2d1b]]="viewMode() === 'grid'"
+                        [class.text-white]="viewMode() === 'grid'" [class.bg-white]="viewMode() !== 'grid'"
+                        [class.text-gray-700]="viewMode() !== 'grid'"
+                        class="px-4 py-2 rounded-lg text-sm font-medium transition flex items-center space-x-2 border border-gray-300"
+                        [class.hover:bg-[#6b2115]]="viewMode() === 'grid'"
+                        [class.hover:bg-gray-50]="viewMode() !== 'grid'">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z">
+                            </path>
+                        </svg>
+                        <span>Grid</span>
+                    </button>
+                    <button (click)="toggleView('table')" [class.bg-[#8c2d1b]]="viewMode() === 'table'"
+                        [class.text-white]="viewMode() === 'table'" [class.bg-white]="viewMode() !== 'table'"
+                        [class.text-gray-700]="viewMode() !== 'table'"
+                        class="px-4 py-2 rounded-lg text-sm font-medium transition flex items-center space-x-2 border border-gray-300"
+                        [class.hover:bg-[#6b2115]]="viewMode() === 'table'"
+                        [class.hover:bg-gray-50]="viewMode() !== 'table'">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                d="M4 6h16M4 10h16M4 14h16M4 18h16"></path>
+                        </svg>
+                        <span>Table</span>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Grid View - Project Cards -->
+            @if (viewMode() === 'grid') {
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
+                @for (project of projects(); track project.projectId) {
+                <!-- Project Card -->
+                <div class="bg-white rounded-xl border border-gray-200 shadow-sm hover:shadow-md transition">
+                    <div class="p-6">
+                        <!-- Project Header -->
+                        <div class="flex items-start justify-between mb-4">
+                            <h3 class="text-lg font-semibold text-gray-900">{{ project.projectName }}</h3>
+                            <span [class]="getStatusClass(project.status)"
+                                class="px-3 py-1 text-xs font-medium rounded-full">
+                                {{ getStatusLabel(project.status) }}
+                            </span>
+                        </div>
+
+                        <!-- Progress Bar -->
+                        <div class="mb-4">
+                            <div class="flex items-center justify-between mb-2">
+                                <span class="text-sm text-gray-600">Progress</span>
+                                <span class="text-sm font-medium text-gray-900">{{ project.progress }}%</span>
+                            </div>
+                            <div class="w-full bg-gray-200 rounded-full h-2">
+                                <div [class]="getProgressColor(project.status)" class="h-2 rounded-full"
+                                    [style.width.%]="project.progress"></div>
+                            </div>
+                        </div>
+
+                        <!-- Project Details -->
+                        <div class="space-y-2 mb-4">
+                            <div class="flex items-center text-sm text-gray-600">
+                                <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                        d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z">
+                                    </path>
+                                </svg>
+                                <span>{{ project.startDate }} – {{ project.endDate }}</span>
+                            </div>
+                            <div class="flex items-center justify-between text-sm">
+                                <div class="flex items-center text-gray-600">
+                                    <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                            d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2">
+                                        </path>
+                                    </svg>
+                                    <span>{{ project.phaseCount }} Phases</span>
+                                </div>
+                                <div class="flex items-center" [class.text-red-600]="project.overdueTasks > 0"
+                                    [class.text-green-600]="project.overdueTasks === 0">
+                                    <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        @if (project.overdueTasks > 0) {
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                            d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                                        } @else {
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                            d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                                        }
+                                    </svg>
+                                    <span>{{ project.overdueTasks }} Overdue Tasks</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Action Buttons -->
+                        <div class="flex items-center space-x-2 pt-4 border-t border-gray-200">
+                            <button (click)="viewProject(project.projectId)"
+                                class="flex-1 px-3 py-2 bg-[#8c2d1b] text-white text-sm font-medium rounded-lg hover:bg-[#6b2115] transition">
+                                View Project
+                            </button>
+                            <button (click)="viewTimeline(project.projectId)"
+                                class="px-3 py-2 bg-gray-100 text-gray-700 text-sm font-medium rounded-lg hover:bg-gray-200 transition">
+                                Timeline
+                            </button>
+                            <button (click)="viewKanban(project.projectId)"
+                                class="px-3 py-2 bg-gray-100 text-gray-700 text-sm font-medium rounded-lg hover:bg-gray-200 transition">
+                                Kanban
+                            </button>
+                        </div>
+                    </div>
+                </div>
+                }
+            </div>
+            }
+
+            <!-- Table View - Projects Table -->
+            @if (viewMode() === 'table') {
+            <div class="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden">
+                <div class="overflow-x-auto">
+                    <table class="min-w-full divide-y divide-gray-200">
+                        <thead class="bg-gray-50">
+                            <tr>
+                                <th
+                                    class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                    Project Name</th>
+                                <th
+                                    class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                    Status</th>
+                                <th
+                                    class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                    Progress</th>
+                                <th
+                                    class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                    Start Date</th>
+                                <th
+                                    class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                    End Date</th>
+                                <th
+                                    class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                    Overdue Tasks</th>
+                                <th
+                                    class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                    Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody class="bg-white divide-y divide-gray-200">
+                            @for (project of projects(); track project.projectId) {
+                            <!-- Table Row -->
+                            <tr class="hover:bg-gray-50">
+                                <td class="px-6 py-4 whitespace-nowrap">
+                                    <div class="text-sm font-medium text-gray-900">{{ project.projectName }}</div>
+                                </td>
+                                <td class="px-6 py-4 whitespace-nowrap">
+                                    <span [class]="getStatusClass(project.status)"
+                                        class="px-3 py-1 text-xs font-medium rounded-full">
+                                        {{ getStatusLabel(project.status) }}
+                                    </span>
+                                </td>
+                                <td class="px-6 py-4 whitespace-nowrap">
+                                    <div class="flex items-center">
+                                        <div class="w-24 bg-gray-200 rounded-full h-2 mr-2">
+                                            <div [class]="getProgressColor(project.status)" class="h-2 rounded-full"
+                                                [style.width.%]="project.progress"></div>
+                                        </div>
+                                        <span class="text-sm text-gray-900">{{ project.progress }}%</span>
+                                    </div>
+                                </td>
+                                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-600">{{ project.startDate }}
+                                </td>
+                                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-600">{{ project.endDate }}</td>
+                                <td class="px-6 py-4 whitespace-nowrap">
+                                    <span
+                                        [class]="project.overdueTasks > 0 ? 'bg-red-100 text-red-700' : 'bg-green-100 text-green-700'"
+                                        class="px-2 py-1 text-xs font-medium rounded">{{ project.overdueTasks }}</span>
+                                </td>
+                                <td class="px-6 py-4 whitespace-nowrap text-sm">
+                                    <button (click)="viewProject(project.projectId)"
+                                        class="text-[#8c2d1b] hover:text-[#6b2115] font-medium">View</button>
+                                </td>
+                            </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+            }
+
+        </section>
+        }
+    </div>
+</div>

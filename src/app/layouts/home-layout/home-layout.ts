@@ -1,11 +1,11 @@
 import { ChangeDetectionStrategy, Component, inject } from '@angular/core';
+import { RouterOutlet } from '@angular/router';
 import { SidebarComponent } from '../../components/sidebar/sidebar';
-import { ProjectContentComponent } from '../../components/project-content/project-content';
 import { SidebarStateService } from '../../services/sidebar-state.service';
 
 @Component({
   selector: 'app-home-layout',
-  imports: [SidebarComponent, ProjectContentComponent],
+  imports: [SidebarComponent, RouterOutlet],
   template: `
     <div 
       class="home-layout flex flex-col h-screen w-screen bg-gray-100 overflow-hidden"
@@ -15,8 +15,10 @@ import { SidebarStateService } from '../../services/sidebar-state.service';
       <app-sidebar></app-sidebar>
 
       <div class="main-area flex flex-1 overflow-hidden pt-20 transition-all duration-300">
-        <div class="flex-1 flex flex-col overflow-hidden">
-          <app-project-content></app-project-content>
+        <div class="flex-1 flex flex-col overflow-hidden h-full">
+          <div class="h-full">
+            <router-outlet></router-outlet>
+          </div>
         </div>
       </div>
     </div>

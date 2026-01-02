@@ -1,0 +1,144 @@
+@if (isOpen()) {
+<div class="modal-backdrop" (click)="onClose()">
+    <div class="modal-container" (click)="$event.stopPropagation()">
+        <!-- Modal Header -->
+        <div class="modal-header">
+            <h2 class="modal-title">Create Subtask</h2>
+            <button type="button" class="close-button" (click)="onClose()" aria-label="Close modal">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12">
+                    </path>
+                </svg>
+            </button>
+        </div>
+
+        <!-- Modal Content (Scrollable) -->
+        <div class="modal-content">
+            @if (error()) {
+            <div class="mb-4 p-4 bg-red-50 border border-red-200 rounded-lg text-red-700">
+                {{ error() }}
+            </div>
+            }
+
+            <form (ngSubmit)="onSubmit()" class="task-form">
+                <!-- Subtask Name -->
+                <div class="form-group">
+                    <label for="subTaskName" class="form-label">
+                        Subtask Name <span class="required">*</span>
+                    </label>
+                    <input type="text" id="subTaskName" [value]="subtaskForm().subTaskName"
+                        (input)="updateField('subTaskName', $any($event.target).value)" class="form-input"
+                        placeholder="Enter subtask name" required>
+                </div>
+
+                <!-- Date Range -->
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="startDate" class="form-label">Start Date</label>
+                        <input type="date" id="startDate" [value]="subtaskForm().startDate"
+                            (change)="updateField('startDate', $any($event.target).value)" class="form-input" />
+                    </div>
+
+                    <div class="form-group">
+                        <label for="endDate" class="form-label">End Date</label>
+                        <input type="date" id="endDate" [value]="subtaskForm().endDate"
+                            (change)="updateField('endDate', $any($event.target).value)" class="form-input" />
+                    </div>
+                </div>
+
+                <!-- Priority and Status -->
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="priority" class="form-label">Priority</label>
+                        <div class="custom-select-wrapper">
+                            <select id="priority" [value]="subtaskForm().priority"
+                                (change)="updateField('priority', $any($event.target).value)"
+                                class="form-input custom-select">
+                                <option value="Low">Low</option>
+                                <option value="Medium">Medium</option>
+                                <option value="High">High</option>
+                            </select>
+                            <div class="select-color-indicator" [class.low]="subtaskForm().priority === 'Low'"
+                                [class.medium]="subtaskForm().priority === 'Medium'"
+                                [class.high]="subtaskForm().priority === 'High'">
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="status" class="form-label">Status</label>
+                        <div class="custom-select-wrapper">
+                            <select id="status" [value]="subtaskForm().status"
+                                (change)="updateField('status', $any($event.target).value)"
+                                class="form-input custom-select">
+                                <option value="TO_DO">To Do</option>
+                                <option value="IN_PROGRESS">In Progress</option>
+                                <option value="DONE">Done</option>
+                                <option value="REVIEW">Review</option>
+                            </select>
+                            <div class="select-color-indicator" [class.todo]="subtaskForm().status === 'TO_DO'"
+                                [class.in-progress]="subtaskForm().status === 'IN_PROGRESS'"
+                                [class.review]="subtaskForm().status === 'REVIEW'"
+                                [class.done]="subtaskForm().status === 'DONE'">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Assigned To -->
+                <div class="form-group">
+                    <label class="form-label">Assigned To</label>
+                    <div class="member-selector">
+                        <div class="selected-member" (click)="toggleMemberDropdown()">
+                            @if (getSelectedMember(); as member) {
+                            <div class="member-display">
+                                <div [class]="'avatar ' + getAvatarColor(member)">
+                                    {{ getInitials(member) }}
+                                </div>
+                                <div>
+                                    <div class="member-name">{{ member.user }}</div>
+                                    <div class="member-role">{{ member.role }}</div>
+                                </div>
+                            </div>
+                            } @else {
+                            <span class="placeholder">Select a project member (optional)</span>
+                            }
+                        </div>
+
+                        @if (showMemberDropdown()) {
+                        <div class="member-list">
+                            <div class="member-list-item" (click)="clearSelection()">
+                                <span class="placeholder">No Member</span>
+                            </div>
+                            @for (member of projectMembers(); track member.memberId) {
+                            <div class="member-list-item" (click)="selectMember(member)">
+                                <div class="member-display">
+                                    <div [class]="'avatar ' + getAvatarColor(member)">
+                                        {{ getInitials(member) }}
+                                    </div>
+                                    <div>
+                                        <div class="member-name">{{ member.user }}</div>
+                                        <div class="member-role">{{ member.role }}</div>
+                                    </div>
+                                </div>
+                            </div>
+                            }
+                        </div>
+                        }
+                    </div>
+                </div>
+            </form>
+        </div>
+
+        <!-- Modal Footer (Fixed) -->
+        <div class="modal-footer">
+            <button type="button" class="btn btn-cancel" (click)="onClose()">
+                Cancel
+            </button>
+            <button type="submit" class="btn btn-primary" (click)="onSubmit()" [disabled]="isSubmitting()">
+                {{ isSubmitting() ? 'Creating...' : 'Create Subtask' }}
+            </button>
+        </div>
+    </div>
+</div>
+}

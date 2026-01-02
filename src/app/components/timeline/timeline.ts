@@ -122,7 +122,7 @@ export class TimelineComponent implements OnInit, AfterViewInit {
             }
         });
 
-        // Initialize scroll sync after phases are loaded
+        // Initialize scroll sync and auto-center after phases are loaded
         effect(() => {
             const phasesData = this.phases();
             const isLoadingState = this.isLoading();
@@ -131,7 +131,9 @@ export class TimelineComponent implements OnInit, AfterViewInit {
             if (phasesData.length > 0 && !isLoadingState) {
                 setTimeout(() => {
                     this.initializeScrollSync();
-                }, 100);
+                    // Auto-center on today after timeline is fully rendered
+                    this.scrollToToday();
+                }, 150);
             }
         });
     }
@@ -144,10 +146,8 @@ export class TimelineComponent implements OnInit, AfterViewInit {
     }
 
     ngAfterViewInit() {
-        // Use setTimeout to ensure @if block has rendered
-        setTimeout(() => {
-            this.initializeScrollSync();
-        }, 0);
+        // Scroll sync and auto-centering are handled in the effect
+        // after data is loaded, so this is just a placeholder for the lifecycle hook
     }
 
     private scrollSyncInitialized = false;
@@ -523,71 +523,39 @@ export class TimelineComponent implements OnInit, AfterViewInit {
     setTimeScale(scale: TimeScale) {
         this.timeScale.set(scale);
         this.calculateTimeline(this.phases());
+        // Auto-center on today after view change (instant, no animation)
+        setTimeout(() => {
+            this.scrollToToday(false);
+        }, 100);
     }
 
-    fitToContent() {
-        // Auto-fit logic: find earliest and latest dates
-        const phasesData = this.phases();
-        if (phasesData.length === 0) return;
-
-        let earliestDate: Date | null = null;
-        let latestDate: Date | null = null;
-
-        phasesData.forEach(phase => {
-            const start = this.timelineService.parseDate(phase.startDate);
-            const end = this.timelineService.parseDate(phase.endDate);
-
-            if (start) {
-                if (!earliestDate || start < earliestDate) {
-                    earliestDate = start;
-                }
-            }
-            if (end) {
-                if (!latestDate || end > latestDate) {
-                    latestDate = end;
-                }
-            }
-
-            phase.tasks?.forEach(task => {
-                const taskStart = this.timelineService.parseDate(task.startDate);
-                const taskEnd = this.timelineService.parseDate(task.endDate);
-
-                if (taskStart) {
-                    if (!earliestDate || taskStart < earliestDate) {
-                        earliestDate = taskStart;
-                    }
-                }
-                if (taskEnd) {
-                    if (!latestDate || taskEnd > latestDate) {
-                        latestDate = taskEnd;
-                    }
-                }
-            });
-        });
-
-        if (earliestDate !== null && latestDate !== null) {
-            // Determine best scale based on duration
-            // Type assertion is safe here because we've checked both are not null
-            const earliest: Date = earliestDate;
-            const latest: Date = latestDate;
-            const durationDays = Math.ceil((latest.getTime() - earliest.getTime()) / (1000 * 60 * 60 * 24));
-
-            if (durationDays <= 90) {
-                this.setTimeScale(TimeScale.WEEK);
-            } else if (durationDays <= 365) {
-                this.setTimeScale(TimeScale.MONTH);
-            } else {
-                this.setTimeScale(TimeScale.QUARTER);
-            }
-        }
-    }
-
-    scrollToToday() {
+    scrollToToday(smooth: boolean = true) {
         const position = this.todayPosition();
         if (position > 0) {
-            const timelineBody = document.querySelector('.timeline-body');
-            if (timelineBody) {
-                timelineBody.scrollLeft = position - 200; // Center today marker
+            // Use the correct selector for the scrollable element
+            const timelineBody = document.querySelector('.timeline-body-inner');
+            const horizontalScrollbar = document.querySelector('.timeline-horizontal-scroll');
+
+            if (timelineBody && horizontalScrollbar) {
+                // Calculate scroll position to center today's marker
+                const viewportWidth = (timelineBody as HTMLElement).clientWidth;
+                const scrollPosition = Math.max(0, position - (viewportWidth / 2));
+
+                if (smooth) {
+                    // Smooth scroll both elements
+                    (timelineBody as HTMLElement).scrollTo({
+                        left: scrollPosition,
+                        behavior: 'smooth'
+                    });
+                    (horizontalScrollbar as HTMLElement).scrollTo({
+                        left: scrollPosition,
+                        behavior: 'smooth'
+                    });
+                } else {
+                    // Instant scroll (for view changes)
+                    (timelineBody as HTMLElement).scrollLeft = scrollPosition;
+                    (horizontalScrollbar as HTMLElement).scrollLeft = scrollPosition;
+                }
             }
         }
     }
@@ -705,7 +673,7 @@ export class TimelineComponent implements OnInit, AfterViewInit {
         this.dragState.set(null);
     }
 
-    
+
     //Update bar dates after drag/resize
     updateBarDates(barId: string, newStart: Date, newEnd: Date) {
         const phasesData = [...this.phases()];
@@ -788,7 +756,7 @@ export class TimelineComponent implements OnInit, AfterViewInit {
 
 
 
-    
+
     //Get status color class
     getStatusClass(status?: string): string {
         switch (status) {
@@ -800,7 +768,7 @@ export class TimelineComponent implements OnInit, AfterViewInit {
         }
     }
 
-    
+
     //Get phase color based on index
     getPhaseColor(index: number): string {
         const colors = [
@@ -844,7 +812,7 @@ export class TimelineComponent implements OnInit, AfterViewInit {
         return totalHeight;
     }
 
-    
+
     //Create a TimelineRow object from phase or task data
     //Helper method for event handlers 
     createTimelineRow(item: Phase | Task, type: 'phase' | 'task', phaseId?: number): TimelineRow {
@@ -885,7 +853,7 @@ export class TimelineComponent implements OnInit, AfterViewInit {
         }
     }
 
-    
+
     //Handle mouse wheel event for horizontal scrolling with Shift key
     onTimelineWheel(event: WheelEvent) {
         if (event.shiftKey && this.horizontalScrollbarRef) {

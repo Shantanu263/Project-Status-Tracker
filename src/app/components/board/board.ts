@@ -5,7 +5,6 @@ import { environment } from '../../environments/environment';
 import { SelectedProjectService } from '../../services/selected-project.service';
 import { ProjectService } from '../../services/project.service';
 import { MatIconModule } from '@angular/material/icon';
-import { ModalComponent } from '../shared/modal/modal';
 import { TaskFormComponent } from '../phases/task-form/task-form';
 import { TaskDetailsModalComponent } from '../phases/task-details-modal/task-details-modal';
 import { Task } from '../../models/phase.model';
@@ -56,7 +55,7 @@ interface Column {
 @Component({
   selector: 'app-board',
   standalone: true,
-  imports: [CommonModule, MatIconModule, ModalComponent, TaskFormComponent, TaskDetailsModalComponent],
+  imports: [CommonModule, MatIconModule, TaskFormComponent, TaskDetailsModalComponent],
   templateUrl: './board.html',
   styleUrl: './board.scss',
   changeDetection: ChangeDetectionStrategy.OnPush
@@ -377,6 +376,7 @@ export class BoardComponent {
 
   getGetPrefilledTask(): Task {
     const column = this.selectedColumnForTask();
+    const phase = this.selectedPhase();
     if (!column) {
       return {
         taskName: '',
@@ -384,7 +384,8 @@ export class BoardComponent {
         startDate: '',
         endDate: '',
         status: 'TO_DO',
-        priority: 'Medium'
+        priority: 'Medium',
+        projectPhaseId: phase?.phaseId
       };
     }
 
@@ -394,7 +395,8 @@ export class BoardComponent {
       startDate: '',
       endDate: '',
       status: column.statusValue,
-      priority: 'Medium'
+      priority: 'Medium',
+      projectPhaseId: phase?.phaseId
     };
   }
 

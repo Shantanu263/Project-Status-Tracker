@@ -1,47 +1,36 @@
-<!-- Search and Filters -->
-<div class="mb-6 bg-white rounded-lg border border-gray-200 p-6">
-  <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
-    <!-- Search Bar -->
-    <div class="md:col-span-1">
-      <label class="block text-sm font-medium text-gray-700 mb-2">Search Members</label>
-      <input type="text" (input)="onSearch($event.target.value)" [value]="searchQuery()"
-        placeholder="Search by name, role..."
-        class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#8c2d1b] transition-colors" />
+<!-- <div class="max-w-7xl mx-auto px-6 py-8"> -->
+
+<!-- Filters & Search Section -->
+<div class="bg-white rounded-lg shadow-sm border border-gray-200 p-4 mb-4">
+  <div class="flex items-center gap-3">
+    <!-- Search Input -->
+    <div class="flex-1 relative">
+      <input type="text" placeholder="Search by name, role, or email..." (input)="onSearch($any($event.target).value)"
+        class="w-full pl-10 pr-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#8c2d1b] focus:border-transparent outline-none" />
+      <svg class="w-5 h-5 text-gray-400 absolute left-3 top-1/2 transform -translate-y-1/2" fill="none"
+        stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+          d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
+      </svg>
     </div>
 
-    <!-- Sort By -->
-    <div>
-      <label class="block text-sm font-medium text-gray-700 mb-2">Sort By</label>
-      <select #sortSelect (change)="onSortChange(sortSelect.value)" [value]="sortBy()"
-        class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#8c2d1b] transition-colors">
-        @for (option of sortOptions; track option.value) {
-        <option [value]="option.value">{{ option.label }}</option>
-        }
-      </select>
-    </div>
+    <!-- Items Per Page -->
+    <select #pageSizeSelect (change)="onPageSizeChange(pageSizeSelect.value)"
+      class="px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#8c2d1b] focus:border-transparent outline-none bg-white">
+      <option value="5">5 per page</option>
+      <option value="10" selected>10 per page</option>
+      <option value="25">25 per page</option>
+      <option value="50">50 per page</option>
+    </select>
 
-    <!-- Order -->
-    <div>
-      <label class="block text-sm font-medium text-gray-700 mb-2">Order</label>
-      <select #orderSelect (change)="onOrderChange(orderSelect.value)" [value]="order()"
-        class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#8c2d1b] transition-colors">
-        @for (option of orderOptions; track option.value) {
-        <option [value]="option.value">{{ option.label }}</option>
-        }
-      </select>
-    </div>
-
-    <!-- Page Size -->
-    <div>
-      <label class="block text-sm font-medium text-gray-700 mb-2">Results Per Page</label>
-      <select #pageSizeSelect (change)="onPageSizeChange(pageSizeSelect.value)" [value]="pageSize()"
-        class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#8c2d1b] transition-colors">
-        <option value="5">5</option>
-        <option value="10">10</option>
-        <option value="20">20</option>
-        <option value="50">50</option>
-      </select>
-    </div>
+    <!-- Add Member Button -->
+    <button
+      class="px-5 py-2.5 bg-[#8c2d1b] text-white rounded-lg hover:bg-[#6b2115] transition-colors duration-200 font-medium shadow-sm flex items-center gap-2">
+      <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path>
+      </svg>
+      Add Members
+    </button>
   </div>
 </div>
 
@@ -77,113 +66,149 @@
 
 <!-- Members Table -->
 @if (!loading() && members().length > 0) {
-<div class="bg-white rounded-lg border border-gray-200 overflow-hidden flex flex-col h-full">
-  <div class="overflow-x-auto overflow-y-auto flex-1">
+<div class="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden mb-16">
+  <!-- Table -->
+  <div class="overflow-x-auto">
     <table class="w-full">
-      <thead>
-        <tr class="bg-gray-50 border-b border-gray-200 sticky top-0">
-          <th class="px-6 py-4 text-left text-sm font-semibold text-gray-900">Member</th>
-          <th class="px-6 py-4 text-left text-sm font-semibold text-gray-900">Role</th>
-          <th class="px-6 py-4 text-left text-sm font-semibold text-gray-900">Assigned By</th>
-          <th class="px-6 py-4 text-left text-sm font-semibold text-gray-900">Status</th>
+      <thead class="bg-gray-50 border-b border-gray-200">
+        <tr>
+          <!-- ID Column -->
+          <th (click)="toggleSort('memberId')"
+            class="px-6 py-3 text-left text-xs font-medium text-gray-600 uppercase tracking-wider cursor-pointer hover:bg-gray-100 transition-colors group">
+            <div class="flex items-center gap-2">
+              <span>ID</span>
+              <svg class="w-4 h-4 transition-opacity" [class.opacity-100]="isSortedBy('memberId')"
+                [class.opacity-0]="!isSortedBy('memberId')" [class.group-hover:opacity-50]="!isSortedBy('memberId')"
+                fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                @if (isSortedBy('memberId') && sortOrder() === 'asc') {
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 15l7-7 7 7"></path>
+                } @else {
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
+                }
+              </svg>
+            </div>
+          </th>
+
+          <!-- Member Column -->
+          <th (click)="toggleSort('user.name')"
+            class="px-6 py-3 text-left text-xs font-medium text-gray-600 uppercase tracking-wider cursor-pointer hover:bg-gray-100 transition-colors group">
+            <div class="flex items-center gap-2">
+              <span>Member</span>
+              <svg class="w-4 h-4 transition-opacity" [class.opacity-100]="isSortedBy('user.name')"
+                [class.opacity-0]="!isSortedBy('user.name')" [class.group-hover:opacity-50]="!isSortedBy('user.name')"
+                fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                @if (isSortedBy('user.name') && sortOrder() === 'asc') {
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 15l7-7 7 7"></path>
+                } @else {
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
+                }
+              </svg>
+            </div>
+          </th>
+
+          <!-- Role Column -->
+          <th (click)="toggleSort('user.role')"
+            class="px-6 py-3 text-left text-xs font-medium text-gray-600 uppercase tracking-wider cursor-pointer hover:bg-gray-100 transition-colors group">
+            <div class="flex items-center gap-2">
+              <span>Role</span>
+              <svg class="w-4 h-4 transition-opacity" [class.opacity-100]="isSortedBy('user.role')"
+                [class.opacity-0]="!isSortedBy('user.role')" [class.group-hover:opacity-50]="!isSortedBy('user.role')"
+                fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                @if (isSortedBy('user.role') && sortOrder() === 'asc') {
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 15l7-7 7 7"></path>
+                } @else {
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
+                }
+              </svg>
+            </div>
+          </th>
+
+          <!-- Assigned By Column -->
+          <th class="px-6 py-3 text-left text-xs font-medium text-gray-600 uppercase tracking-wider">
+            <div class="flex items-center gap-2">
+              <span>Assigned By</span>
+            </div>
+          </th>
         </tr>
       </thead>
-      <tbody class="divide-y divide-gray-200">
-        @for (member of filteredMembers(); track member.memberId) {
-        <tr class="hover:bg-gray-50 transition-colors duration-150">
+      <tbody class="bg-white divide-y divide-gray-200">
+
+        @for (member of filteredMembers(); track member.memberId; let i = $index) {
+        <tr class="hover:bg-gray-50 transition-colors">
+          <!-- ID -->
+          <td class="px-6 py-4 whitespace-nowrap">
+            <div class="text-sm font-medium text-gray-900">#{{ member.memberId }}</div>
+          </td>
+
           <!-- Member Info -->
-          <td class="px-6 py-4">
+          <td class="px-6 py-4 whitespace-nowrap">
             <div class="flex items-center">
               <div
-                class="w-10 h-10 bg-gradient-to-br rounded-full border-2 border-white flex items-center justify-center text-white text-xs font-semibold flex-shrink-0"
-                [ngClass]="getAvatarColor(member.memberId)">
+                class="w-10 h-10 rounded-full bg-gradient-to-br {{ getAvatarGradient(i) }} flex items-center justify-center text-white font-semibold">
                 {{ getInitials(member.user) }}
               </div>
               <div class="ml-4">
-                <p class="text-sm font-medium text-gray-900">{{ member.user }}</p>
-                <p class="text-xs text-gray-500">{{ member.email }}</p>
+                <div class="text-sm font-medium text-gray-900">{{ member.user }}</div>
+                <div class="text-sm text-gray-600">{{ member.email }}</div>
               </div>
             </div>
           </td>
 
           <!-- Role -->
-          <td class="px-6 py-4">
-            <span [ngClass]="getRoleColor(member.role)"
-              class="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium">
+          <td class="px-6 py-4 whitespace-nowrap">
+            <span
+              class="px-3 py-1 inline-flex text-xs leading-5 font-semibold rounded-full {{ getRoleColorClass(member.role) }}">
               {{ getRoleBadgeText(member.role) }}
             </span>
           </td>
 
           <!-- Assigned By -->
-          <td class="px-6 py-4">
-            <div class="text-sm">
-              <p class="font-medium text-gray-900">{{ member.assignedBy.name }}</p>
-              <p class="text-xs text-gray-500">{{ member.assignedBy.role.roleName }}</p>
-            </div>
+          <td class="px-6 py-4 whitespace-nowrap">
+            <div class="text-sm font-medium text-gray-900">{{ member.assignedBy.name }}</div>
+            <div class="text-sm text-gray-600">{{ member.assignedBy.role.roleName }}</div>
           </td>
-
-          <!-- Status -->
-          <td class="px-6 py-4">
-            <span [ngClass]="getStatusColor(member.memberStatus)"
-              class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium">
-              <span class="w-2 h-2 mr-1.5 rounded-full"
-                [class]="member.memberStatus === 'ACTIVE' ? 'bg-green-600' : 'bg-gray-400'"></span>
-              {{ member.memberStatus }}
-            </span>
+        </tr>
+        } @empty {
+        <tr>
+          <td colspan="4" class="px-6 py-8 text-center text-gray-500">
+            No members found
           </td>
         </tr>
         }
+
       </tbody>
     </table>
   </div>
-</div>
 
-<!-- Pagination -->
-<div class="mt-6 flex items-center justify-between">
-  <div class="text-sm text-gray-600">
-    Showing <span class="font-medium">{{ (currentPage() * pageSize()) + 1 }}</span> to
-    <span class="font-medium">{{ Math.min((currentPage() + 1) * pageSize(), totalItems()) }}</span> of
-    <span class="font-medium">{{ totalItems() }}</span> members
-  </div>
+  <!-- Pagination -->
+  <div class="px-6 py-4 border-t border-gray-200 bg-gray-50">
+    <div class="flex items-center justify-between">
+      <p class="text-sm text-gray-600">
+        Showing <span class="font-medium">{{ startIndex }}</span> to
+        <span class="font-medium">{{ endIndex }}</span> of
+        <span class="font-medium">{{ totalItems() }}</span> members
+      </p>
+      <div class="flex items-center space-x-2">
+        <button (click)="previousPage()" [disabled]="currentPage() === 0"
+          class="px-3 py-2 border border-gray-300 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-100 transition-colors disabled:opacity-50 disabled:cursor-not-allowed">
+          Previous
+        </button>
 
-  <div class="flex items-center space-x-2">
-    <button (click)="goToFirstPage()" [disabled]="currentPage() === 0 || loading()"
-      class="p-2 rounded-lg border border-gray-300 text-gray-700 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-      title="First page">
-      <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path>
-      </svg>
-    </button>
+        @for (pageNum of getPageNumbers(); track pageNum) {
+        <button (click)="goToPage(pageNum)" [class.bg-[#8c2d1b]]="currentPage() === pageNum"
+          [class.text-white]="currentPage() === pageNum" [class.border-gray-300]="currentPage() !== pageNum"
+          [class.text-gray-700]="currentPage() !== pageNum"
+          class="px-3 py-2 rounded-lg text-sm font-medium transition-colors" [class.border]="currentPage() !== pageNum">
+          {{ pageNum + 1 }}
+        </button>
+        }
 
-    <button (click)="goToPreviousPage()" [disabled]="currentPage() === 0 || loading()"
-      class="p-2 rounded-lg border border-gray-300 text-gray-700 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-      title="Previous page">
-      <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 12H5M12 19l-7-7 7-7"></path>
-      </svg>
-    </button>
-
-    <div class="flex items-center space-x-1">
-      <span class="text-sm text-gray-600">Page</span>
-      <span class="px-3 py-1 bg-[#8c2d1b] text-white rounded-lg text-sm font-medium">{{ currentPage() + 1 }}</span>
-      <span class="text-sm text-gray-600">of {{ totalPages() }}</span>
+        <button (click)="nextPage()" [disabled]="currentPage() >= totalPages() - 1"
+          class="px-3 py-2 border border-gray-300 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-100 transition-colors disabled:opacity-50 disabled:cursor-not-allowed">
+          Next
+        </button>
+      </div>
     </div>
-
-    <button (click)="goToNextPage()" [disabled]="currentPage() === totalPages() - 1 || loading()"
-      class="p-2 rounded-lg border border-gray-300 text-gray-700 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-      title="Next page">
-      <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 12h14M12 5l7 7-7 7"></path>
-      </svg>
-    </button>
-
-    <button (click)="goToLastPage()" [disabled]="currentPage() === totalPages() - 1 || loading()"
-      class="p-2 rounded-lg border border-gray-300 text-gray-700 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-      title="Last page">
-      <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
-      </svg>
-    </button>
   </div>
 </div>
 } @else if (!loading() && !error()) {
@@ -198,3 +223,4 @@
   <p class="text-gray-500 text-sm mt-1">Try adjusting your search or filters</p>
 </div>
 }
+<!-- </div> -->

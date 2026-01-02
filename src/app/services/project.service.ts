@@ -1,10 +1,10 @@
 import { Injectable } from '@angular/core';
 import { environment } from '../environments/environment';
 import { Project, ProjectMember } from '../models/project.model';
-import { DashboardData } from '../models/dashboard.model';
+import { DashboardData, ProjectsDashboardData } from '../models/dashboard.model';
 import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
-import { Phase, Task } from '../models/phase.model';
+import { Phase, Task, Comment } from '../models/phase.model';
 
 @Injectable({
   providedIn: 'root'
@@ -75,11 +75,45 @@ export class ProjectService {
     return this.http.put<Task>(`${this.api}/${projectId}/phases/${phaseId}/tasks/${taskId}`, updates);
   }
 
+  getTaskDetails(projectId: number, phaseId: number, taskId: number): Observable<Task> {
+    return this.http.get<Task>(`${this.api}/${projectId}/phases/${phaseId}/tasks/${taskId}`);
+  }
+
+  // Comment operations
+  addComment(taskId: number, content: string): Observable<Comment> {
+    return this.http.post<Comment>(`${this.api}/tasks/${taskId}/comments`, { content });
+  }
+
+  updateComment(commentId: number, content: string): Observable<Comment> {
+    return this.http.patch<Comment>(`${this.api}/comments/${commentId}`, { content });
+  }
+
+  deleteComment(commentId: number): Observable<void> {
+    return this.http.delete<void>(`${this.api}/comments/${commentId}`);
+  }
+
   getProjectMembers(projectId: number): Observable<ProjectMember[]> {
     return this.http.get<ProjectMember[]>(`${this.api}/${projectId}/project-members`);
   }
 
   applyTemplateToProject(projectId: number, templateId: number): Observable<any> {
     return this.http.post<any>(`${this.api}/${projectId}/phases/template/${templateId}`, {});
+  }
+
+  getProjectsDashboard(): Observable<ProjectsDashboardData> {
+    return this.http.get<ProjectsDashboardData>(`${this.api}/projects-dashboard`);
+  }
+
+  // Subtask operations
+  getSubtaskDetails(projectId: number, phaseId: number, taskId: number, subTaskId: number): Observable<any> {
+    return this.http.get<any>(`${this.api}/${projectId}/phases/${phaseId}/tasks/${taskId}/subtasks/${subTaskId}`);
+  }
+
+  updateSubtask(projectId: number, phaseId: number, taskId: number, subTaskId: number, updates: any): Observable<any> {
+    return this.http.put<any>(`${this.api}/${projectId}/phases/${phaseId}/tasks/${taskId}/subtasks/${subTaskId}`, updates);
+  }
+
+  createSubtask(projectId: number, phaseId: number, taskId: number, subtask: any): Observable<any> {
+    return this.http.post<any>(`${this.api}/${projectId}/phases/${phaseId}/tasks/${taskId}/subtasks`, subtask);
   }
 }
