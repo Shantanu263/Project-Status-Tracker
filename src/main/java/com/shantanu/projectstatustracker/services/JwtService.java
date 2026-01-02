@@ -24,4 +24,5 @@ public interface JwtService {
     String extractRole(String jwtToken);
 
     String extractName(String token);
+
 }

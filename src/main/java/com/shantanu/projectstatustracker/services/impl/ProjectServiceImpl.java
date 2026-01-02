@@ -6,6 +6,9 @@ import com.shantanu.projectstatustracker.dtos.ProjectUpdateRequestDTO;
 import com.shantanu.projectstatustracker.dtos.dashboard.*;
 import com.shantanu.projectstatustracker.dtos.mappers.ProjectMapper;
 import com.shantanu.projectstatustracker.dtos.mappers.ProjectMemberMapper;
+import com.shantanu.projectstatustracker.dtos.superDashboard.DashboardSummaryDTO;
+import com.shantanu.projectstatustracker.dtos.superDashboard.ProjectProgressBucketDTO;
+import com.shantanu.projectstatustracker.dtos.superDashboard.ProjectRadarChartDTO;
 import com.shantanu.projectstatustracker.globalExceptionHandlers.ResourceNotFoundException;
 import com.shantanu.projectstatustracker.models.*;
 import com.shantanu.projectstatustracker.repositories.*;
@@ -49,7 +52,7 @@ public class ProjectServiceImpl implements ProjectService {
         }
         List<Project> projects;
 
-        if (role.equalsIgnoreCase("SUPER_ADMIN")) {
+        if (role.equalsIgnoreCase("SUPER ADMIN")) {
             projects = projectRepo.findAll();
         } else {
             projects = projectRepo.findAllByMemberEmail(email);
@@ -309,8 +312,11 @@ public class ProjectServiceImpl implements ProjectService {
                         )).toList()
         );
         // ----- ACTIVITY LOG -----
+        Pageable pageable = PageRequest.of(0, 8);
+
         dto.setRecentActivity(
-                activityLogRepo.findRecentActivity(projectId)
+                activityLogRepo.findRecentActivity(projectId, pageable)
+                        .getContent()
                         .stream()
                         .map(a -> new ActivityLogDTO(
                                 a.getPerformedBy().getName(),
@@ -331,6 +337,64 @@ public class ProjectServiceImpl implements ProjectService {
 
     }
 
+    @Override
+    public ResponseEntity<Object> getProjectsDashboard() {
+        User user = userRepo.findByEmail((String) request.getAttribute("email"))
+                .orElseThrow(() -> new ResourceNotFoundException("User not Found"));
+
+        Long userId = request.getAttribute("role").equals("SUPER ADMIN")? null : user.getUserId();
+
+        DashboardSummaryDTO dashboard = new DashboardSummaryDTO();
+
+        // KPI Cards
+        dashboard.setTotalProjects(projectRepo.countTotalProjects(userId));
+
+        dashboard.setActiveProjects(projectRepo.countByStatus("ongoing", userId));
+
+        dashboard.setCompletedProjects(projectRepo.countByStatus("COMPLETED", userId));
+
+        dashboard.setDelayedProjects(projectRepo.countDelayedProjects(userId));
+
+        dashboard.setAverageProgress(projectRepo.getAverageProjectProgress(userId));
+
+        // Project Cards
+        dashboard.setProjectCardDTOS(projectRepo.getProjectCardData(userId));
+
+        // Charts
+        dashboard.setProjectStatusChart(projectRepo.getProjectStatusDistribution(userId));
+
+        dashboard.setProjectRadarChart(buildRadarChart(userId));
+
+        dashboard.setProjectPriorityChart(projectRepo.getProjectPriorityDistribution(userId));
+
+        List<ProjectProgressBucketDTO> buckets =
+                projectRepo.getProjectProgressDistributionNative(userId)
+                        .stream()
+                        .map(row -> new ProjectProgressBucketDTO(
+                                (String) row[0],
+                                ((Number) row[1]).longValue()
+                        ))
+                        .toList();
+
+        dashboard.setProjectProgressChart(buckets);
+
+        return ResponseEntity.ok(dashboard);
+
+    }
+
+    @Override
+    public ResponseEntity<Object> updateRoleOfProjectMember(Long projectId, Long projectMemberId, ProjectRole projectRole) {
+        if (!projectRepo.existsById(projectId)) return ResponseEntity.ok(Map.of("message","Project does not exist"));
+
+        ProjectMember projectMember = projectMemberRepo.findById(projectMemberId)
+                .orElseThrow(() -> new ResourceNotFoundException("Project Member not found"));
+
+        projectMember.setRole(projectRole);
+
+        projectMemberRepo.save(projectMember);
+        return ResponseEntity.ok(Map.of("message","Project Role Updated Successfully"));
+    }
+
     public Map<String, Object> toPaginatedResponse(Page<ProjectMember> page) {
         Map<String, Object> response = new HashMap<>();
         response.put("items", page.getContent().stream()
@@ -343,6 +407,33 @@ public class ProjectServiceImpl implements ProjectService {
         response.put("isLast", page.isLast());
         return response;
 
+    }
+
+    private List<ProjectRadarChartDTO> buildRadarChart(Long userId) {
+
+        List<ProjectRadarChartDTO> radar = new ArrayList<>();
+
+        radar.add(new ProjectRadarChartDTO(
+                "Task Completion",
+                projectRepo.getTaskCompletionScore(userId)
+        ));
+
+        radar.add(new ProjectRadarChartDTO(
+                "Schedule Adherence",
+                projectRepo.getScheduleAdherenceScore(userId)
+        ));
+
+        radar.add(new ProjectRadarChartDTO(
+                "Risk Level",
+                projectRepo.getRiskScore(userId)
+        ));
+
+        radar.add(new ProjectRadarChartDTO(
+                "Progress Consistency",
+                projectRepo.getProgressConsistencyScore(userId)
+        ));
+
+        return radar;
     }
 
 }

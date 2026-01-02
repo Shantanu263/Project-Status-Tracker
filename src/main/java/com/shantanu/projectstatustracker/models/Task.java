@@ -56,7 +56,9 @@ public class Task {
 
     @OneToMany(mappedBy = "task")
     @JsonManagedReference
-    List<SubTask> subTasks;
+    private List<SubTask> subTasks;
+
+    private Double progress;
 
     @OneToMany
     @JoinColumn(name = "parent_id", referencedColumnName = "task_id",

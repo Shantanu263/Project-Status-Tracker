@@ -176,6 +176,7 @@ public class PhaseServiceImpl implements PhaseService {
         return ResponseEntity.ok(Map.of("message","Completion updated"));
     }
 
+    @Override
     public Double updatePhaseProgress(Long phaseId) {
         Phase phase = phaseRepo.findById(phaseId)
                 .orElseThrow(() -> new ResourceNotFoundException("Phase not found"));

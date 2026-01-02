@@ -1,5 +1,6 @@
 package com.shantanu.projectstatustracker.services;
 
+import com.shantanu.projectstatustracker.dtos.SubTaskRequestDTO;
 import com.shantanu.projectstatustracker.dtos.TaskRequestDTO;
 import com.shantanu.projectstatustracker.models.Status;
 import com.shantanu.projectstatustracker.models.Task;
@@ -23,7 +24,17 @@ public interface TaskService {
 
     ResponseEntity<Object> updateCompletion(Long projectId, Long phaseId, Long taskId, Date completedAt);
 
-     record TaskSnapshot(
+    ResponseEntity<Object> addSubTask(Long projectId, Long phaseId, Long taskId, SubTaskRequestDTO subTaskRequestDTO);
+
+    ResponseEntity<Object> updateSubTask(Long projectId, Long phaseId, Long taskId, Long subTaskId, SubTaskRequestDTO subTaskRequestDTO);
+
+    ResponseEntity<Object> deleteSubTask(Long projectId, Long phaseId, Long taskId, Long subTaskId);
+
+    Double updateTaskProgress(Long taskId);
+
+    ResponseEntity<Object> getSubTaskById(Long projectId, Long phaseId, Long taskId, Long subTaskId);
+
+    record TaskSnapshot(
             Long taskId,
             String taskName,
             String description,

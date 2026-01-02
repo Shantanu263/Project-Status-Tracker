@@ -9,7 +9,7 @@ import org.mapstruct.*;
 
 import java.util.List;
 
-@Mapper(componentModel = "spring", uses = {CommentMapper.class, ActivityLogMapper.class})
+@Mapper(componentModel = "spring", uses = {CommentMapper.class, ActivityLogMapper.class, SubTaskMapper.class})
 public interface TaskMapper {
 
     @Mapping(source = "phase",target = "projectPhase")
@@ -28,6 +28,8 @@ public interface TaskMapper {
     @Mapping(source = "task.assignedTo.memberId",target = "assignedToProjectMemberId")
     @Mapping(source = "task.projectPhase.phaseId",target = "projectPhaseId")
     @Mapping(source = "task.logs", target = "logs")
+    @Mapping(source = "task.subTasks", target = "subTasks")
+    @Mapping(source = "task.progress", target = "progress")
     TaskResponseDTO mapTaskToResponse(Task task);
 
     @Mapping(source = "task.assignedTo.memberId",target = "assignedToProjectMemberId")

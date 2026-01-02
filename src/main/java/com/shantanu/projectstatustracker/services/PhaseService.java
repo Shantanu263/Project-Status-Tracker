@@ -22,4 +22,6 @@ public interface PhaseService {
     ResponseEntity<Object> addPhaseTemplateToProject(Long projectId, Long templateId);
 
     ResponseEntity<Object> updateCompletion(Long projectId, Long phaseId, Date completedAt);
+
+    Double updatePhaseProgress(Long phaseId);
 }

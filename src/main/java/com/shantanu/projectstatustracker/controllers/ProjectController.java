@@ -3,8 +3,8 @@ package com.shantanu.projectstatustracker.controllers;
 import com.shantanu.projectstatustracker.dtos.AddMemberRequestDTO;
 import com.shantanu.projectstatustracker.dtos.ProjectRequestDTO;
 import com.shantanu.projectstatustracker.dtos.ProjectUpdateRequestDTO;
+import com.shantanu.projectstatustracker.models.ProjectRole;
 import com.shantanu.projectstatustracker.services.ProjectService;
-import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -15,6 +15,7 @@ import org.springframework.web.bind.annotation.*;
 @RequestMapping("/api/project")
 public class ProjectController {
     private final ProjectService projectService;
+
 
     @GetMapping()
     public ResponseEntity<Object> getProjects(){
@@ -75,6 +76,13 @@ public class ProjectController {
         return projectService.addMemberToProjectUsingEmail(projectId,addMemberRequestDTO,email);
     }
 
+    @PatchMapping("/{projectId}/project-members/{projectMemberId}/role")
+    public ResponseEntity<Object> updateRoleOfProjectMember(@PathVariable(name = "projectId") Long projectId,
+                                                            @PathVariable(name = "projectMemberId") Long projectMemberId,
+                                                            @RequestBody AddMemberRequestDTO addMemberRequestDTO){
+        return projectService.updateRoleOfProjectMember(projectId,projectMemberId, addMemberRequestDTO.getRoleInProject());
+    }
+
     @PreAuthorize("@auth.isProjectHeadOfProject(#projectId) or @auth.isSuperAdmin()")
     @DeleteMapping("/{projectId}/project-members/{userId}")
     public ResponseEntity<Object> deleteMemberFromProject(@PathVariable(name = "projectId") Long projectId,
@@ -85,6 +93,11 @@ public class ProjectController {
     @GetMapping("{projectId}/dashboard")
     public ResponseEntity<Object> getDashboardData(@PathVariable(name = "projectId") Long projectId){
         return projectService.getDashboardData(projectId);
+    }
+
+    @GetMapping("projects-dashboard")
+    public ResponseEntity<Object> getProjectsDashboard(){
+        return projectService.getProjectsDashboard();
     }
 
 }

@@ -13,4 +13,13 @@ public class DashboardSummaryDTO {
     double averageProgress;
 
     List<ProjectCardDTO> projectCardDTOS;
+
+    List<ProjectStatusChartDTO> projectStatusChart;
+
+    List<ProjectRadarChartDTO> projectRadarChart;
+
+    List<ProjectPriorityChartDTO> projectPriorityChart;
+
+    List<ProjectProgressBucketDTO> projectProgressChart;
+
 }

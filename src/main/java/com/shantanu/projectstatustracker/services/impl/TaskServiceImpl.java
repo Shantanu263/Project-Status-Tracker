@@ -1,13 +1,12 @@
 package com.shantanu.projectstatustracker.services.impl;
 
+import com.shantanu.projectstatustracker.dtos.SubTaskRequestDTO;
 import com.shantanu.projectstatustracker.dtos.TaskRequestDTO;
+import com.shantanu.projectstatustracker.dtos.mappers.SubTaskMapper;
 import com.shantanu.projectstatustracker.dtos.mappers.TaskMapper;
 import com.shantanu.projectstatustracker.globalExceptionHandlers.ResourceNotFoundException;
 import com.shantanu.projectstatustracker.models.*;
-import com.shantanu.projectstatustracker.repositories.PhaseRepo;
-import com.shantanu.projectstatustracker.repositories.ProjectMemberRepo;
-import com.shantanu.projectstatustracker.repositories.ProjectRepo;
-import com.shantanu.projectstatustracker.repositories.TaskRepo;
+import com.shantanu.projectstatustracker.repositories.*;
 import com.shantanu.projectstatustracker.services.ActivityLogService;
 import com.shantanu.projectstatustracker.services.TaskService;
 import jakarta.servlet.http.HttpServletRequest;
@@ -30,6 +29,8 @@ public class TaskServiceImpl implements TaskService {
     private final HttpServletRequest request;
     private final ActivityLogService activityLogService;
     private final ProjectRepo projectRepo;
+    private final SubTaskMapper subTaskMapper;
+    private final SubTaskRepo subTaskRepo;
 
     @Override
     public ResponseEntity<Object> getPhaseTasks(Long projectId, Long phaseId) {
@@ -106,6 +107,9 @@ public class TaskServiceImpl implements TaskService {
         // Update phase progress with respect to Task Status
         phaseService.updatePhaseProgress(phaseId);
 
+        // Update task progress with respect to subTask Status
+        updateTaskProgress(taskId);
+
         List<String> changes = detectChanges(oldSnapshot, existingTask);
 
         for (String change : changes) {
@@ -134,12 +138,20 @@ public class TaskServiceImpl implements TaskService {
             return new ResponseEntity<>(Map.of("message", "This task is assigned to other user."), HttpStatus.BAD_REQUEST);
         }
 
+//        if (status == Status.DONE && !existingTask.getSubTasks().isEmpty() && existingTask.getProgress()!=100.0) {
+//            return new ResponseEntity<>(Map.of("message","All Sub Tasks not completed. Cannot change status"),
+//                    HttpStatus.BAD_REQUEST);
+//        }
+
         Status existingStatus = existingTask.getStatus();
         existingTask.setStatus(status);
         taskRepo.save(existingTask);
         
         // Update phase progress with respect to Task Status
         phaseService.updatePhaseProgress(phaseId);
+
+        // Update task progress
+        //updateTaskProgress(taskId);
 
         activityLogService.log(
                 projectId,
@@ -178,6 +190,90 @@ public class TaskServiceImpl implements TaskService {
         taskRepo.save(existingTask);
 
         return ResponseEntity.ok(Map.of("message","Completion updated"));
+    }
+
+    @Override
+    public ResponseEntity<Object> addSubTask(Long projectId, Long phaseId, Long taskId, SubTaskRequestDTO subTaskRequestDTO) {
+
+        Task task = taskRepo.findByTaskIdAndProjectPhase_PhaseId(taskId,phaseId)
+                .orElseThrow(() -> new ResourceNotFoundException("Task not found"));
+
+        ProjectMember assignedTo = null;
+
+        if (subTaskRequestDTO.getAssignedTo() != null){
+            assignedTo = projectMemberRepo.findById(subTaskRequestDTO.getAssignedTo())
+                    .orElseThrow(() -> new ResourceNotFoundException("Project Member not found"));
+        }
+
+        SubTask subTask = subTaskMapper.mapRequestToSubTask(subTaskRequestDTO,task,assignedTo);
+        subTaskRepo.save(subTask);
+
+        // Update task progress with respect to subTask Status
+        updateTaskProgress(taskId);
+
+        activityLogService.log(
+                task.getProjectPhase().getProject().getProjectId(),
+                (String) request.getAttribute("email"),
+                request.getAttribute("username") + " created new Sub Task " + subTaskRequestDTO.getSubTaskName(),
+                EntityType.SUBTASK,
+                subTask.getSubTaskId()
+        );
+
+        return ResponseEntity.ok(subTaskMapper.mapSubTaskToResponse(subTask));
+    }
+
+    @Override
+    public ResponseEntity<Object> updateSubTask(Long projectId, Long phaseId, Long taskId, Long subTaskId, SubTaskRequestDTO subTaskRequestDTO) {
+        taskRepo.findByTaskIdAndProjectPhase_PhaseId(taskId,phaseId)
+                .orElseThrow(() -> new ResourceNotFoundException("Task not found"));
+
+        ProjectMember assignedTo = null;
+
+        if (subTaskRequestDTO.getAssignedTo() != null) {
+            assignedTo = projectMemberRepo.findById(subTaskRequestDTO.getAssignedTo())
+                    .orElseThrow(() -> new ResourceNotFoundException("Project member not found"));
+        }
+
+        SubTask existingSubTask = subTaskRepo.findBySubTaskIdAndTask_TaskId(subTaskId,taskId)
+                .orElseThrow(() -> new ResourceNotFoundException("Sub Task not found"));
+
+
+        subTaskMapper.updateSubTaskFromDTO(subTaskRequestDTO,assignedTo,existingSubTask);
+
+        subTaskRepo.save(existingSubTask);
+
+        // Update task progress with respect to subTask Status
+        updateTaskProgress(taskId);
+
+        return ResponseEntity.ok(Map.of("message","Sub Task updated","update Sub Task",subTaskMapper.mapSubTaskToResponse(existingSubTask)));
+    }
+
+    @Override
+    public ResponseEntity<Object> deleteSubTask(Long projectId, Long phaseId, Long taskId, Long subTaskId) {
+        taskRepo.findByTaskIdAndProjectPhase_PhaseId(taskId,phaseId)
+                .orElseThrow(() -> new ResourceNotFoundException("Task not found"));
+
+        SubTask subTask = subTaskRepo.findBySubTaskIdAndTask_TaskId(subTaskId,taskId)
+                .orElseThrow(() -> new ResourceNotFoundException("Sub Task not found"));
+
+        subTaskRepo.delete(subTask);
+
+        // Update task progress with respect to subTask Status
+        updateTaskProgress(taskId);
+
+        return ResponseEntity.ok(Map.of("message","Sub Task deleted"));
+    }
+
+
+    @Override
+    public ResponseEntity<Object> getSubTaskById(Long projectId, Long phaseId, Long taskId, Long subTaskId) {
+        taskRepo.findByTaskIdAndProjectPhase_PhaseId(taskId,phaseId)
+                .orElseThrow(() -> new ResourceNotFoundException("Task not found"));
+
+        SubTask subTask = subTaskRepo.findBySubTaskIdAndTask_TaskId(subTaskId,taskId)
+                .orElseThrow(() -> new ResourceNotFoundException("Sub Task not found"));
+
+        return ResponseEntity.ok(subTaskMapper.mapSubTaskToResponse(subTask));
     }
 
     public static List<String> detectChanges(TaskSnapshot oldTask, Task newTask) {
@@ -234,6 +330,41 @@ public class TaskServiceImpl implements TaskService {
         }
 
         return changes;
+    }
+
+    @Override
+    public Double updateTaskProgress(Long taskId) {
+        Task task = taskRepo.findById(taskId)
+                .orElseThrow(() -> new ResourceNotFoundException("Task not found"));
+
+        List<SubTask> subTasks = subTaskRepo.findByTask_TaskId(taskId);
+
+        if (subTasks.isEmpty()) {
+            if (Status.DONE.equals(task.getStatus())) task.setProgress(100.0);
+            else task.setProgress(0.0);
+            taskRepo.save(task);
+            return task.getProgress();
+        }
+
+        long completedSubTasks = subTasks.stream()
+                .filter(subTask -> Status.DONE.equals(subTask.getStatus()))
+                .count();
+
+        Double progress = (double) completedSubTasks / subTasks.size() * 100;
+
+        //If the task is completed, but new subtask has been added later
+        if (task.getStatus().equals(Status.DONE) && progress!=100.0) task.setStatus(Status.IN_PROGRESS);
+
+        //If all subtasks are completed, set Task Status to 'DONE'
+//        if (progress == 100.0) task.setStatus(Status.DONE);
+
+        task.setProgress(progress);
+        taskRepo.save(task);
+
+        // Update the phase progress after updating the task progress
+        //phaseService.updatePhaseProgress(task.getProjectPhase().getPhaseId());
+
+        return progress;
     }
 
 }

@@ -1,5 +1,6 @@
 package com.shantanu.projectstatustracker.controllers;
 
+import com.shantanu.projectstatustracker.dtos.SubTaskRequestDTO;
 import com.shantanu.projectstatustracker.dtos.TaskRequestDTO;
 import com.shantanu.projectstatustracker.models.Status;
 import com.shantanu.projectstatustracker.services.TaskService;
@@ -87,6 +88,49 @@ public class TaskController {
             @RequestBody TaskRequestDTO dto) {
         return taskService.updateTask(projectId, phaseId, taskId, dto);
     }
+
+    @GetMapping("/phases/{phaseId}/tasks/{taskId}/subtasks/{subTaskId}")
+    public ResponseEntity<Object> getSubTaskById(
+            @PathVariable Long projectId,
+            @PathVariable Long phaseId,
+            @PathVariable Long taskId,
+            @PathVariable Long subTaskId
+    ){
+        return taskService.getSubTaskById(projectId,phaseId,taskId,subTaskId);
+    }
+
+    @PostMapping("/phases/{phaseId}/tasks/{taskId}/subtasks")
+    public ResponseEntity<Object> addSubTask(
+            @PathVariable Long projectId,
+            @PathVariable Long phaseId,
+            @PathVariable Long taskId,
+            @RequestBody SubTaskRequestDTO subTaskRequestDTO
+    ){
+        return taskService.addSubTask(projectId,phaseId,taskId,subTaskRequestDTO);
+    }
+
+    @PutMapping("/phases/{phaseId}/tasks/{taskId}/subtasks/{subTaskId}")
+    public ResponseEntity<Object> updateSubTask(
+            @PathVariable Long projectId,
+            @PathVariable Long phaseId,
+            @PathVariable Long taskId,
+            @PathVariable Long subTaskId,
+            @RequestBody SubTaskRequestDTO subTaskRequestDTO
+    ){
+        return taskService.updateSubTask(projectId,phaseId,taskId,subTaskId,subTaskRequestDTO);
+    }
+
+    @DeleteMapping("/phases/{phaseId}/tasks/{taskId}/subtasks/{subTaskId}")
+    public ResponseEntity<Object> deleteSubTask(
+            @PathVariable Long projectId,
+            @PathVariable Long phaseId,
+            @PathVariable Long taskId,
+            @PathVariable Long subTaskId
+    ){
+        return taskService.deleteSubTask(projectId,phaseId,taskId,subTaskId);
+    }
+
+
 
 }
 
