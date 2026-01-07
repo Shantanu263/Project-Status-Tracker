@@ -5,11 +5,14 @@ import com.shantanu.projectstatustracker.services.EmailService;
 import jakarta.mail.MessagingException;
 import jakarta.mail.internet.MimeMessage;
 import lombok.RequiredArgsConstructor;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.io.ClassPathResource;
 import org.springframework.mail.SimpleMailMessage;
 import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.mail.javamail.MimeMessageHelper;
+import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 
 import java.io.IOException;
@@ -20,6 +23,7 @@ import java.nio.charset.StandardCharsets;
 @Service
 public class EmailServiceImpl implements EmailService {
     private final JavaMailSender javaMailSender;
+    private static final Logger log = LoggerFactory.getLogger(EmailServiceImpl.class);
 
     @Value("${spring.mail.username}")
     String myEmailId;
@@ -48,6 +52,15 @@ public class EmailServiceImpl implements EmailService {
         javaMailSender.send(message);
     }
 
+    @Async
+    public void sendHtmlMessageAsync(MailBody mailBody) {
+        try {
+            sendHtmlMessage(mailBody);
+        } catch (MessagingException e) {
+            log.error("Failed to send async email", e);
+        }
+    }
+
     public String getOtpEmailTemplate(String userName, String otp) {
         try {
             // Load template from resources
@@ -63,6 +76,23 @@ public class EmailServiceImpl implements EmailService {
             template = template.replace("support@yourcompany.com", "your-support@email.com");
             template = template.replace("Your Company Name", "Your Actual Company Name");
             template = template.replace("Your Company", "Your Actual Company Name");
+
+            return template;
+        } catch (IOException e) {
+            throw new RuntimeException("Failed to load email template", e);
+        }
+    }
+
+    public String getAccountCreationEmailTemplate(String userName, String email) {
+        try {
+            // Load template from resources
+            ClassPathResource resource = new ClassPathResource("templates/email/email-template.html");
+            String template = new String(resource.getInputStream().readAllBytes(), StandardCharsets.UTF_8);
+
+            // Replace placeholders
+            template = template.replace("[USER_NAME]", userName);
+            template = template.replace("[USER_EMAIL]", email);
+            template = template.replace("[SENDER_NAME]", "Team ProjectHub");
 
             return template;
         } catch (IOException e) {

@@ -1,5 +1,6 @@
 package com.shantanu.projectstatustracker.services.impl;
 
+import com.shantanu.projectstatustracker.dtos.MailBody;
 import com.shantanu.projectstatustracker.dtos.UserLoginRequestDTO;
 import com.shantanu.projectstatustracker.dtos.UserRequestDTO;
 import com.shantanu.projectstatustracker.dtos.mappers.ProjectMemberMapper;
@@ -8,7 +9,9 @@ import com.shantanu.projectstatustracker.models.*;
 import com.shantanu.projectstatustracker.repositories.*;
 import com.shantanu.projectstatustracker.services.ActivityLogService;
 import com.shantanu.projectstatustracker.services.AuthService;
+import com.shantanu.projectstatustracker.services.EmailService;
 import com.shantanu.projectstatustracker.services.JwtService;
+import jakarta.mail.MessagingException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
@@ -32,6 +35,7 @@ public class AuthServiceImpl implements AuthService {
     private final ProjectRepo projectRepo;
     private final RoleRepo roleRepo;
     private final ActivityLogService activityLogService;
+    private final EmailService emailService;
 
     @Value("${jwt.accessTokenTime}")
     private long accessTokenTime;
@@ -80,6 +84,18 @@ public class AuthServiceImpl implements AuthService {
             }
         }
 
+        //Send mail to registered User
+        String htmlContent = emailService.getAccountCreationEmailTemplate(user.getName(), user.getEmail());
+
+        MailBody mailBody = MailBody.builder()
+                .to(user.getEmail())
+                .text(htmlContent)  // add HTML template
+                .subject("Password Reset OTP - Secure Your Account")
+                .build();
+
+        emailService.sendHtmlMessageAsync(mailBody);
+
+        //Return response
         return ResponseEntity.ok(Map.of("message","User signed up successfully"));
     }
 

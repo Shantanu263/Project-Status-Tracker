@@ -1,13 +1,10 @@
 package com.shantanu.projectstatustracker.dtos.mappers;
 
 import com.shantanu.projectstatustracker.dtos.*;
-import com.shantanu.projectstatustracker.models.Phase;
 import com.shantanu.projectstatustracker.models.Project;
-import org.mapstruct.Mapper;
-import org.mapstruct.Mapping;
+import org.mapstruct.*;
 
 import java.util.List;
-import java.util.Set;
 
 @Mapper(componentModel = "spring",uses = {ProjectMemberMapper.class, RoleMapper.class})
 public interface ProjectMapper {
@@ -21,5 +18,8 @@ public interface ProjectMapper {
     Project mapProjectRequestDTOToProject(ProjectRequestDTO projectRequestDTO);
 
     Project mapUpdateRequestToProject(ProjectUpdateRequestDTO projectUpdateRequestDTO);
+
+    @BeanMapping(nullValuePropertyMappingStrategy = NullValuePropertyMappingStrategy.IGNORE)
+    void updateProjectFromDTO(ProjectUpdateRequestDTO projectUpdateRequestDTO, @MappingTarget Project project);
 
 }

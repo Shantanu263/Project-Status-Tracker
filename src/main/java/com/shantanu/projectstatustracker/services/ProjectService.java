@@ -27,6 +27,8 @@ public interface ProjectService {
 
     ResponseEntity<Object> addMemberToProjectUsingEmail(Long projectId, AddMemberRequestDTO addMemberRequestDTO, String assignedByEmail);
 
+    ResponseEntity<Object> getProjectMemberById(Long id,Long memberId);
+
     ResponseEntity<Object> getProjectMembersPaginated(Long id, int pageNumber, int pageSize, String sortBy, String order, String search);
 
     ResponseEntity<Object> getDashboardData(Long projectId);

@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Email Template</title>
+</head>
+<body style="margin: 0; padding: 0; font-family: Arial, sans-serif; background-color: #f4f4f4;">
+<table role="presentation" style="width: 100%; border-collapse: collapse; border-radius: 0.75rem">
+    <tr>
+        <td align="center" style="padding: 40px 0;">
+            <table role="presentation" style="width: 600px; border-collapse: collapse; background-color: #ffffff; box-shadow: 0 2px 8px rgba(0,0,0,0.1); border-radius: 0.75rem">
+
+                <!-- Header -->
+                <tr>
+                    <td style="background-color: #a0391a; padding: 30px; text-align: center; border-top-right-radius: 0.75rem; border-top-left-radius: 0.75rem;">
+                        <h1 style="margin: 0; color: #ffffff; font-size: 28px; font-weight: bold;">User Account Created</h1>
+                    </td>
+                </tr>
+
+                <!-- Body Content -->
+                <tr>
+                    <td style="padding: 40px 40px 20px 40px;">
+                        <p style="margin: 0 0 20px 0; color: #333333; font-size: 16px; line-height: 1.6;">
+                            Hello <strong>[USER_NAME]</strong>,
+                        </p>
+
+                        <p style="margin: 0 0 20px 0; color: #666666; font-size: 16px; line-height: 1.6;">
+                            Your user account has been successfully created in ProjectHub
+                        </p>
+
+                        <p style="margin: 0 0 30px 0; color: #666666; font-size: 16px; line-height: 1.6;">
+                            Below are your account details:
+                        </p>
+
+                        <!-- Account Details Box -->
+                        <table role="presentation" style="width: 100%; border-collapse: collapse; margin-bottom: 30px;">
+                            <tr>
+                                <td style="border-left: 4px solid #a0391a; padding: 20px 20px 20px 25px; background-color: #f9f9f9;">
+                                    <table role="presentation" style="width: 100%; border-collapse: collapse;">
+                                        <tr>
+                                            <td style="padding: 8px 0; color: #999999; font-size: 15px; width: 120px;">Username:</td>
+                                            <td style="padding: 8px 0; color: #a0391a; font-size: 15px; font-weight: bold;">[USER_NAME]</td>
+                                        </tr>
+                                        <tr>
+                                            <td style="padding: 8px 0; color: #999999; font-size: 15px;">Email:</td>
+                                            <td style="padding: 8px 0; color: #1a73e8; font-size: 15px;">[USER_EMAIL]</td>
+                                        </tr>
+<!--                                        <tr>-->
+<!--                                            <td style="padding: 8px 0; color: #999999; font-size: 15px;">Added By:</td>-->
+<!--                                            <td style="padding: 8px 0; color: #a0391a; font-size: 15px; font-weight: bold;">[ADDED_BY]</td>-->
+<!--                                        </tr>-->
+                                    </table>
+                                </td>
+                            </tr>
+                        </table>
+
+                        <!-- CTA Button -->
+                        <table role="presentation" style="width: 100%; border-collapse: collapse; margin-bottom: 30px;">
+                            <tr>
+                                <td align="center">
+                                    <a href="{{portalLink}}" style="display: inline-block; padding: 14px 40px; background-color: #a0391a; color: #ffffff; text-decoration: none; font-size: 16px; font-weight: bold; border-radius: 4px;">Go to Portal</a>
+                                </td>
+                            </tr>
+                        </table>
+
+                        <p style="margin: 0; color: #666666; font-size: 16px; line-height: 1.6;">
+                            Thank you,<br>
+                            [SENDER_NAME]
+                        </p>
+                    </td>
+                </tr>
+
+                <!-- Footer -->
+                <tr>
+                    <td style="background-color: #a0391a; padding: 25px 40px; text-align: center; border-bottom-right-radius: 0.75rem; border-bottom-left-radius: 0.75rem;">
+                        <p style="margin: 0 0 8px 0; color: #ffffff; font-size: 18px; font-weight: bold;">ProjectHub</p>
+                        <p style="margin: 0; color: #ffffff; font-size: 13px;">© 2025 CyberNxt Solutions LLP. All Rights Reserved.</p>
+                    </td>
+                </tr>
+
+            </table>
+        </td>
+    </tr>
+</table>
+</body>
+</html>

@@ -7,5 +7,6 @@ public interface EmailService {
     void sendSimpleMessage(MailBody mailBody);
     void sendHtmlMessage(MailBody mailBody) throws MessagingException;
     String getOtpEmailTemplate(String userName, String otp);
-
+    String getAccountCreationEmailTemplate(String userName, String email);
+    void sendHtmlMessageAsync(MailBody mailBody);
 }

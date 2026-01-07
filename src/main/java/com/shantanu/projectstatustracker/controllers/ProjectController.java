@@ -51,6 +51,12 @@ public class ProjectController {
         return projectService.getProjectMembers(id);
     }
 
+    @GetMapping("/{id}/project-member/{memberId}")
+    public ResponseEntity<Object> getProjectMemberById(@PathVariable(name = "id") Long id,
+                                                    @PathVariable(name = "memberId") Long memberId){
+        return projectService.getProjectMemberById(id, memberId);
+    }
+
     @GetMapping("/{id}/get-project-members")
     public ResponseEntity<Object> getProjectMembersPaginated(@PathVariable(name = "id") Long id,
                                                              @RequestParam(value = "page", defaultValue = "0", required = false) int pageNumber,

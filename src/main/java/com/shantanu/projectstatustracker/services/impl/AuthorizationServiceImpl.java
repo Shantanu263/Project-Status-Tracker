@@ -30,12 +30,10 @@ public class AuthorizationServiceImpl implements AuthorizationService {
     @Override
     public boolean canManageProject(Long projectId) {
         String email = getCurrentUserEmail();
-        System.out.println(email+"can manageProject");
         if (email == null) return false;
-//        System.out.println(memberRepo.existsByProject_ProjectIdAndUser_EmailAndRole(
-//                projectId,email,ProjectRole.PROJECT_HEAD));
+
         return memberRepo.existsByProject_ProjectIdAndUser_EmailAndRole(
-                projectId,email,ProjectRole.PROJECT_HEAD);
+                projectId,email,ProjectRole.SUPER_ADMIN);
     }
 
     @Override

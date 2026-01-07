@@ -16,6 +16,8 @@ public class ProjectRequestDTO {
 
     Date endDate;
 
+    String Status;
+
     String priority;
 
     Long projectHeadId;

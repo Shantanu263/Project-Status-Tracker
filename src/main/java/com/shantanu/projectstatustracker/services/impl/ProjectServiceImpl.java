@@ -118,7 +118,7 @@ public class ProjectServiceImpl implements ProjectService {
         ProjectMember admin = ProjectMember.builder()
                 .project(project)
                 .role(ProjectRole.SUPER_ADMIN)
-                .user(userRepo.findByEmail((String) request.getAttribute("email")).orElseThrow())
+                .user(userRepo.findByEmail((String) request.getAttribute("email")).orElseThrow(() -> new ResourceNotFoundException("User not found")))
                 .assignedBy(userRepo.findByName("Admin").orElseThrow(() -> new ResourceNotFoundException("Admin not found")))
                 .build();
 
@@ -149,12 +149,14 @@ public class ProjectServiceImpl implements ProjectService {
     public ResponseEntity<Object> updateProject(Long id, ProjectUpdateRequestDTO projectUpdateRequestDTO) {
         Project existingProject = projectRepo.findById(id).orElseThrow(() -> new ResourceNotFoundException("Project not found"));
 
-        existingProject.setProjectName(projectUpdateRequestDTO.getProjectName());
-        existingProject.setDescription(projectUpdateRequestDTO.getDescription());
-        existingProject.setStartDate(projectUpdateRequestDTO.getStartDate());
-        existingProject.setEndDate(projectUpdateRequestDTO.getEndDate());
-        existingProject.setPriority(projectUpdateRequestDTO.getPriority());
-        existingProject.setStatus(projectUpdateRequestDTO.getStatus());
+//        existingProject.setProjectName(projectUpdateRequestDTO.getProjectName());
+//        existingProject.setDescription(projectUpdateRequestDTO.getDescription());
+//        existingProject.setStartDate(projectUpdateRequestDTO.getStartDate());
+//        existingProject.setEndDate(projectUpdateRequestDTO.getEndDate());
+//        existingProject.setPriority(projectUpdateRequestDTO.getPriority());
+//        existingProject.setStatus(projectUpdateRequestDTO.getStatus());
+
+        projectMapper.updateProjectFromDTO(projectUpdateRequestDTO,existingProject);
 
         projectRepo.save(existingProject);
 
@@ -166,7 +168,7 @@ public class ProjectServiceImpl implements ProjectService {
                 existingProject.getProjectId()
         );
 
-        return ResponseEntity.ok("project updated");
+        return ResponseEntity.ok(existingProject);
 
     }
 
@@ -174,7 +176,7 @@ public class ProjectServiceImpl implements ProjectService {
     public ResponseEntity<Object> deleteProject(Long id) {
         projectRepo.deleteById(id);
 
-        return ResponseEntity.ok("Project with Id:"+id+" Deleted");
+        return ResponseEntity.ok(Map.of("message","Project with Id:"+id+" Deleted"));
     }
 
     @Override
@@ -247,6 +249,13 @@ public class ProjectServiceImpl implements ProjectService {
         }
 
         return ResponseEntity.ok(Map.of("message","Member Invited"));
+    }
+
+    @Override
+    public ResponseEntity<Object> getProjectMemberById(Long id, Long memberId) {
+        projectRepo.findById(id).orElseThrow(() -> new ResourceNotFoundException("Project not found"));
+
+        return ResponseEntity.ok(projectMemberMapper.mapProjectMember(projectMemberRepo.findById(memberId).orElseThrow(() -> new ResourceNotFoundException("Member not found"))));
     }
 
     @Override
