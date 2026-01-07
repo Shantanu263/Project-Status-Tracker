@@ -107,4 +107,17 @@ export class AuthService {
     //console.log('Checking if super admin, role:', role);
     return role?.toUpperCase() === 'SUPER_ADMIN' || role?.toUpperCase() === 'SUPER ADMIN';
   }
+
+  canManageProject(projectMembers: any[], currentUserId: number | null): boolean {
+    // Check global role first
+    if (this.isSuperAdmin()) {
+      return true;
+    }
+
+    // Check project role
+    if (!currentUserId) return false;
+
+    const member = projectMembers?.find(m => m.userId === currentUserId);
+    return member?.role?.toUpperCase() === 'SUPER_ADMIN' || member?.role?.toUpperCase() === 'SUPER ADMIN';
+  }
 }

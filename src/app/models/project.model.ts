@@ -20,7 +20,17 @@ export interface Project {
   description: string;
   startDate: string;
   endDate: string;
+  status?: string; // 'ongoing', 'completed', 'on hold', 'delayed'
+  priority?: string; // 'Low', 'Medium', 'High'
   progress: number;
   projectHead: { id: number; name: string; email: string };
   projectMembers: ProjectMember[];
+  createdAt?: string; // Format: yyyy-mm-ddThh:mm:ss
+  createdBySuperAdmin?: {
+    userId: number;
+    name: string;
+    email: string;
+    createdAt: string;
+    role: { roleName: string };
+  };
 }

@@ -14,7 +14,7 @@ import { SidebarStateService } from '../../services/sidebar-state.service';
     >
       <app-sidebar></app-sidebar>
 
-      <div class="main-area flex flex-1 overflow-hidden pt-20 transition-all duration-300">
+      <div class="main-area flex flex-1 overflow-hidden pt-17 transition-all duration-300">
         <div class="flex-1 flex flex-col overflow-hidden h-full">
           <div class="h-full">
             <router-outlet></router-outlet>

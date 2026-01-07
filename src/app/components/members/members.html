@@ -24,7 +24,7 @@
     </select>
 
     <!-- Add Member Button -->
-    <button
+    <button (click)="openAddMembersModal()"
       class="px-5 py-2.5 bg-[#8c2d1b] text-white rounded-lg hover:bg-[#6b2115] transition-colors duration-200 font-medium shadow-sm flex items-center gap-2">
       <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path>
@@ -224,3 +224,10 @@
 </div>
 }
 <!-- </div> -->
+
+<!-- Add Members Modal -->
+<app-add-members-modal
+  [isOpen]="showAddMembersModal()"
+  [projectId]="selectedProject()?.projectId || 0"
+  (close)="closeAddMembersModal()"
+  (membersAdded)="onMembersAdded()" />

@@ -15,6 +15,11 @@
     }
 }
 
+.modal-backdrop {
+    background: rgba(0, 0, 0, .32);
+    animation: fadeInBackdrop 0.2s ease-in-out;
+}
+
 // Custom dropdown styles (for member, status, and priority selectors)
 .member-selector,
 .status-selector,

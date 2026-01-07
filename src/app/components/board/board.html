@@ -2,7 +2,7 @@
 <div class="flex flex-col h-full">
     <!-- Board Header -->
     <div class="flex-shrink-0 mb-6">
-        <div class="flex items-center justify-between">
+        <div class="flex items-center justify-between" style="padding-right: 32px;">
             <div>
                 <h1 class="text-3xl font-bold text-gray-800">Project Board</h1>
             </div>
@@ -45,10 +45,10 @@
 
     <!-- Kanban Board -->
     @if (!loading()) {
-    <div class="flex-1 flex flex-col overflow-hidden">
+    <div>
         <!-- Scrollable Container with both headers and content -->
-        <div class="flex-1 overflow-y-auto">
-            <div class="min-h-full flex flex-col">
+        <div class="overflow-y-auto" style="height: 400px; padding-bottom: 10px; padding-right: 25px;">
+            <div class="flex flex-col">
                 <!-- Column Headers (Sticky) -->
                 <div class="sticky top-0 z-10 grid grid-cols-4 gap-4 mb-0">
                     @for (column of columns(); track column.id) {
@@ -71,17 +71,17 @@
                 </div>
 
                 <!-- Columns Content Area -->
-                <div class="grid grid-cols-4 gap-4 flex-1">
+                <div class="grid grid-cols-4 gap-4">
                     @for (column of columns(); track column.id) {
                     <div class="bg-white rounded-b-xl shadow-sm border border-gray-200 border-t-0 flex flex-col"
-                        [style.height.px]="(maxTaskCount() * 76) + 80" (dragover)="onDragOver($event)"
+                        [style.min-height.px]="columnHeight()" (dragover)="onDragOver($event)"
                         (drop)="onDrop(column.id, $event)" (mouseenter)="onColumnHover(column.id)"
                         (mouseleave)="onColumnLeave()" [class.bg-gray-50]="draggingTask() !== null">
 
                         <!-- Tasks Container -->
-                        <div class="p-3 space-y-2 flex-1 flex flex-col overflow-hidden">
+                        <div class="p-3 space-y-2">
                             <!-- Tasks List -->
-                            <div class="flex-1 space-y-2 overflow-y-auto">
+                            <div class="space-y-2">
                                 @for (task of column.tasks; track task.id) {
                                 <!-- Compact Task Card -->
                                 <div class="bg-white border border-gray-200 rounded-lg p-3 hover:shadow-md transition-all duration-200 cursor-pointer group"
@@ -133,7 +133,7 @@
                                             <!-- Due Date with Text -->
                                             @if (task.dueDate) {
                                             <div class="flex items-center gap-1 text-xs text-gray-500"
-                                                title="{{ task.dueDate | date: 'MMM d, y' }}">
+                                                title="{{ `Due on ${formatDate(task.dueDate) | date: 'd MMM, y'}` }}">
                                                 <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor"
                                                     viewBox="0 0 24 24">
                                                     <path stroke-linecap="round" stroke-linejoin="round"
@@ -141,7 +141,8 @@
                                                         d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z">
                                                     </path>
                                                 </svg>
-                                                <span class="text-xs whitespace-nowrap">{{ task.dueDate | date: 'MMM d'
+                                                <span class="text-xs whitespace-nowrap">{{ formatDate(task.dueDate) |
+                                                    date: 'd MMM, y'
                                                     }}</span>
                                             </div>
                                             }

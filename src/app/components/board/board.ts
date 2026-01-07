@@ -20,11 +20,7 @@ interface TaskResponse {
   endDate: string;
   status: TaskStatus;
   priority: string;
-  assignedTo: {
-    userId: number;
-    name: string;
-    email: string;
-  };
+  assignedToProjectMemberId: number;
   //assignedTo: number;
 }
 
@@ -115,6 +111,20 @@ export class BoardComponent {
     const columns = this.columns();
     const MIN_CARDS = 3; // Minimum for visual consistency
     return Math.max(...columns.map(col => col.tasks.length), MIN_CARDS);
+  });
+
+  // Calculate dynamic column height based on task count
+  columnHeight = computed(() => {
+    const maxTasks = this.maxTaskCount();
+    const BASE_HEIGHT = 325; // Default height for 3 or fewer tasks
+    const TASK_INCREMENT = 85; // Height increase per task beyond 3
+
+    if (maxTasks <= 3) {
+      return BASE_HEIGHT;
+    }
+
+    // For each task beyond 3, add 95px
+    return BASE_HEIGHT + ((maxTasks - 3) * TASK_INCREMENT);
   });
 
   constructor() {
@@ -227,9 +237,21 @@ export class BoardComponent {
         priority: (task.priority as 'Low' | 'Medium' | 'High'),
         dueDate: task.endDate,
         status: taskStatus,
-        assignees: task.assignedTo ? [{ initials: this.getInitials(task.assignedTo.name), name: task.assignedTo.name }] : []
-        //assignees: [{ initials: "task.assignedTo.name", name: "task.assignedTo.name" }]
+        assignees: [] // Will be populated if member info is available
       };
+
+      // Try to find member from already loaded project members
+      if (task.assignedToProjectMemberId) {
+        const member = this.projectMembers().find(m => {
+          // Handle both string and number types for memberId
+          const memberIdNum = typeof m.memberId === 'string' ? parseInt(m.memberId, 10) : m.memberId;
+          return memberIdNum === task.assignedToProjectMemberId;
+        });
+
+        if (member) {
+          taskCard.assignees = [{ initials: this.getInitials(member.user), name: member.user }];
+        }
+      }
 
       const column = columns.find(col => col.statusValue === taskStatus);
       if (column) {
@@ -428,5 +450,44 @@ export class BoardComponent {
     const maxTasks = this.maxTaskCount();
     const placeholdersNeeded = Math.max(0, maxTasks - currentTaskCount);
     return Array(placeholdersNeeded).fill(0);
+  }
+
+  formatDate(dateString: string): string {
+    if (!dateString) return '—';
+
+    try {
+      // Handle dd-mm-yyyy format from backend
+      const parts = dateString.split('-');
+      if (parts.length === 3) {
+        // Convert dd-mm-yyyy to yyyy-mm-dd for Date constructor
+        const [day, month, year] = parts;
+        const date = new Date(`${year}-${month}-${day}`);
+
+        // Check if date is valid
+        if (isNaN(date.getTime())) {
+          return '—';
+        }
+
+        return date.toLocaleDateString('en-GB', {
+          day: '2-digit',
+          month: 'short',
+          year: 'numeric'
+        });
+      }
+
+      // Fallback: try parsing as-is
+      const date = new Date(dateString);
+      if (isNaN(date.getTime())) {
+        return '—';
+      }
+
+      return date.toLocaleDateString('en-GB', {
+        day: '2-digit',
+        month: 'short',
+        year: 'numeric'
+      });
+    } catch {
+      return '—';
+    }
   }
 }

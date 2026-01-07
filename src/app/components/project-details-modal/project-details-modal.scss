@@ -1,0 +1,219 @@
+.modal-content-wrapper {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    min-height: 0;
+    background: white;
+    border-radius: 0.75rem;
+    max-width: 48rem;
+    width: 100%;
+    max-height: 90vh;
+    box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+    animation: slideIn 0.3s ease-out;
+    overflow: hidden; // This ensures rounded corners are visible
+}
+
+.modal-header {
+    flex-shrink: 0;
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    background: linear-gradient(to right, #8c2d1b, #6b2115);
+    padding: 1.5rem 2rem;
+    gap: 1rem;
+
+    h2 {
+        margin: 0;
+    }
+
+    button {
+        flex-shrink: 0;
+        padding: 0.5rem;
+        background: none;
+        border: none;
+        cursor: pointer;
+
+        &:hover {
+            opacity: 0.8;
+        }
+    }
+}
+
+.modal-content {
+    flex: 1;
+    overflow-y: auto;
+    overflow-x: hidden;
+    padding: 2rem;
+
+    // Custom scrollbar styling
+    scrollbar-width: thin;
+    scrollbar-color: #d1d5db #f3f4f6;
+
+    &::-webkit-scrollbar {
+        width: 0.5rem;
+    }
+
+    &::-webkit-scrollbar-track {
+        background: #f3f4f6;
+    }
+
+    &::-webkit-scrollbar-thumb {
+        background: #d1d5db;
+        border-radius: 0.25rem;
+
+        &:hover {
+            background: #9ca3af;
+        }
+    }
+}
+
+// Custom dropdown styles (for member selector)
+.member-selector {
+    position: relative;
+}
+
+.selected-member {
+    padding: 0.625rem 0.875rem;
+    border: 1px solid #d1d5db;
+    border-radius: 0.5rem;
+    cursor: pointer;
+    transition: all 0.2s;
+    background-color: white;
+    min-height: 2.5rem;
+    display: flex;
+    align-items: center;
+
+    &:hover {
+        border-color: #8c2d1b;
+        background-color: #f9fafb;
+    }
+
+    &:focus-within {
+        outline: none;
+        border-color: #8c2d1b;
+        box-shadow: 0 0 0 3px rgba(140, 45, 27, 0.1);
+    }
+}
+
+.member-display {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    flex: 1;
+}
+
+.avatar {
+    width: 2rem;
+    height: 2rem;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    font-size: 0.75rem;
+    font-weight: 600;
+    flex-shrink: 0;
+}
+
+.member-name {
+    font-size: 0.875rem;
+    font-weight: 500;
+    color: #1f2937;
+}
+
+.member-role {
+    font-size: 0.75rem;
+    color: #6b7280;
+}
+
+.placeholder {
+    color: #9ca3af;
+    font-size: 0.875rem;
+}
+
+.member-list {
+    position: absolute;
+    top: 100%;
+    left: 0;
+    right: 0;
+    background-color: white;
+    border: 1px solid #d1d5db;
+    border-top: none;
+    border-radius: 0 0 0.5rem 0.5rem;
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+    z-index: 10;
+    max-height: 300px;
+    overflow-y: auto;
+}
+
+.member-list-item {
+    padding: 0.75rem 0.875rem;
+    cursor: pointer;
+    transition: background-color 0.2s;
+
+    &:hover {
+        background-color: #f3f4f6;
+    }
+
+    .member-display {
+        gap: 0.75rem;
+    }
+
+    .member-name {
+        font-size: 0.875rem;
+    }
+
+    .member-role {
+        font-size: 0.75rem;
+    }
+}
+
+// Backdrop animation
+@keyframes fadeInBackdrop {
+    from {
+        opacity: 0;
+    }
+
+    to {
+        opacity: 1;
+    }
+}
+
+.modal-backdrop {
+    background: rgba(0, 0, 0, .32);
+    animation: fadeInBackdrop 0.2s ease-in-out;
+}
+
+// Modal slide-in animation
+@keyframes slideIn {
+    from {
+        transform: translateY(-20px);
+        opacity: 0;
+    }
+
+    to {
+        transform: translateY(0);
+        opacity: 1;
+    }
+}
+
+// Comment fade-out animation
+.comment-item {
+    animation: fadeIn 0.2s ease-in-out;
+}
+
+@keyframes commentFadeOut {
+    from {
+        opacity: 1;
+        transform: scale(1);
+    }
+
+    to {
+        opacity: 0;
+        transform: scale(0.95);
+    }
+}
+
+.comment-deleting {
+    animation: commentFadeOut 0.3s ease-out forwards;
+}

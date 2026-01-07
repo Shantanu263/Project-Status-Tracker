@@ -4,6 +4,7 @@ import { FormsModule } from '@angular/forms';
 import { HttpClient } from '@angular/common/http';
 import { environment } from '../../environments/environment';
 import { SelectedProjectService } from '../../services/selected-project.service';
+import { AddMembersModalComponent } from '../add-members-modal/add-members-modal';
 
 interface AssignedBy {
   userId: number;
@@ -36,7 +37,7 @@ interface MembersResponse {
 @Component({
   selector: 'app-members',
   standalone: true,
-  imports: [CommonModule, FormsModule],
+  imports: [CommonModule, FormsModule, AddMembersModalComponent],
   templateUrl: './members.html',
   styleUrl: './members.scss',
   changeDetection: ChangeDetectionStrategy.OnPush
@@ -48,6 +49,7 @@ export class MembersComponent {
   members = signal<ProjectMember[]>([]);
   loading = signal(false);
   error = signal<string | null>(null);
+  showAddMembersModal = signal(false);
 
   // Pagination
   currentPage = signal(0);
@@ -330,4 +332,18 @@ export class MembersComponent {
   }
 
   Math = Math;
+
+
+  openAddMembersModal(): void {
+    this.showAddMembersModal.set(true);
+  }
+
+  closeAddMembersModal(): void {
+    this.showAddMembersModal.set(false);
+  }
+
+  onMembersAdded(): void {
+    this.showAddMembersModal.set(false);
+    this.loadMembers();
+  }
 }

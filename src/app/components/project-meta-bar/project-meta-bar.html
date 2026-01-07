@@ -1,0 +1,61 @@
+<div class="flex flex-wrap items-center gap-x-4 gap-y-2 text-sm">
+    <!-- Start Date -->
+    <div class="flex items-center gap-1.5">
+        <svg class="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
+        </svg>
+        <span class="text-xs text-gray-600">Start Date:</span>
+        <span class="font-medium text-gray-600">{{ formattedStartDate() }}</span>
+    </div>
+
+    <!-- Separator Dot -->
+    <span class="text-gray-300">•</span>
+
+    <!-- End Date -->
+    <div class="flex items-center gap-1.5">
+        <svg class="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
+        </svg>
+        <span class="text-xs text-gray-600">End Date:</span>
+        <span class="font-medium text-gray-600">{{ formattedEndDate() }}</span>
+    </div>
+
+    <!-- Status Badge -->
+    @if (status()) {
+    <!-- Separator Dot -->
+    <span class="text-gray-300">•</span>
+
+    <div class="flex items-center gap-1.5">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" class="h-4 w-4" fill="none">
+            <!-- Outer ring -->
+            <circle class="text-gray-400" cx="8" cy="8" r="6" stroke="currentColor" stroke-width="1.5" />
+
+            <!-- Inner dot -->
+            <circle class="text-gray-400" cx="8" cy="8" r="3" fill="currentColor" />
+        </svg>
+        <span class="text-xs text-gray-600">Status:</span>
+        <span class="px-2.5 py-0.5 rounded-full text-xs font-medium" [class]="getStatusColor(status())">
+            {{ capitalize(status()) }}
+        </span>
+    </div>
+    }
+
+    <!-- Priority Badge -->
+    @if (priority()) {
+    <!-- Separator Dot -->
+    <span class="text-gray-300">•</span>
+
+    <div class="flex items-center gap-1.5">
+        <svg class="w-3.5 h-3.5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                d="M3 21v-4m0 0V5a2 2 0 012-2h6.5l1 1H21l-3 6 3 6h-8.5l-1-1H5a2 2 0 00-2 2zm9-13.5V9"></path>
+        </svg>
+        <span class="text-xs text-gray-600">Priority:</span>
+        <span class="px-2.5 py-0.5 rounded-full text-xs font-medium" [class]="getPriorityColor(priority())">
+            {{ priority() }}
+        </span>
+    </div>
+    }
+</div>

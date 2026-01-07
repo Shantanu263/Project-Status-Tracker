@@ -11,12 +11,16 @@ import { TasksComponent } from '../tasks/tasks';
 import { UserManagementComponent } from '../user-management/user-management';
 import { ProjectService } from '../../services/project.service';
 import { toSignal } from '@angular/core/rxjs-interop';
+import { ProjectMetaBarComponent } from '../project-meta-bar/project-meta-bar';
+import { ProjectDetailsModalComponent } from '../project-details-modal/project-details-modal';
+import { ConfirmationDialogComponent } from '../shared/confirmation-dialog/confirmation-dialog';
+import { AuthService } from '../../services/auth.service';
 
 type TabType = 'summary' | 'board' | 'phases' | 'tasks' | 'members' | 'timeline' | 'calendar';
 
 @Component({
   selector: 'app-project-content',
-  imports: [CommonModule, BoardComponent, MembersComponent, DashboardComponent, PhasesComponent, TimelineComponent, TasksComponent, UserManagementComponent],
+  imports: [CommonModule, BoardComponent, MembersComponent, DashboardComponent, PhasesComponent, TimelineComponent, TasksComponent, UserManagementComponent, ProjectMetaBarComponent, ProjectDetailsModalComponent, ConfirmationDialogComponent],
   templateUrl: './project-content.html',
   styleUrl: './project-content.scss',
   changeDetection: ChangeDetectionStrategy.OnPush
@@ -26,6 +30,7 @@ export class ProjectContentComponent {
   private readonly route = inject(ActivatedRoute);
   private readonly router = inject(Router);
   private readonly projectService = inject(ProjectService);
+  private readonly authService = inject(AuthService);
 
   activeTab = signal<TabType>('summary');
   selectedProject = computed(() => this.selectedProjectService.getSelectedProject()());
@@ -34,6 +39,13 @@ export class ProjectContentComponent {
   // Get projects list to check if user has any projects
   projects = toSignal(this.projectService.getProjects(), { initialValue: [] });
   hasNoProjects = computed(() => this.projects().length === 0);
+
+  // Project menu and modal state
+  showProjectMenu = signal<boolean>(false);
+  showProjectDetailsModal = signal<boolean>(false);
+  showDeleteConfirmation = signal<boolean>(false);
+  showSnackbar = signal<boolean>(false);
+  snackbarMessage = signal<string>('');
 
   tabs: { label: string; value: TabType }[] = [
     { label: 'Summary', value: 'summary' },
@@ -84,5 +96,79 @@ export class ProjectContentComponent {
       // Navigate to the tab route
       this.router.navigate(['/home/projects', project.projectId, tab]);
     }
+  }
+
+  canManageProject(): boolean {
+    const project = this.selectedProject();
+    if (!project) return false;
+
+    const currentUserId = this.authService.getCurrentUserId();
+    return this.authService.canManageProject(project.projectMembers, currentUserId);
+  }
+
+  toggleProjectMenu() {
+    this.showProjectMenu.update(v => !v);
+  }
+
+  openEditModal() {
+    this.showProjectMenu.set(false);
+    this.showProjectDetailsModal.set(true);
+  }
+
+  openDeleteConfirmation() {
+    this.showProjectMenu.set(false);
+    this.showDeleteConfirmation.set(true);
+  }
+
+  cancelDelete() {
+    this.showDeleteConfirmation.set(false);
+  }
+
+  confirmDelete() {
+    this.showDeleteConfirmation.set(false);
+    this.deleteProject();
+  }
+
+  private deleteProject() {
+    const project = this.selectedProject();
+    if (!project) return;
+
+    this.projectService.deleteProject(project.projectId).subscribe({
+      next: () => {
+        this.showSnackbarMessage('Project deleted successfully');
+        setTimeout(() => {
+          this.router.navigate(['/home']);
+        }, 1500);
+      },
+      error: (err) => {
+        this.showSnackbarMessage('Failed to delete project');
+        console.error(err);
+      }
+    });
+  }
+
+  showSnackbarMessage(message: string) {
+    this.snackbarMessage.set(message);
+    this.showSnackbar.set(true);
+    setTimeout(() => {
+      this.showSnackbar.set(false);
+    }, 3000);
+  }
+
+  closeProjectDetailsModal() {
+    this.showProjectDetailsModal.set(false);
+  }
+
+  onProjectUpdated() {
+    // Refresh project data
+    const project = this.selectedProject();
+    if (project) {
+      this.selectedProjectService.loadProjectById(project.projectId);
+    }
+  }
+
+  onProjectDeleted() {
+    // Navigate to home after deletion
+    this.router.navigate(['/home']);
   }
 }

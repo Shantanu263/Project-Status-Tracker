@@ -99,6 +99,8 @@ export class CreateProjectModalComponent {
       startDate: ['', Validators.required],
       endDate: ['', Validators.required],
       description: [''],
+      status: ['ongoing'], // Default status
+      priority: ['Medium'] // Default priority
     });
 
     this.memberForm = this.fb.group({
@@ -134,6 +136,8 @@ export class CreateProjectModalComponent {
       startDate: formValue.startDate,
       endDate: formValue.endDate,
       projectHeadId: this.PROJECT_HEAD_ID,
+      status: formValue.status,
+      priority: formValue.priority
     };
 
     console.log('Submitting project payload:', payload);

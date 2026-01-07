@@ -77,7 +77,7 @@
 
     <!-- LIST VIEW -->
     @if (viewMode() === 'list') {
-    <div class="p-4" style="margin-bottom: -12px;">
+    <div>
       @if (filteredPhases().length === 0) {
       <div class="text-center py-8 text-gray-500">
         <p>No phases found</p>
@@ -96,7 +96,7 @@
       </div>
 
       <!-- Phase Rows -->
-      <div class="divide-y divide-gray-200">
+      <div class="divide-y divide-gray-200" style="height: 370px; overflow-y: auto;">
         @for (phase of filteredPhases(); track phase.phaseId) {
         <div class="grid grid-cols-12 gap-4 px-4 py-4 hover:bg-gray-50 transition-colors cursor-pointer"
           (click)="openPhaseDetails($event, phase)">
@@ -147,7 +147,7 @@
 
     <!-- GRID VIEW -->
     @if (viewMode() === 'grid') {
-    <div class="p-4">
+    <div class="p-4" style="height: 403px; overflow-y: auto;">
       @if (filteredPhases().length === 0) {
       <div class="text-center py-8 text-gray-500">
         <p>No phases found</p>

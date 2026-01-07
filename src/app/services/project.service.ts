@@ -96,6 +96,10 @@ export class ProjectService {
     return this.http.get<ProjectMember[]>(`${this.api}/${projectId}/project-members`);
   }
 
+  getProjectMember(memberId: number): Observable<ProjectMember> {
+    return this.http.get<ProjectMember>(`${this.api}/project-member/${memberId}`);
+  }
+
   applyTemplateToProject(projectId: number, templateId: number): Observable<any> {
     return this.http.post<any>(`${this.api}/${projectId}/phases/template/${templateId}`, {});
   }
@@ -115,5 +119,21 @@ export class ProjectService {
 
   createSubtask(projectId: number, phaseId: number, taskId: number, subtask: any): Observable<any> {
     return this.http.post<any>(`${this.api}/${projectId}/phases/${phaseId}/tasks/${taskId}/subtasks`, subtask);
+  }
+
+  // Project operations
+  updateProject(projectId: number, updates: Partial<{
+    projectName: string;
+    description: string;
+    startDate: string;
+    endDate: string;
+    priority: string;
+    status: string;
+  }>): Observable<Project> {
+    return this.http.put<Project>(`${this.api}/${projectId}`, updates);
+  }
+
+  deleteProject(projectId: number): Observable<void> {
+    return this.http.delete<void>(`${this.api}/${projectId}`);
   }
 }

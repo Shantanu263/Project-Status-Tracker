@@ -41,7 +41,7 @@
   @else {
   <div class="flex flex-col flex-1 min-h-0">
     <div class="timeline-wrapper flex flex-col bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden"
-      style="height: calc(100vh - 220px);">
+      style="height: calc(100vh - 240px);">
       <!-- Header Row (Fixed at top) -->
       <div class="timeline-header-row flex border-b border-gray-200 bg-gray-50 flex-shrink-0">
         <!-- Left Column Header (Sticky - Highest z-index) -->
@@ -254,13 +254,13 @@
           </div>
         </div>
 
-        <!-- Separate Horizontal Scrollbar Container (Always Visible) -->
-        <div class="timeline-scrollbar-container flex border-t border-gray-200 bg-gray-50 rounded-b-lg">
+        <!-- Separate Horizontal Scrollbar Container -->
+        <div class="timeline-scrollbar-container flex border-t border-gray-200 bg-gray-50 rounded-b-lg -mb-[10px]">
           <!-- Left Spacer (matches left column width) -->
           <div class="w-80 flex-shrink-0 border-r border-gray-200"></div>
 
           <!-- Horizontal Scrollbar Area -->
-          <div class="timeline-horizontal-scroll flex-1 overflow-x-auto" #horizontalScrollbar
+          <div class="timeline-horizontal-scroll flex-1 overflow-x-auto -mt-[11px]" #horizontalScrollbar
             (wheel)="onTimelineWheel($event)">
             <div class="timeline-scrollbar-content" [style.width.px]="timelineColumns().length * getColumnWidth()"
               [style.height.px]="10"></div>

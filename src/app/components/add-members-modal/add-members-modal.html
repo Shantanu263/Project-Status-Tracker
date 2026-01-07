@@ -1,0 +1,149 @@
+@if (isOpen()) {
+<!-- Modal Backdrop -->
+<div class="fixed inset-0 z-50 flex items-center justify-center p-4 modal-backdrop" (click)="onClose()">
+    <!-- Modal Container -->
+    <div class="modal-content-wrapper bg-white rounded-xl shadow-2xl w-full flex flex-col"
+        style="max-width: 900px; height: 596px;" (click)="$event.stopPropagation()">
+
+        <!-- Fixed Header -->
+        <div
+            class="modal-header bg-gradient-to-r from-[#8c2d1b] to-[#6b2115] text-white px-8 py-6 rounded-t-xl flex items-center justify-between">
+            <div>
+                <h2 class="text-3xl font-bold">Add Team Members</h2>
+                <p class="text-white mt-1 opacity-90">Add members to your project</p>
+            </div>
+            <button type="button" (click)="onClose()"
+                class="text-white hover:text-gray-200 transition-colors duration-200" aria-label="Close modal">
+                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12">
+                    </path>
+                </svg>
+            </button>
+        </div>
+
+        <!-- Scrollable Content -->
+        <div class="flex-1 px-8 py-6">
+            @if (errorMessage()) {
+            <div class="mb-4 p-4 bg-red-50 border border-red-200 rounded-lg text-red-700">
+                {{ errorMessage() }}
+            </div>
+            }
+
+            <form [formGroup]="memberForm" class="space-y-6">
+                <div>
+                    <!-- Add Member Form -->
+                    <div class="bg-gray-50 p-5 rounded-lg border border-gray-200">
+                        <div class="flex flex-col sm:flex-row gap-3">
+                            <input type="email" formControlName="memberEmail" placeholder="Enter email"
+                                class="flex-1 px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#8c2d1b] focus:border-transparent transition-all duration-200 outline-none" />
+
+                            <select formControlName="memberRole"
+                                class="px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#8c2d1b] focus:border-transparent transition-all duration-200 outline-none bg-white sm:w-48">
+                                <option value="SUPER_ADMIN">Project Admin</option>
+                                <option value="PROJECT_HEAD">Project Head</option>
+                                <option value="PROJECT_HANDLER">Project Handler</option>
+                                <option value="PROJECT_VIEWER">Project Viewer</option>
+                            </select>
+
+                            <button type="button" (click)="addMember()" [disabled]="isLoading()"
+                                class="px-6 py-3 bg-[#8c2d1b] text-white rounded-lg hover:bg-[#6b2115] transition-colors duration-200 font-medium flex items-center justify-center whitespace-nowrap disabled:opacity-50 disabled:cursor-not-allowed">
+                                <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                        d="M12 6v6m0 0v6m0-6h6m-6 0H6">
+                                    </path>
+                                </svg>
+                                Add Member
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Members List -->
+                    <div class="mt-5 bg-white border border-gray-200 rounded-lg"
+                        style="height: 254px; overflow-y: auto;">
+                        @if (members().length > 0) {
+                        <div class="p-2 space-y-2">
+                            @for (member of members(); track member.email; let i = $index) {
+                            <div
+                                class="flex items-center justify-between p-4 bg-white border border-gray-200 rounded-lg hover:border-[#8c2d1b] transition-colors duration-200">
+                                <div class="flex items-center space-x-3">
+                                    <div
+                                        [class]="'w-10 h-10 bg-gradient-to-br ' + member.color + ' rounded-full flex items-center justify-center text-white font-semibold'">
+                                        {{ member.initials }}
+                                    </div>
+                                    <div>
+                                        <p class="font-medium text-gray-800">{{ member.email }}</p>
+                                        <p class="text-sm text-gray-500">{{ member.role }}</p>
+                                    </div>
+                                </div>
+                                <button type="button" (click)="removeMember(i)" [disabled]="isLoading()"
+                                    class="text-red-500 hover:text-red-700 hover:bg-red-50 p-2 rounded-lg transition-colors duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
+                                    aria-label="Remove member">
+                                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                            d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16">
+                                        </path>
+                                    </svg>
+                                </button>
+                            </div>
+                            }
+                        </div>
+                        } @else {
+                        <div class="h-full flex items-center justify-center">
+                            <div class="text-center py-8">
+                                <svg class="w-12 h-12 mx-auto text-gray-400 mb-3" fill="none" stroke="currentColor"
+                                    viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                        d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z">
+                                    </path>
+                                </svg>
+                                <p class="text-gray-500">No team members added yet</p>
+                                <p class="text-sm text-gray-400 mt-1">Add members using the form above</p>
+                            </div>
+                        </div>
+                        }
+                    </div>
+
+                    <!-- Progress Indicator for Adding Members -->
+                    @if (membersBeingAdded() > 0 && isLoading()) {
+                    <div class="mt-5 p-4 bg-blue-50 border border-blue-200 rounded-lg">
+                        <p class="text-sm text-blue-700">
+                            Adding members... {{ membersBeingAdded() }}/{{ members().length }} completed
+                        </p>
+                        <div class="mt-2 w-full bg-blue-200 rounded-full h-2">
+                            <div class="bg-blue-600 h-2 rounded-full transition-all duration-300"
+                                [style.width.%]="(membersBeingAdded() / members().length) * 100">
+                            </div>
+                        </div>
+                    </div>
+                    }
+                </div>
+            </form>
+        </div>
+
+        <!-- Fixed Footer -->
+        <div class="border-t border-gray-200 px-8 py-4 bg-gray-50 rounded-b-xl flex items-center justify-end gap-3">
+            <button type="button" (click)="onClose()" [disabled]="isLoading()"
+                class="px-6 py-3 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors duration-200 font-medium disabled:opacity-50 disabled:cursor-not-allowed">
+                Cancel
+            </button>
+            <button type="button" (click)="finishAndAddMembers()" [disabled]="isLoading() || members().length === 0"
+                [class]="'px-8 py-3 rounded-lg transition-all duration-200 font-medium shadow-lg flex items-center gap-2 ' + 
+                         (members().length === 0 
+                           ? 'bg-gray-400 text-white cursor-not-allowed opacity-50' 
+                           : 'bg-gradient-to-r from-[#8c2d1b] to-[#6b2115] text-white hover:from-[#6b2115] hover:to-[#512110] shadow-[#8c2d1b]/30 disabled:from-gray-400 disabled:to-gray-400 disabled:cursor-not-allowed')">
+                @if (isLoading()) {
+                <svg class="animate-spin h-5 w-5" fill="none" viewBox="0 0 24 24">
+                    <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                    <path class="opacity-75" fill="currentColor"
+                        d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z">
+                    </path>
+                </svg>
+                <span>Adding Members...</span>
+                } @else {
+                <span>@if (members().length > 0) { Add {{ members().length }} Member(s) } @else { Add Members }</span>
+                }
+            </button>
+        </div>
+    </div>
+</div>
+}

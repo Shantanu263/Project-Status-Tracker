@@ -146,7 +146,7 @@
 						"header": [],
 						"body": {
 							"mode": "raw",
-							"raw": "{\r\n  \"email\": \"shantanu@example.com\",\r\n  \"password\": \"shantanu\"\r\n}\r\n",
+							"raw": "{\r\n  \"email\": \"admin@example.com\",\r\n  \"password\": \"admin123\"\r\n}\r\n",
 							"options": {
 								"raw": {
 									"language": "json"
@@ -176,7 +176,7 @@
 						"header": [],
 						"body": {
 							"mode": "raw",
-							"raw": "{\r\n  \"refreshToken\" : \"eyJhbGciOiJIUzUxMiJ9.eyJzdWIiOiJzaGFudGFudUBleGFtcGxlLmNvbSIsInJvbGUiOiJQUk9KRUNUIEhFQUQiLCJpYXQiOjE3NjA1NTI0NjcsImV4cCI6MTc2MTE1NzI2N30.0Pnw5amgvDcw35e39mHT-tay1BFZSxm7g9T1SdajIn0BILUTBlIQMazVAb1tc4h0J3OEnZKbY3ZCBbqr0gv83Q\"\r\n}\r\n",
+							"raw": "{\r\n  \"refreshToken\" : \"eyJhbGciOiJIUzUxMiJ9.eyJzdWIiOiJhZG1pbkBleGFtcGxlLmNvbSIsInVzZXJJZCI6Miwicm9sZSI6IlNVUEVSIEFETUlOIiwibmFtZSI6IkFkbWluIiwiaWF0IjoxNzY3MzUwNTMzLCJleHAiOjE3Njc5NTUzMzN9.myfcKzvzkyXvfUgv3lu0rAbmGgy3w7JwXULvpbt0YPmGNt11V2H7wygFf7rv7xWU7Jquq3dVG1MjV0LqFrxRGQ\"\r\n}\r\n",
 							"options": {
 								"raw": {
 									"language": "json"
@@ -213,7 +213,7 @@
 						"header": [],
 						"body": {
 							"mode": "raw",
-							"raw": "{\r\n  \"projectRole\": \"dkmfkdmfkdfmdfk\"\r\n}",
+							"raw": "{\r\n  \"projectRole\": \"PROJECT_HEAD\"\r\n}",
 							"options": {
 								"raw": {
 									"language": "json"
@@ -228,6 +228,13 @@
 							"path": [
 								"home",
 								"test-enum"
+							],
+							"query": [
+								{
+									"key": "projectRole",
+									"value": "knfkdnfkdfkdfnn",
+									"disabled": true
+								}
 							]
 						}
 					},
@@ -242,7 +249,39 @@
 					"name": "Get Users",
 					"request": {
 						"method": "GET",
-						"header": []
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/admin/users?page=0&size=3&sortBy=role&order=asc&search=Ad",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"admin",
+								"users"
+							],
+							"query": [
+								{
+									"key": "page",
+									"value": "0"
+								},
+								{
+									"key": "size",
+									"value": "3"
+								},
+								{
+									"key": "sortBy",
+									"value": "role"
+								},
+								{
+									"key": "order",
+									"value": "asc"
+								},
+								{
+									"key": "search",
+									"value": "Ad"
+								}
+							]
+						}
 					},
 					"response": []
 				},
@@ -280,7 +319,7 @@
 						"header": [],
 						"body": {
 							"mode": "raw",
-							"raw": "{\r\n   \"roleName\" : \"HANDLER\" \r\n}",
+							"raw": "{\r\n   \"roleName\" : \"PROJECT HANDLER\" \r\n}",
 							"options": {
 								"raw": {
 									"language": "json"
@@ -288,14 +327,14 @@
 							}
 						},
 						"url": {
-							"raw": "{{base_url}}/admin/approve-user/2",
+							"raw": "{{base_url}}/admin/change-role/23",
 							"host": [
 								"{{base_url}}"
 							],
 							"path": [
 								"admin",
-								"approve-user",
-								"2"
+								"change-role",
+								"23"
 							]
 						}
 					},
@@ -309,16 +348,6 @@
 				{
 					"name": "Get Projects",
 					"request": {
-						"auth": {
-							"type": "bearer",
-							"bearer": [
-								{
-									"key": "token",
-									"value": "eyJhbGciOiJIUzUxMiJ9.eyJzdWIiOiJ0b21teWtlZGk2MkBnbWFpbC5jb20iLCJyb2xlIjoiUFJPSkVDVF9IRUFEIiwibmFtZSI6IlRlc3QgVXNlciIsImlhdCI6MTc2MTY0MzUyMywiZXhwIjoxNzYyMjQ4MzIzfQ._I_mQ5SBetzjpAT6p64teC8eO4vQ6NJcJn4--vNgA5cPG-zxaWa7Icz3x8ZX6DVf6Eq5BHeXgqt4Z1Nd5jMznA",
-									"type": "string"
-								}
-							]
-						},
 						"method": "GET",
 						"header": [],
 						"url": {
@@ -336,11 +365,21 @@
 				{
 					"name": "Create Project",
 					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "eyJhbGciOiJIUzUxMiJ9.eyJzdWIiOiJ0b21teWtlZGk2MkBnbWFpbC5jb20iLCJyb2xlIjoiTUVNQkVSIiwibmFtZSI6IlRlc3QgVXNlciIsImlhdCI6MTc2NDIyOTY0OCwiZXhwIjoxNzY0ODM0NDQ4fQ.ECi5-r1I-oTN_XRYt92fwU6MTSWpspSQt6HZxFYwFkcN7B3BzhOvBVjcC47H-eDF74Qnktm9Kpnz-SsmtjrqnQ",
+									"type": "string"
+								}
+							]
+						},
 						"method": "POST",
 						"header": [],
 						"body": {
 							"mode": "raw",
-							"raw": "{\r\n  \"projectName\": \"Software Development Lifecycle Project\",\r\n  \"description\": \"SDLC\",\r\n  \"startDate\": \"2025-10-15\",\r\n  \"endDate\": \"2026-01-01\",\r\n  \"priority\": \"Low\",\r\n  \"projectHeadId\": \"7\",\r\n  \"templateId\" : 1  \r\n}\r\n",
+							"raw": "{\r\n  \"projectName\": \"Software Development Lifecycle Project 72\",\r\n  \"description\": \"SDLC\",\r\n  \"startDate\": \"2025-10-15\",\r\n  \"endDate\": \"2026-01-01\",\r\n  \"projectHeadId\": \"7\",\r\n  \"templateId\" : 1  \r\n}\r\n",
 							"options": {
 								"raw": {
 									"language": "json"
@@ -446,6 +485,14 @@
 					"response": []
 				},
 				{
+					"name": "Get project members Paginated",
+					"request": {
+						"method": "GET",
+						"header": []
+					},
+					"response": []
+				},
+				{
 					"name": "Add member to a Project",
 					"request": {
 						"method": "POST",
@@ -460,6 +507,75 @@
 								"10",
 								"project-members",
 								"6"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Add member to a Project using email",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\r\n    \"email\": \"shantanu@example.com\",\r\n    \"roleInProject\":\"PROJECT_HEAD\"\r\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{base_url}}/project/24/project-members/add-user",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"project",
+								"24",
+								"project-members",
+								"add-user"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Update Project Member Role",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "eyJhbGciOiJIUzUxMiJ9.eyJzdWIiOiJyb2dlckBleGFtcGxlLmNvbSIsInVzZXJJZCI6MTksInJvbGUiOiJBRE1JTiIsIm5hbWUiOiJSb2dlciIsImlhdCI6MTc2NzAyNDc2NywiZXhwIjoxNzY3NjI5NTY3fQ.12ESa-lcrSLf6RJW1fYPa9ZZowr54jfzi6dsT3d4hGlqwvYvv0GbqfVdfFZsNPdb4dj31lfF_4QysjZ6KFGk8w",
+									"type": "string"
+								}
+							]
+						},
+						"method": "PATCH",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\r\n    \"roleInProject\":\"PROJECT_HANDLER\"\r\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{base_url}}/project/21/project-members/34/role",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"project",
+								"21",
+								"project-members",
+								"34",
+								"role"
 							]
 						}
 					},
@@ -486,29 +602,37 @@
 					"response": []
 				},
 				{
-					"name": "Add member to a Project using email",
+					"name": "Get Dashboard of Project",
 					"request": {
-						"method": "POST",
+						"method": "GET",
 						"header": [],
-						"body": {
-							"mode": "raw",
-							"raw": "{\r\n    \"email\": \"harry@example.com\",\r\n    \"roleInProject\":\"PROJECT HANDLER\"\r\n}",
-							"options": {
-								"raw": {
-									"language": "json"
-								}
-							}
-						},
 						"url": {
-							"raw": "{{base_url}}/project/10/project-members/add-user",
+							"raw": "{{base_url}}/project/21/dashboard",
 							"host": [
 								"{{base_url}}"
 							],
 							"path": [
 								"project",
-								"10",
-								"project-members",
-								"add-user"
+								"21",
+								"dashboard"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Get Projects Dashboard",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/project/projects-dashboard",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"project",
+								"projects-dashboard"
 							]
 						}
 					},
@@ -553,6 +677,27 @@
 								"10",
 								"phase",
 								"25"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Add Phase Template to Project",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/project/21/phases/template/1",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"project",
+								"21",
+								"phases",
+								"template",
+								"1"
 							]
 						}
 					},
@@ -643,6 +788,33 @@
 					"response": []
 				},
 				{
+					"name": "Update Completion Date of a Phase",
+					"request": {
+						"method": "PATCH",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/project/10/phase/24/completed?completedAt=2025-12-24",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"project",
+								"10",
+								"phase",
+								"24",
+								"completed"
+							],
+							"query": [
+								{
+									"key": "completedAt",
+									"value": "2025-12-24"
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
 					"name": "Delete Phase of a Project",
 					"request": {
 						"method": "DELETE",
@@ -692,10 +864,23 @@
 			"name": "Tasks",
 			"item": [
 				{
-					"name": "Get all Tasks of a Project",
+					"name": "Get Tasks of a Member",
 					"request": {
 						"method": "GET",
-						"header": []
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/project/21/member/3/tasks",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"project",
+								"21",
+								"member",
+								"3",
+								"tasks"
+							]
+						}
 					},
 					"response": []
 				},
@@ -743,6 +928,30 @@
 					"response": []
 				},
 				{
+					"name": "Get Sub Task by Id",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/project/21/phases/57/tasks/13/subtasks/2",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"project",
+								"21",
+								"phases",
+								"57",
+								"tasks",
+								"13",
+								"subtasks",
+								"2"
+							]
+						}
+					},
+					"response": []
+				},
+				{
 					"name": "Add Task",
 					"request": {
 						"method": "POST",
@@ -767,6 +976,48 @@
 								"phases",
 								"25",
 								"tasks"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Add Sub Task",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "eyJhbGciOiJIUzUxMiJ9.eyJzdWIiOiJyb2dlckBleGFtcGxlLmNvbSIsInVzZXJJZCI6MTksInJvbGUiOiJBRE1JTiIsIm5hbWUiOiJSb2dlciIsImlhdCI6MTc2NzAyNDc2NywiZXhwIjoxNzY3NjI5NTY3fQ.12ESa-lcrSLf6RJW1fYPa9ZZowr54jfzi6dsT3d4hGlqwvYvv0GbqfVdfFZsNPdb4dj31lfF_4QysjZ6KFGk8w",
+									"type": "string"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\r\n    \"subTaskName\": \"Sub Task 1\",\r\n    \"startDate\": \"2025-12-30\",\r\n    \"endDate\": \"2026-01-02\",\r\n    \"status\": \"TO_DO\",\r\n    \"priority\": \"Low\",\r\n    \"assignedTo\": 34\r\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{base_url}}/project/21/phases/57/tasks/13/subtasks",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"project",
+								"21",
+								"phases",
+								"57",
+								"tasks",
+								"13",
+								"subtasks"
 							]
 						}
 					},
@@ -804,6 +1055,49 @@
 					"response": []
 				},
 				{
+					"name": "Update Sub Task",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "eyJhbGciOiJIUzUxMiJ9.eyJzdWIiOiJyb2dlckBleGFtcGxlLmNvbSIsInVzZXJJZCI6MTksInJvbGUiOiJBRE1JTiIsIm5hbWUiOiJSb2dlciIsImlhdCI6MTc2NzAyNDc2NywiZXhwIjoxNzY3NjI5NTY3fQ.12ESa-lcrSLf6RJW1fYPa9ZZowr54jfzi6dsT3d4hGlqwvYvv0GbqfVdfFZsNPdb4dj31lfF_4QysjZ6KFGk8w",
+									"type": "string"
+								}
+							]
+						},
+						"method": "PUT",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\r\n    \"subTaskName\": \"Sub Task 01\",\r\n    \"startDate\": \"2025-12-31\",\r\n    \"endDate\": \"2026-01-02\",\r\n    \"status\": \"TO_DO\",\r\n    \"priority\": \"Low\",\r\n    \"assignedTo\": 34\r\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{base_url}}/project/21/phases/57/tasks/13/subtasks/2",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"project",
+								"21",
+								"phases",
+								"57",
+								"tasks",
+								"13",
+								"subtasks",
+								"2"
+							]
+						}
+					},
+					"response": []
+				},
+				{
 					"name": "Change Status of a Task",
 					"request": {
 						"method": "PATCH",
@@ -833,6 +1127,35 @@
 					"response": []
 				},
 				{
+					"name": "Update Completed Date of a Task",
+					"request": {
+						"method": "PATCH",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/project/10/phase/24/tasks/6/completed?completedAt=2025-12-24",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"project",
+								"10",
+								"phase",
+								"24",
+								"tasks",
+								"6",
+								"completed"
+							],
+							"query": [
+								{
+									"key": "completedAt",
+									"value": "2025-12-24"
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
 					"name": "Delete Task",
 					"request": {
 						"method": "DELETE",
@@ -849,6 +1172,145 @@
 								"24",
 								"tasks",
 								"6"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Delete Sub Task",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "eyJhbGciOiJIUzUxMiJ9.eyJzdWIiOiJyb2dlckBleGFtcGxlLmNvbSIsInVzZXJJZCI6MTksInJvbGUiOiJBRE1JTiIsIm5hbWUiOiJSb2dlciIsImlhdCI6MTc2NzAyNDc2NywiZXhwIjoxNzY3NjI5NTY3fQ.12ESa-lcrSLf6RJW1fYPa9ZZowr54jfzi6dsT3d4hGlqwvYvv0GbqfVdfFZsNPdb4dj31lfF_4QysjZ6KFGk8w",
+									"type": "string"
+								}
+							]
+						},
+						"method": "DELETE",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\r\n    \"subTaskName\": \"Sub Task 1\",\r\n    \"startDate\": \"2025-12-30\",\r\n    \"endDate\": \"2026-01-02\",\r\n    \"status\": \"TO_DO\",\r\n    \"priority\": \"Low\",\r\n    \"assignedTo\": 34\r\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/project/21/phases/57/tasks/13/subtasks/1",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"project",
+								"21",
+								"phases",
+								"57",
+								"tasks",
+								"13",
+								"subtasks",
+								"1"
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "Comments",
+			"item": [
+				{
+					"name": "Add comment to a Task",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\r\n    \"content\":\"This is another comment added in Logging task\"\r\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{base_url}}/project/tasks/15/comments",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"project",
+								"tasks",
+								"15",
+								"comments"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Add comment to a SubTask",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\r\n    \"content\":\"This is a comment.\"\r\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{base_url}}/project/subtasks/2/comments",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"project",
+								"subtasks",
+								"2",
+								"comments"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Update Comment",
+					"request": {
+						"method": "PATCH",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/project/comments/2",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"project",
+								"comments",
+								"2"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Delete Comment",
+					"request": {
+						"method": "DELETE",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/project/comments/2",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"project",
+								"comments",
+								"2"
 							]
 						}
 					},
@@ -909,7 +1371,7 @@
 		"bearer": [
 			{
 				"key": "token",
-				"value": "eyJhbGciOiJIUzUxMiJ9.eyJzdWIiOiJ0b21teWtlZGk2MkBnbWFpbC5jb20iLCJyb2xlIjoiUFJPSkVDVF9IRUFEIiwibmFtZSI6IlRlc3QgVXNlciIsImlhdCI6MTc2MjQyMTI1NiwiZXhwIjoxNzYzMDI2MDU2fQ.ZigKiQbICcW-JZVjpaNkvH729BGSGbPZG2dnRoPzfOchBAsjdBZyLcDu0ibZjk-m8G0kLFoitm9RRq5RFPSUIg",
+				"value": "eyJhbGciOiJIUzUxMiJ9.eyJzdWIiOiJhZG1pbkBleGFtcGxlLmNvbSIsInVzZXJJZCI6Miwicm9sZSI6IlNVUEVSIEFETUlOIiwibmFtZSI6IkFkbWluIiwiaWF0IjoxNzY3MDg3OTcyLCJleHAiOjE3Njc2OTI3NzJ9.v3K5rgsRe8uvq5NRRWEnOrSlVxO21CJTah-BMZwfgPvwx4IPVOgCEKNTwWJTHT8pZ31NJxAtPC-Gb9-sqNZKbg",
 				"type": "string"
 			}
 		]
