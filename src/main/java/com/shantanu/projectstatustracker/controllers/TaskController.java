@@ -46,15 +46,7 @@ public class TaskController {
             @RequestBody TaskRequestDTO dto) {
         return taskService.updateTask(projectId, phaseId, taskId, dto);
     }
-//
-//    @DeleteMapping("/{taskId}")
-//    public ResponseEntity<Object> deleteTask(
-//            @PathVariable Long projectId,
-//            @PathVariable Long phaseId,
-//            @PathVariable Long taskId) {
-//        return taskService.deleteTask(projectId, phaseId, taskId);
-//    }
-    
+
     @PatchMapping("/phases/{phaseId}/tasks/{taskId}/status")
     public ResponseEntity<Object> updateTaskStatus(
             @PathVariable Long projectId,
@@ -62,6 +54,15 @@ public class TaskController {
             @PathVariable Long taskId,
             @RequestParam Status status) {
         return taskService.updateTaskStatus(projectId, phaseId, taskId, status);
+    }
+
+    @DeleteMapping("/phases/{phaseId}/tasks/{taskId}")
+    public ResponseEntity<Object> deleteTask(
+            @PathVariable Long projectId,
+            @PathVariable Long phaseId,
+            @PathVariable Long taskId
+    ){
+        return taskService.deleteTask(projectId,phaseId,taskId);
     }
 
     @GetMapping("/member/{memberId}/tasks")
@@ -129,8 +130,6 @@ public class TaskController {
     ){
         return taskService.deleteSubTask(projectId,phaseId,taskId,subTaskId);
     }
-
-
 
 }
 

@@ -1,5 +1,6 @@
 package com.shantanu.projectstatustracker.dtos;
 
+import com.shantanu.projectstatustracker.models.PhaseStatus;
 import jakarta.annotation.Nullable;
 import lombok.Data;
 
@@ -16,7 +17,7 @@ public class PhaseRequestDTO {
 
     Date endDate;
 
-    String status;
+    PhaseStatus status;
 
     @Nullable
     Long projectMemberId;

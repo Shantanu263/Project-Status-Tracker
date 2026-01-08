@@ -1,6 +1,7 @@
 package com.shantanu.projectstatustracker.controllers;
 
 import com.shantanu.projectstatustracker.dtos.PhaseRequestDTO;
+import com.shantanu.projectstatustracker.models.PhaseStatus;
 import com.shantanu.projectstatustracker.services.PhaseService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
@@ -57,7 +58,7 @@ public class PhaseController {
     public ResponseEntity<Object> updateStatus(
             @PathVariable Long projectId,
             @PathVariable Long phaseId,
-            @RequestParam(name = "status") String status) {
+            @RequestParam(name = "status") PhaseStatus status) {
         return phaseService.updatePhaseStatus(projectId, phaseId, status);
     }
 

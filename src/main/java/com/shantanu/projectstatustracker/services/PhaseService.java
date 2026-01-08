@@ -1,6 +1,7 @@
 package com.shantanu.projectstatustracker.services;
 
 import com.shantanu.projectstatustracker.dtos.PhaseRequestDTO;
+import com.shantanu.projectstatustracker.models.PhaseStatus;
 import org.springframework.http.ResponseEntity;
 
 import java.util.Date;
@@ -17,11 +18,12 @@ public interface PhaseService {
 
     ResponseEntity<Object> deleteProjectPhase(Long projectId,Long phaseId);
 
-    ResponseEntity<Object> updatePhaseStatus(Long projectId, Long phaseId, String status);
+    ResponseEntity<Object> updatePhaseStatus(Long projectId, Long phaseId, PhaseStatus status);
 
     ResponseEntity<Object> addPhaseTemplateToProject(Long projectId, Long templateId);
 
     ResponseEntity<Object> updateCompletion(Long projectId, Long phaseId, Date completedAt);
 
     Double updatePhaseProgress(Long phaseId);
+
 }

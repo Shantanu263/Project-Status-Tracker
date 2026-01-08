@@ -41,7 +41,8 @@ public class Phase {
     @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "dd-MM-yyyy")
     private Date completedAt;
 
-    private String status;
+    @Enumerated(EnumType.STRING)
+    private PhaseStatus status;
 
     private Double progress;
 

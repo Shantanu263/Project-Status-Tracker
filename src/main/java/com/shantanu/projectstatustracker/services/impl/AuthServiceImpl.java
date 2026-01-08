@@ -90,7 +90,7 @@ public class AuthServiceImpl implements AuthService {
         MailBody mailBody = MailBody.builder()
                 .to(user.getEmail())
                 .text(htmlContent)  // add HTML template
-                .subject("Password Reset OTP - Secure Your Account")
+                .subject("")
                 .build();
 
         emailService.sendHtmlMessageAsync(mailBody);

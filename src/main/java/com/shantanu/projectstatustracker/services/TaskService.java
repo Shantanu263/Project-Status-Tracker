@@ -18,6 +18,8 @@ public interface TaskService {
 
     ResponseEntity<Object> updateTask(Long projectId, Long phaseId, Long taskId, TaskRequestDTO dto);
 
+    ResponseEntity<Object> deleteTask(Long projectId, Long phaseId, Long taskId);
+
     ResponseEntity<Object> updateTaskStatus(Long projectId, Long phaseId, Long taskId, Status status);
 
     ResponseEntity<Object> getTasksOfAMember(Long projectId, Long memberId);

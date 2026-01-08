@@ -126,11 +126,11 @@ public class PhaseServiceImpl implements PhaseService {
     }
 
     @Override
-    public ResponseEntity<Object> updatePhaseStatus(Long projectId, Long phaseId, String status) {
+    public ResponseEntity<Object> updatePhaseStatus(Long projectId, Long phaseId, PhaseStatus status) {
         Phase phase = phaseRepo.findByPhaseIdAndProject_ProjectId(phaseId, projectId)
                 .orElseThrow(() -> new RuntimeException("Phase not found"));
 
-        phase.setStatus(String.valueOf(status));
+        phase.setStatus(status);
         phaseRepo.save(phase);
         
         // Update phase progress after updating its status
@@ -152,7 +152,7 @@ public class PhaseServiceImpl implements PhaseService {
         List<Phase> clonedPhases = projectTemplate.getProjectTemplatePhases().stream().map(templatePhase -> {
             Phase phase = new Phase();
             phase.setPhaseName(templatePhase.getPhaseName());
-            phase.setStatus("Not Started"); // Default status
+            phase.setStatus(PhaseStatus.TO_DO);   // Default status
             phase.setStartDate(project.getStartDate()); // start same as project
             phase.setEndDate(project.getEndDate());     // end same as project
             phase.setProject(project);

@@ -94,7 +94,7 @@ public class ProjectServiceImpl implements ProjectService {
             List<Phase> clonedPhases = projectTemplate.getProjectTemplatePhases().stream().map(templatePhase -> {
                 Phase phase = new Phase();
                 phase.setPhaseName(templatePhase.getPhaseName());
-                phase.setStatus("Not Started"); // Default status
+                phase.setStatus(PhaseStatus.TO_DO); // Default status
                 phase.setStartDate(project.getStartDate()); // start same as project
                 phase.setEndDate(project.getEndDate());     // end same as project
                 phase.setProject(project);

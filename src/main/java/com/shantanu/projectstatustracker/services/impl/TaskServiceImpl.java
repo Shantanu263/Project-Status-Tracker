@@ -65,6 +65,7 @@ public class TaskServiceImpl implements TaskService {
         }
 
         Task task = taskMapper.mapTaskRequestDTOToTask(taskRequestDTO,phase,assignedTo);
+        task.setProgress(0.0);
         taskRepo.save(task);
         
         // Update phase progress after creating a task
@@ -122,6 +123,19 @@ public class TaskServiceImpl implements TaskService {
         }
 
         return ResponseEntity.ok(Map.of("message","Task updated","update Task",taskMapper.mapTaskToResponse(existingTask)));
+    }
+
+    @Override
+    public ResponseEntity<Object> deleteTask(Long projectId, Long phaseId, Long taskId) {
+        Task task = taskRepo.findByTaskIdAndProjectPhase_PhaseId(taskId,phaseId)
+                .orElseThrow(() -> new ResourceNotFoundException("Task not found"));
+
+        taskRepo.delete(task);
+
+        // Update task progress with respect to subTask Status
+        phaseService.updatePhaseProgress(phaseId);
+
+        return ResponseEntity.ok(Map.of("message","Task deleted"));
     }
 
     @Override
