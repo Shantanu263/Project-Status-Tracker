@@ -18,6 +18,7 @@ export interface Log {
 export interface SubTask {
   subTaskId: number;
   subTaskName: string;
+  description?: string;
   taskId: number;
   startDate: string;
   endDate: string;
@@ -56,9 +57,10 @@ export interface Phase {
   description?: string;
   startDate?: string;
   endDate?: string;
-  status?: 'TO_DO' | 'IN_PROGRESS' | 'DONE' | 'REVIEW';
+  status?: 'IN_PROGRESS' | 'COMPLETED' | 'NOT_STARTED' | 'ON_HOLD';
   tasks?: Task[];
   projectMemberId?: number;
+  assignedToName?: string;
   completedAt?: string;
   progress?: number;
   updatedAt?: string;

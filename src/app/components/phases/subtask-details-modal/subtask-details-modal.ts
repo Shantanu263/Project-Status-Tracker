@@ -37,6 +37,8 @@ export class SubtaskDetailsModalComponent {
     editingField = signal<string | null>(null);
     activeTab = signal<'history' | 'comments'>('history');
     showMemberDropdown = signal(false);
+    showMoreMenu = signal(false);
+    showDeleteConfirmation = signal(false);
 
     // Comment state
     editingCommentId = signal<number | null>(null);
@@ -91,6 +93,35 @@ export class SubtaskDetailsModalComponent {
         this.close.emit();
     }
 
+    toggleMoreMenu(): void {
+        this.showMoreMenu.update(v => !v);
+    }
+
+    openDeleteConfirmation(): void {
+        this.showMoreMenu.set(false);
+        this.showDeleteConfirmation.set(true);
+    }
+
+    closeDeleteConfirmation(): void {
+        this.showDeleteConfirmation.set(false);
+    }
+
+    confirmDelete(): void {
+        this.projectService.deleteSubtask(this.projectId(), this.phaseId(), this.taskId(), this.subTaskId()).subscribe({
+            next: () => {
+                this.showDeleteConfirmation.set(false);
+                this.close.emit();
+                // Notify parent to refresh
+                this.updated.emit();
+            },
+            error: (err: any) => {
+                console.error('Error deleting subtask:', err);
+                this.error.set('Failed to delete subtask');
+                this.showDeleteConfirmation.set(false);
+            }
+        });
+    }
+
     startEditing(field: string): void {
         this.editingField.set(field);
     }
@@ -102,6 +133,11 @@ export class SubtaskDetailsModalComponent {
     updateSubtaskName(newValue: string): void {
         if (!newValue.trim()) return;
         this.updateField('subTaskName', newValue);
+        this.editingField.set(null);
+    }
+
+    updateDescription(newValue: string): void {
+        this.updateField('description', newValue);
         this.editingField.set(null);
     }
 

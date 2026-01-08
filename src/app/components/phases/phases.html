@@ -16,8 +16,7 @@
       <div class="flex items-center gap-2">
         <!-- Search Input -->
         <div class="relative">
-          <input type="text" placeholder="Search phases" [(ngModel)]="searchQuery"
-            (ngModelChange)="onSearchChange($event)"
+          <input type="text" placeholder="Search phases" [(ngModel)]="searchTerm"
             class="w-64 bg-gray-50 border border-gray-300 rounded-md pl-9 pr-3 py-1.5 text-sm text-gray-900 placeholder-gray-500 focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500" />
           <svg class="w-4 h-4 text-gray-500 absolute left-3 top-1/2 transform -translate-y-1/2" fill="none"
             stroke="currentColor" viewBox="0 0 24 24">
@@ -30,20 +29,21 @@
       <!-- Right Side -->
       <div class="flex items-center gap-2">
         <!-- Status Filter -->
-        <select [(ngModel)]="statusFilter" (ngModelChange)="onStatusFilterChange($event)"
+        <select [(ngModel)]="statusFilter"
           class="px-3 py-1.5 bg-gray-50 border border-gray-300 rounded-md text-sm text-gray-700 focus:outline-none focus:ring-1 focus:ring-blue-500">
-          <option>All Status</option>
-          <option>Not Started</option>
-          <option>In Progress</option>
-          <option>Completed</option>
+          <option value="all">All Status</option>
+          <option value="NOT_STARTED">Not Started</option>
+          <option value="IN_PROGRESS">In Progress</option>
+          <option value="ON_HOLD">On Hold</option>
+          <option value="COMPLETED">Completed</option>
         </select>
 
         <!-- Sort Dropdown -->
-        <select [(ngModel)]="sortBy" (ngModelChange)="onSortChange($event)"
+        <select [(ngModel)]="sortBy"
           class="px-3 py-1.5 bg-gray-50 border border-gray-300 rounded-md text-sm text-gray-700 focus:outline-none focus:ring-1 focus:ring-blue-500">
-          <option>Sort by Start Date</option>
-          <option>Sort by End Date</option>
-          <option>Sort by Progress</option>
+          <option value="name">Sort by Name</option>
+          <option value="date">Sort by Date</option>
+          <option value="status">Sort by Status</option>
         </select>
 
         <!-- View Toggle -->
@@ -66,12 +66,15 @@
         </div>
 
         <!-- Add Phase Button -->
+        @if (canCreatePhase()) {
         <button (click)="openAddPhaseModal()"
-          class="p-1.5 text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded transition-colors">
+          class="flex items-center gap-1.5 px-3 py-1.5 bg-blue-600 text-white text-sm font-medium rounded-md hover:bg-blue-700 transition-colors">
           <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path>
           </svg>
+          Add Phase
         </button>
+        }
       </div>
     </div>
 
@@ -88,11 +91,10 @@
         class="grid grid-cols-12 gap-4 px-4 py-2 border-b border-gray-200 text-xs font-medium text-gray-600 uppercase tracking-wider sticky top-0 bg-white">
         <div class="col-span-3">Phase Name</div>
         <div class="col-span-2">Status</div>
-        <div class="col-span-2">Duration</div>
-        <div class="col-span-2">Progress</div>
+        <div class="col-span-2">Start Date</div>
+        <div class="col-span-2">End Date</div>
+        <div class="col-span-2">Assignee</div>
         <div class="col-span-1">Tasks</div>
-        <div class="col-span-1">Updated</div>
-        <div class="col-span-1 text-right">Actions</div>
       </div>
 
       <!-- Phase Rows -->
@@ -109,34 +111,24 @@
             </span>
           </div>
           <div class="col-span-2 flex items-center">
-            <span class="text-sm text-gray-600">{{ formatDuration(phase.startDate, phase.endDate) }}</span>
+            <span class="text-sm text-gray-600">{{ phase.startDate || '—' }}</span>
           </div>
           <div class="col-span-2 flex items-center">
-            <div class="flex-1">
-              <div class="flex items-center justify-between mb-1">
-                <span class="text-xs text-gray-600">{{ getProgressPercentage(phase) }}%</span>
-              </div>
-              <div class="w-full bg-gray-200 rounded-full h-1.5">
-                <div [class]="'h-1.5 rounded-full ' + getProgressBarColor(getProgressPercentage(phase))"
-                  [style.width.%]="getProgressPercentage(phase)"></div>
-              </div>
+            <span class="text-sm text-gray-600">{{ phase.endDate || '—' }}</span>
+          </div>
+          <div class="col-span-2 flex items-center gap-2">
+            @if (phase.assignedToName) {
+            <div
+              [class]="'w-6 h-6 rounded-full flex items-center justify-center text-white text-xs font-medium ' + getAvatarColor(phase.assignedToName)">
+              {{ getInitials(phase.assignedToName) }}
             </div>
+            <span class="text-sm text-gray-700">{{ phase.assignedToName }}</span>
+            } @else {
+            <span class="text-sm text-gray-400">Unassigned</span>
+            }
           </div>
           <div class="col-span-1 flex items-center">
             <span class="text-sm text-gray-600">{{ getTaskCount(phase) }}</span>
-          </div>
-          <div class="col-span-1 flex items-center">
-            <span class="text-sm text-gray-600">{{ getLastUpdatedTime(phase) }}</span>
-          </div>
-          <div class="col-span-1 flex items-center justify-end">
-            <button (click)="openPhaseActionsMenu($event, phase)"
-              class="p-1 text-gray-600 hover:text-gray-900 rounded hover:bg-gray-100">
-              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                  d="M12 5v.01M12 12v.01M12 19v.01M12 6a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2z">
-                </path>
-              </svg>
-            </button>
           </div>
         </div>
         }
@@ -189,16 +181,30 @@
 
           <div class="space-y-2 text-sm">
             <div class="flex items-center justify-between">
-              <span class="text-gray-500">Duration</span>
-              <span class="text-gray-700">{{ formatDuration(phase.startDate, phase.endDate) }}</span>
+              <span class="text-gray-500">Start Date</span>
+              <span class="text-gray-700">{{ phase.startDate || '—' }}</span>
+            </div>
+            <div class="flex items-center justify-between">
+              <span class="text-gray-500">End Date</span>
+              <span class="text-gray-700">{{ phase.endDate || '—' }}</span>
             </div>
             <div class="flex items-center justify-between">
               <span class="text-gray-500">Tasks</span>
               <span class="text-gray-700">{{ getTaskCount(phase) }} total</span>
             </div>
             <div class="flex items-center justify-between">
-              <span class="text-gray-500">Updated</span>
-              <span class="text-gray-700">{{ getLastUpdatedTime(phase) }}</span>
+              <span class="text-gray-500">Assignee</span>
+              @if (phase.assignedToName) {
+              <div class="flex items-center gap-1.5">
+                <div
+                  [class]="'w-5 h-5 rounded-full flex items-center justify-center text-white text-xs font-medium ' + getAvatarColor(phase.assignedToName)">
+                  {{ getInitials(phase.assignedToName) }}
+                </div>
+                <span class="text-gray-700">{{ phase.assignedToName }}</span>
+              </div>
+              } @else {
+              <span class="text-gray-400">Unassigned</span>
+              }
             </div>
           </div>
 
@@ -223,7 +229,8 @@
 
 <!-- Phase Modal -->
 <app-modal [isOpen]="showPhaseModal()" [title]="'Add New Phase'" (close)="closePhaseModal()">
-  <app-phase-form [phase]="selectedPhase()" (submit)="onPhaseSubmit($event)" (cancel)="closePhaseModal()">
+  <app-phase-form [phase]="selectedPhase()" [projectId]="projectId()" (submit)="onPhaseSubmit($event)"
+    (cancel)="closePhaseModal()">
   </app-phase-form>
 </app-modal>
 
@@ -247,8 +254,10 @@
   [cancelText]="'Cancel'" [isDanger]="true" (confirm)="confirmDeleteTask()" (cancel)="closeDeleteTaskDialog()">
 </app-confirmation-dialog>
 
-<!-- Detail Modal -->
-<app-detail-modal [isOpen]="showDetailModal()" [mode]="detailModalMode()" [item]="detailModalItem()"
-  [projectMembers]="projectMembers()" (close)="closeDetailModal()" (save)="onDetailModalSave($event)">
-</app-detail-modal>
+<!-- Phase Details Modal -->
+@if (showPhaseDetailsModal() && selectedPhaseId()) {
+<app-phase-details-modal [isOpen]="showPhaseDetailsModal()" [projectId]="projectId()" [phaseId]="selectedPhaseId()!"
+  [projectMembers]="projectMembers()" (close)="closePhaseDetailsModal()" (updated)="onPhaseDetailsUpdated()">
+</app-phase-details-modal>
+}
 }

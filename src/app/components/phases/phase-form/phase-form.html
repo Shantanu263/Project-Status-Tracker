@@ -35,11 +35,55 @@
     <div class="form-group">
         <label for="status" class="form-label">Status</label>
         <select id="status" formControlName="status" class="form-input">
-            <option value="pending">Pending</option>
-            <option value="ongoing">Ongoing</option>
-            <option value="completed">Completed</option>
-            <option value="delayed">Delayed</option>
+            <option value="TO_DO">To Do</option>
+            <option value="IN_PROGRESS">In Progress</option>
+            <option value="ON_HOLD">On Hold</option>
+            <option value="COMPLETED">Completed</option>
         </select>
+    </div>
+
+    <!-- Assigned To -->
+    <div class="form-group">
+        <label for="assignedTo" class="form-label">Assign To</label>
+        <div class="member-selector">
+            <div class="selected-member" (click)="toggleMemberDropdown()">
+                @if (getSelectedMember(); as member) {
+                <div class="member-display">
+                    <div [class]="'avatar ' + getAvatarColor(member)">
+                        {{ getInitials(member) }}
+                    </div>
+                    <div>
+                        <div class="member-name">{{ member.user }}</div>
+                        <div class="member-role">{{ member.role }}</div>
+                    </div>
+                </div>
+                } @else {
+                <span class="placeholder">Select a project member (optional)</span>
+                }
+            </div>
+
+            @if (showMemberDropdown()) {
+            <div class="member-list">
+                <div class="member-list-item" (click)="clearSelection()">
+                    <span class="placeholder">No Member</span>
+                </div>
+                @for (member of projectMembers(); track member.memberId) {
+                <div class="member-list-item" (click)="selectMember(member)">
+                    <div class="member-display">
+                        <div [class]="'avatar ' + getAvatarColor(member)">
+                            {{ getInitials(member) }}
+                        </div>
+                        <div>
+                            <div class="member-name">{{ member.user }}</div>
+                            <div class="member-role">{{ member.role }}</div>
+                        </div>
+                    </div>
+                </div>
+                }
+            </div>
+            }
+            <input type="hidden" formControlName="assignedTo" />
+        </div>
     </div>
 
     <!-- Form Actions -->

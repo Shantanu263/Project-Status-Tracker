@@ -1,0 +1,373 @@
+@if (isOpen()) {
+<!-- Modal Backdrop -->
+<div class="fixed inset-0 z-50 flex items-center justify-center p-4 modal-backdrop" (click)="onClose()">
+    <!-- Modal Container -->
+    <div class="modal-content-wrapper" (click)="$event.stopPropagation()">
+        <!-- Modal Header -->
+        <div class="modal-header">
+            <div>
+                <h2 class="text-3xl font-bold text-white">Phase Details</h2>
+                <p class="text-sm text-gray-200 mt-1">View and edit phase information</p>
+            </div>
+            <div class="flex items-center gap-2">
+                <!-- More Menu Button -->
+                <div class="relative">
+                    <button (click)="toggleMoreMenu()"
+                        class="flex-shrink-0 rounded-lg p-2 text-white transition-colors duration-200 hover:bg-white/20">
+                        <svg class="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                d="M12 5v.01M12 12v.01M12 19v.01M12 6a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2z">
+                            </path>
+                        </svg>
+                    </button>
+                    <!-- More Menu Dropdown -->
+                    @if (showMoreMenu()) {
+                    <div class="absolute right-0 mt-2 w-48 bg-white rounded-lg shadow-lg border border-gray-200 z-10">
+                        @if (canDeletePhase()) {
+                        <button (click)="openDeleteConfirmation()"
+                            class="w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-red-50 rounded-lg transition-colors flex items-center gap-2">
+                            <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                    d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16">
+                                </path>
+                            </svg>
+                            Delete Phase
+                        </button>
+                        }
+                    </div>
+                    }
+                </div>
+                <!-- Close Button -->
+                <button (click)="onClose()"
+                    class="flex-shrink-0 rounded-lg p-2 text-white transition-colors duration-200 hover:bg-white/20">
+                    <svg class="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12">
+                        </path>
+                    </svg>
+                </button>
+            </div>
+        </div>
+
+        <!-- Modal Content -->
+        <div class="modal-content">
+            @if (loading()) {
+            <div class="flex items-center justify-center py-12">
+                <div class="text-gray-500">Loading...</div>
+            </div>
+            } @else if (error()) {
+            <div class="rounded-lg bg-red-50 p-4 text-red-700">
+                {{ error() }}
+            </div>
+            } @else if (phaseDetails()) {
+            <div class="space-y-6">
+                <!-- Phase Name Section -->
+                <div class="space-y-2">
+                    <label class="block text-sm font-medium text-gray-700 mb-2">PHASE NAME</label>
+                    @if (editingField() === 'phaseName') {
+                    <!-- Edit Mode -->
+                    <div class="space-y-2">
+                        <input type="text" #phaseNameInput [value]="phaseDetails()!.phaseName"
+                            class="w-full text-3xl font-bold text-gray-900 border-2 border-[#8c2d1b] rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-[#8c2d1b]"
+                            autofocus />
+                        <div class="flex gap-2">
+                            <button (click)="updatePhaseName(phaseNameInput.value)"
+                                class="px-4 py-2 bg-[#8c2d1b] text-white rounded-lg hover:bg-[#6b2115] transition-colors font-medium">
+                                Save
+                            </button>
+                            <button (click)="cancelEditing()"
+                                class="px-4 py-2 bg-gray-300 text-gray-700 rounded-lg hover:bg-gray-400 transition-colors font-medium">
+                                Cancel
+                            </button>
+                        </div>
+                    </div>
+                    } @else {
+                    <!-- Display Mode -->
+                    <div class="group relative">
+                        <h1 class="text-3xl font-bold text-gray-900">{{ phaseDetails()!.phaseName }}</h1>
+                        @if (canUpdatePhase()) {
+                        <button (click)="startEditing('phaseName')"
+                            class="absolute right-0 top-0 rounded-lg p-2 text-gray-400 opacity-0 transition-opacity duration-200 hover:bg-gray-100 hover:text-gray-600 group-hover:opacity-100">
+                            <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                    d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z">
+                                </path>
+                            </svg>
+                        </button>
+                        }
+                    </div>
+                    }
+                </div>
+
+                <!-- Description Section -->
+                <div class="space-y-2">
+                    <label class="block text-sm font-medium text-gray-700 mb-2 uppercase">Description</label>
+                    @if (editingField() === 'description') {
+                    <!-- Edit Mode -->
+                    <div class="space-y-2">
+                        <textarea #descriptionInput rows="4" [value]="phaseDetails()!.description || ''"
+                            class="w-full border-2 border-[#8c2d1b] rounded-lg p-4 focus:outline-none focus:ring-2 focus:ring-[#8c2d1b] resize-none text-gray-700"
+                            autofocus></textarea>
+                        <div class="flex gap-2">
+                            <button (click)="updateDescription(descriptionInput.value)"
+                                class="px-4 py-2 bg-[#8c2d1b] text-white rounded-lg hover:bg-[#6b2115] transition-colors font-medium">
+                                Save
+                            </button>
+                            <button (click)="cancelEditing()"
+                                class="px-4 py-2 bg-gray-300 text-gray-700 rounded-lg hover:bg-gray-400 transition-colors font-medium">
+                                Cancel
+                            </button>
+                        </div>
+                    </div>
+                    } @else {
+                    <!-- Display Mode -->
+                    <div class="group relative">
+                        <div class="rounded-lg bg-gray-50 p-4">
+                            <p class="text-gray-700">{{ phaseDetails()!.description || 'No description provided' }}</p>
+                        </div>
+                        @if (canUpdatePhase()) {
+                        <button (click)="startEditing('description')"
+                            class="absolute right-2 top-2 rounded-lg p-2 text-gray-400 opacity-0 transition-opacity duration-200 hover:bg-gray-100 hover:text-gray-600 group-hover:opacity-100">
+                            <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                    d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z">
+                                </path>
+                            </svg>
+                        </button>
+                        }
+                    </div>
+                    }
+                </div>
+
+                <div class="border-t border-gray-200"></div>
+
+                <!-- Status Section -->
+                <div class="space-y-2">
+                    <label class="block text-sm font-medium text-gray-700 mb-2">STATUS</label>
+                    <div class="relative">
+                        <select [value]="phaseDetails()!.status || ''"
+                            (change)="updateStatus($any($event.target).value)" [disabled]="!canUpdatePhase()"
+                            class="w-full cursor-pointer appearance-none rounded-lg border border-gray-300 bg-white px-4 py-3 pr-10 font-medium text-gray-900 transition-all outline-none hover:bg-gray-50 focus:border-transparent focus:ring-2 focus:ring-[#8c2d1b] disabled:opacity-50 disabled:cursor-not-allowed">
+                            <option value="TO_DO">To Do</option>
+                            <option value="IN_PROGRESS">In Progress</option>
+                            <option value="ON_HOLD">On Hold</option>
+                            <option value="COMPLETED">Completed</option>
+                        </select>
+                        <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center pr-3">
+                            <svg class="h-5 w-5 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                    d="M19 9l-7 7-7-7"></path>
+                            </svg>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Assigned To Section -->
+                <div class="space-y-2">
+                    <label class="block text-sm font-medium text-gray-700 mb-2">ASSIGNED TO</label>
+                    <div class="member-selector">
+                        <div class="selected-member" (click)="canUpdatePhase() && toggleMemberDropdown()"
+                            [class.disabled]="!canUpdatePhase()">
+                            @if (assignedMember(); as member) {
+                            <div class="member-display">
+                                <div [class]="'avatar ' + getAvatarColor(member)">
+                                    {{ getInitials(member) }}
+                                </div>
+                                <span class="member-name">{{ member.user }}</span>
+                            </div>
+                            <svg class="h-5 w-5 text-gray-600 ml-auto" fill="none" stroke="currentColor"
+                                viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                    d="M19 9l-7 7-7-7"></path>
+                            </svg>
+                            } @else {
+                            <span class="placeholder">Select a project member (optional)</span>
+                            <svg class="h-5 w-5 text-gray-600 ml-auto" fill="none" stroke="currentColor"
+                                viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                    d="M19 9l-7 7-7-7"></path>
+                            </svg>
+                            }
+                        </div>
+
+                        @if (showMemberDropdown()) {
+                        <div class="member-list">
+                            <div class="member-list-item" (click)="clearMemberSelection()">
+                                <span class="placeholder">No Member</span>
+                            </div>
+                            @for (member of projectMembers(); track member.memberId) {
+                            <div class="member-list-item" (click)="selectMember(member)">
+                                <div class="member-display">
+                                    <div [class]="'avatar ' + getAvatarColor(member)">
+                                        {{ getInitials(member) }}
+                                    </div>
+                                    <div>
+                                        <div class="member-name">{{ member.user }}</div>
+                                        <div class="member-role">{{ member.role }}</div>
+                                    </div>
+                                </div>
+                            </div>
+                            }
+                        </div>
+                        }
+                    </div>
+                </div>
+
+                <!-- Divider -->
+                <div class="border-t border-gray-200"></div>
+
+                <!-- Dates Section -->
+                <div class="space-y-4">
+                    <h3 class="text-lg font-semibold text-gray-900">Timeline</h3>
+                    <div class="grid grid-cols-2 gap-4">
+                        <!-- Start Date -->
+                        <div class="space-y-2">
+                            <label class="text-xs font-medium tracking-wide text-gray-500 uppercase">Start Date</label>
+                            <div class="relative">
+                                <input type="date" [value]="formatDate(phaseDetails()!.startDate)"
+                                    (change)="updateStartDate($any($event.target).value)" [disabled]="!canUpdatePhase()"
+                                    class="w-full cursor-pointer appearance-none rounded-lg border border-gray-300 bg-white px-4 py-3 pr-10 font-medium text-gray-900 transition-all outline-none hover:bg-gray-50 focus:border-transparent focus:ring-2 focus:ring-[#8c2d1b] disabled:opacity-50 disabled:cursor-not-allowed" />
+                            </div>
+                        </div>
+
+                        <!-- End Date -->
+                        <div class="space-y-2">
+                            <label class="text-xs font-medium tracking-wide text-gray-500 uppercase">End Date</label>
+                            <div class="relative">
+                                <input type="date" [value]="formatDate(phaseDetails()!.endDate)"
+                                    (change)="updateEndDate($any($event.target).value)" [disabled]="!canUpdatePhase()"
+                                    class="w-full cursor-pointer appearance-none rounded-lg border border-gray-300 bg-white px-4 py-3 pr-10 font-medium text-gray-900 transition-all outline-none hover:bg-gray-50 focus:border-transparent focus:ring-2 focus:ring-[#8c2d1b] disabled:opacity-50 disabled:cursor-not-allowed" />
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Divider -->
+                <div class="border-t border-gray-200"></div>
+
+                <!-- Tasks Section -->
+                <div class="space-y-4">
+                    <div class="flex items-center justify-between">
+                        <h3 class="text-lg font-semibold text-gray-900">Tasks</h3>
+                    </div>
+
+                    <!-- Progress Bar -->
+                    @if (phaseTasks().length > 0) {
+                    <div class="space-y-2">
+                        <div class="flex items-center justify-between text-sm">
+                            <div class="h-2 flex-1 bg-gray-200 rounded-full overflow-hidden">
+                                <div class="h-full bg-blue-500 rounded-full transition-all duration-300"
+                                    [style.width.%]="progressPercentage()"></div>
+                            </div>
+                            <span class="ml-3 text-gray-600 font-medium">{{ progressPercentage() }}% Done</span>
+                        </div>
+                    </div>
+                    }
+
+                    <!-- Tasks Table -->
+                    @if (phaseTasks().length > 0) {
+                    <div class="border border-gray-200 rounded-lg overflow-hidden">
+                        <table class="w-full">
+                            <thead class="bg-gray-50 border-b border-gray-200">
+                                <tr>
+                                    <th
+                                        class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                        Task Name</th>
+                                    <th
+                                        class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                        Status</th>
+                                    <th
+                                        class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                        Assignee</th>
+                                    <th
+                                        class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                        Start Date</th>
+                                    <th
+                                        class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                        End Date</th>
+                                </tr>
+                            </thead>
+                            <tbody class="bg-white divide-y divide-gray-100">
+                                @for (task of phaseTasks(); track task.taskId) {
+                                <tr class="hover:bg-gray-50 transition-colors cursor-pointer"
+                                    (click)="onTaskClick(task.taskId!)">
+                                    <!-- Task Name -->
+                                    <td class="px-4 py-3">
+                                        <div class="flex items-center gap-2">
+                                            <span class="text-sm font-medium text-gray-900">{{ task.taskName }}</span>
+                                        </div>
+                                    </td>
+                                    <!-- Status -->
+                                    <td class="px-4 py-3">
+                                        <span
+                                            [class]="'inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ' + getTaskStatusClass(task.status || '')">
+                                            {{ getTaskStatusLabel(task.status || '') }}
+                                        </span>
+                                    </td>
+                                    <!-- Assignee -->
+                                    <td class="px-4 py-3">
+                                        @if (getAssignedMemberForTask(task.assignedToProjectMemberId); as member) {
+                                        <div class="flex items-center gap-2">
+                                            <div
+                                                [class]="'w-6 h-6 rounded-full flex items-center justify-center text-white text-xs font-medium ' + getAvatarColor(member)">
+                                                {{ getInitials(member) }}
+                                            </div>
+                                            <span class="text-sm text-gray-700">{{ member.user }}</span>
+                                        </div>
+                                        } @else {
+                                        <span class="text-sm text-gray-400">Unassigned</span>
+                                        }
+                                    </td>
+                                    <!-- Start Date -->
+                                    <td class="px-4 py-3">
+                                        <span class="text-sm text-gray-600">{{ task.startDate }}</span>
+                                    </td>
+                                    <!-- End Date -->
+                                    <td class="px-4 py-3">
+                                        <span class="text-sm text-gray-600">{{ task.endDate }}</span>
+                                    </td>
+                                </tr>
+                                }
+                            </tbody>
+                        </table>
+                    </div>
+                    } @else {
+                    <div class="text-center py-8 text-gray-500 border border-gray-200 rounded-lg">
+                        <p>No tasks in this phase yet</p>
+                    </div>
+                    }
+                </div>
+            </div>
+            }
+        </div>
+    </div>
+</div>
+
+<!-- Task Details Modal -->
+@if (showTaskDetailsModal() && selectedTaskId()) {
+<app-task-details-modal [isOpen]="showTaskDetailsModal()" [projectId]="projectId()" [phaseId]="phaseId()"
+    [taskId]="selectedTaskId()!" [projectMembers]="projectMembers()" (close)="closeTaskDetailsModal()"
+    (updated)="onTaskDetailsUpdated()">
+</app-task-details-modal>
+}
+
+<!-- Delete Confirmation Dialog -->
+@if (showDeleteConfirmation()) {
+<div class="fixed inset-0 z-[60] flex items-center justify-center modal-backdrop">
+    <div class="bg-white rounded-lg shadow-xl p-6 max-w-sm w-full mx-4 animate-fadeIn">
+        <h3 class="text-lg font-semibold text-gray-900 mb-2">Delete Phase?</h3>
+        <p class="text-sm text-gray-600 mb-6">Are you sure you want to delete this phase? This action cannot be undone
+            and will also delete all tasks within this phase.</p>
+        <div class="flex gap-3 justify-end">
+            <button (click)="closeDeleteConfirmation()"
+                class="px-4 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition-colors font-medium">
+                Cancel
+            </button>
+            <button (click)="confirmDelete()"
+                class="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors font-medium">
+                Delete
+            </button>
+        </div>
+    </div>
+</div>
+}
+}

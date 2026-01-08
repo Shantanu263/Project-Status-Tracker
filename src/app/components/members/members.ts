@@ -5,6 +5,7 @@ import { HttpClient } from '@angular/common/http';
 import { environment } from '../../environments/environment';
 import { SelectedProjectService } from '../../services/selected-project.service';
 import { AddMembersModalComponent } from '../add-members-modal/add-members-modal';
+import { AuthService } from '../../services/auth.service';
 
 interface AssignedBy {
   userId: number;
@@ -18,11 +19,13 @@ interface AssignedBy {
 interface ProjectMember {
   memberId: string;
   user: string;
+  userId: number;
   project: string;
   role: string;
   email: string;
   assignedBy: AssignedBy;
   memberStatus: string;
+  globalRole?: string;
 }
 
 interface MembersResponse {
@@ -45,11 +48,15 @@ interface MembersResponse {
 export class MembersComponent {
   private readonly http = inject(HttpClient);
   private readonly selectedProjectService = inject(SelectedProjectService);
+  private readonly authService = inject(AuthService);
 
   members = signal<ProjectMember[]>([]);
   loading = signal(false);
   error = signal<string | null>(null);
   showAddMembersModal = signal(false);
+
+  // Role editing
+  editingRoleMemberId = signal<string | null>(null);
 
   // Pagination
   currentPage = signal(0);
@@ -75,6 +82,15 @@ export class MembersComponent {
   ] as const;
 
   selectedProject = computed(() => this.selectedProjectService.getSelectedProject()());
+
+  // Get current user's project role
+  currentUserProjectRole = computed(() => {
+    const currentUserId = this.authService.getCurrentUserId();
+    if (!currentUserId) return null;
+
+    const currentMember = this.members().find(m => m.userId === currentUserId);
+    return currentMember?.role || null;
+  });
 
   filteredMembers = computed(() => {
     const query = this.searchQuery().toLowerCase();
@@ -345,5 +361,137 @@ export class MembersComponent {
   onMembersAdded(): void {
     this.showAddMembersModal.set(false);
     this.loadMembers();
+  }
+
+  // Role management methods
+  startEditingRole(memberId: string): void {
+    this.editingRoleMemberId.set(memberId);
+  }
+
+  stopEditingRole(): void {
+    this.editingRoleMemberId.set(null);
+  }
+
+  isEditingRole(memberId: string): boolean {
+    return this.editingRoleMemberId() === memberId;
+  }
+
+  canEditMemberRole(member: ProjectMember): boolean {
+    const currentUserGlobalRole = this.authService.getUserRole();
+    const currentUserProjectRole = this.currentUserProjectRole();
+
+    // Global SUPER_ADMIN can edit anyone
+    if (currentUserGlobalRole?.toUpperCase().replace(' ', '_') === 'SUPER_ADMIN') {
+      return true;
+    }
+
+    // Project SUPER_ADMIN can edit anyone
+    if (currentUserProjectRole?.toUpperCase().replace(' ', '_') === 'SUPER_ADMIN') {
+      return true;
+    }
+
+    // PROJECT_HEAD restrictions
+    if (currentUserProjectRole?.toUpperCase().replace(' ', '_') === 'PROJECT_HEAD') {
+      // Cannot edit members with global role PROJECT_ADMIN or project role SUPER_ADMIN
+      const memberGlobalRole = member.globalRole?.toUpperCase().replace(' ', '_');
+      const memberProjectRole = member.role?.toUpperCase().replace(' ', '_');
+
+      if (memberGlobalRole === 'PROJECT_ADMIN' || memberProjectRole === 'SUPER_ADMIN') {
+        return false;
+      }
+      return true;
+    }
+
+    // PROJECT_HANDLER restrictions
+    if (currentUserProjectRole?.toUpperCase().replace(' ', '_') === 'PROJECT_HANDLER') {
+      // Cannot edit members with global role PROJECT_ADMIN, project role SUPER_ADMIN or PROJECT_HEAD
+      const memberGlobalRole = member.globalRole?.toUpperCase().replace(' ', '_');
+      const memberProjectRole = member.role?.toUpperCase().replace(' ', '_');
+
+      if (memberGlobalRole === 'PROJECT_ADMIN' ||
+        memberProjectRole === 'SUPER_ADMIN' ||
+        memberProjectRole === 'PROJECT_HEAD') {
+        return false;
+      }
+      return true;
+    }
+
+    // PROJECT_VIEWER cannot edit anyone
+    return false;
+  }
+
+  getAvailableProjectRoles(memberGlobalRole: string | undefined, memberProjectRole: string): string[] {
+    const currentUserGlobalRole = this.authService.getUserRole();
+    const currentUserProjectRole = this.currentUserProjectRole();
+    const allRoles = ['SUPER_ADMIN', 'PROJECT_HEAD', 'PROJECT_HANDLER', 'PROJECT_VIEWER'];
+
+    // Global SUPER_ADMIN or Project SUPER_ADMIN can assign all roles
+    if (currentUserGlobalRole?.toUpperCase().replace(' ', '_') === 'SUPER_ADMIN' ||
+      currentUserProjectRole?.toUpperCase().replace(' ', '_') === 'SUPER_ADMIN') {
+      return allRoles.filter(role => role !== memberProjectRole.toUpperCase().replace(' ', '_'));
+    }
+
+    // PROJECT_HEAD cannot assign SUPER_ADMIN
+    if (currentUserProjectRole?.toUpperCase().replace(' ', '_') === 'PROJECT_HEAD') {
+      return allRoles
+        .filter(role => role !== 'SUPER_ADMIN')
+        .filter(role => role !== memberProjectRole.toUpperCase().replace(' ', '_'));
+    }
+
+    // PROJECT_HANDLER cannot assign SUPER_ADMIN or PROJECT_HEAD
+    if (currentUserProjectRole?.toUpperCase().replace(' ', '_') === 'PROJECT_HANDLER') {
+      return allRoles
+        .filter(role => role !== 'SUPER_ADMIN' && role !== 'PROJECT_HEAD')
+        .filter(role => role !== memberProjectRole.toUpperCase().replace(' ', '_'));
+    }
+
+    return [];
+  }
+
+  changeProjectRole(memberId: string, newRole: string): void {
+    const project = this.selectedProject();
+    if (!project) return;
+
+    const url = `${environment.apiUrl}/project/${project.projectId}/project-members/${memberId}/role`;
+    const payload = { roleInProject: newRole };
+
+    this.http.patch(url, payload).subscribe({
+      next: () => {
+        // Update the member in the list
+        this.members.update(members =>
+          members.map(member =>
+            member.memberId === memberId
+              ? { ...member, role: newRole }
+              : member
+          )
+        );
+        this.stopEditingRole();
+      },
+      error: (err) => {
+        console.error('Error changing project role:', err);
+        this.error.set('Failed to change project role');
+        this.stopEditingRole();
+      }
+    });
+  }
+
+  getProjectRoleDisplayText(role: string): string {
+    const roleMap: Record<string, string> = {
+      'SUPER_ADMIN': 'Super Admin',
+      'PROJECT_HEAD': 'Head',
+      'PROJECT_HANDLER': 'Handler',
+      'PROJECT_VIEWER': 'Viewer'
+    };
+    return roleMap[role.toUpperCase().replace(' ', '_')] || role;
+  }
+
+  getProjectRoleColorClass(role: string): string {
+    const colorMap: Record<string, string> = {
+      'SUPER_ADMIN': 'bg-purple-100 text-purple-800',
+      'PROJECT_HEAD': 'bg-[#8c2d1b] text-white',
+      'PROJECT_HANDLER': 'bg-blue-100 text-blue-700',
+      'PROJECT_VIEWER': 'bg-gray-100 text-gray-700'
+    };
+    return colorMap[role.toUpperCase().replace(' ', '_')] || 'bg-gray-100 text-gray-700';
   }
 }

@@ -63,58 +63,6 @@ export class ProjectsDashboard implements AfterViewInit, OnDestroy {
 
   isLoading = computed(() => this.dashboardDataSignal() === null);
 
-  // Hardcoded activity data (as requested)
-  activities = [
-    {
-      type: 'completed',
-      icon: 'check',
-      message: 'Task "API Integration" marked as completed',
-      project: 'E-Commerce Platform',
-      time: '2 hours ago',
-      color: 'blue'
-    },
-    {
-      type: 'deadline',
-      icon: 'calendar',
-      message: 'Phase deadline extended by 5 days',
-      project: 'Cloud Migration',
-      time: '4 hours ago',
-      color: 'yellow'
-    },
-    {
-      type: 'assigned',
-      icon: 'user',
-      message: 'Sarah Johnson assigned to "Database Schema"',
-      project: 'Data Analytics Dashboard',
-      time: '5 hours ago',
-      color: 'green'
-    },
-    {
-      type: 'overdue',
-      icon: 'alert',
-      message: '3 tasks now overdue - immediate attention required',
-      project: 'CRM Integration',
-      time: '6 hours ago',
-      color: 'red'
-    },
-    {
-      type: 'comment',
-      icon: 'message',
-      message: 'New comment added to "UI/UX Review"',
-      project: 'Mobile App Redesign',
-      time: '8 hours ago',
-      color: 'indigo'
-    },
-    {
-      type: 'phase',
-      icon: 'clipboard',
-      message: 'Phase "Testing & QA" started',
-      project: 'E-Commerce Platform',
-      time: 'Yesterday',
-      color: 'purple'
-    }
-  ];
-
   constructor() {
     // Watch for data changes and update charts
     effect(() => {
@@ -547,7 +495,7 @@ export class ProjectsDashboard implements AfterViewInit, OnDestroy {
                 weight: 600
               },
               color: '#374151',
-              padding: 15,  // Increased padding for colored squares
+              padding: 1,  // Reduced padding for closer alignment
               align: 'start' as const,  // Left align labels
               crossAlign: 'near' as const
             }
@@ -576,7 +524,7 @@ export class ProjectsDashboard implements AfterViewInit, OnDestroy {
 
             // Draw square
             const squareSize = 10;
-            const x = yScale.left - 20;  // Position to the left of labels
+            const x = yScale.left - 10;  // Position closer to labels
 
             ctx.fillStyle = color;
             ctx.fillRect(x - squareSize / 2, y - squareSize / 2, squareSize, squareSize);

@@ -64,7 +64,7 @@ export class ProjectService {
   }
 
   deleteTask(projectId: number, phaseId: number, taskId: number): Observable<void> {
-    return this.http.delete<void>(`${this.api}/${projectId}/phase/${phaseId}/tasks/${taskId}`);
+    return this.http.delete<void>(`${this.api}/${projectId}/phases/${phaseId}/tasks/${taskId}`);
   }
 
   updatePhase(projectId: number, phaseId: number, updates: Partial<Phase>): Observable<Phase> {
@@ -119,6 +119,10 @@ export class ProjectService {
 
   createSubtask(projectId: number, phaseId: number, taskId: number, subtask: any): Observable<any> {
     return this.http.post<any>(`${this.api}/${projectId}/phases/${phaseId}/tasks/${taskId}/subtasks`, subtask);
+  }
+
+  deleteSubtask(projectId: number, phaseId: number, taskId: number, subTaskId: number): Observable<void> {
+    return this.http.delete<void>(`${this.api}/${projectId}/phases/${phaseId}/tasks/${taskId}/subtasks/${subTaskId}`);
   }
 
   // Project operations

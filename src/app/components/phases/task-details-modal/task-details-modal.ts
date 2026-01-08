@@ -4,6 +4,7 @@ import { FormsModule } from '@angular/forms';
 import { ChangeDetectionStrategy } from '@angular/core';
 import { ProjectMember } from '../../../models/project.model';
 import { ProjectService } from '../../../services/project.service';
+import { PermissionService } from '../../../services/permission.service';
 import { AuthService } from '../../../services/auth.service';
 import { Task } from '../../../models/phase.model';
 import { SubtaskDetailsModalComponent } from '../subtask-details-modal/subtask-details-modal';
@@ -19,6 +20,7 @@ import { SubtaskFormComponent } from '../subtask-form/subtask-form';
 })
 export class TaskDetailsModalComponent {
     private projectService = inject(ProjectService);
+    private permissionService = inject(PermissionService);
     private authService = inject(AuthService);
 
     // Inputs
@@ -39,6 +41,8 @@ export class TaskDetailsModalComponent {
     editingField = signal<string | null>(null);
     activeTab = signal<'history' | 'comments'>('history');
     showMemberDropdown = signal(false);
+    showMoreMenu = signal(false);
+    showDeleteConfirmation = signal(false);
 
     // Comment state
     editingCommentId = signal<number | null>(null);
@@ -51,6 +55,21 @@ export class TaskDetailsModalComponent {
     showSubtaskModal = signal(false);
     selectedSubtaskId = signal<number | null>(null);
     showSubtaskFormModal = signal(false);
+
+    // Permission signals
+    currentUserIdComputed = computed(() => this.authService.getCurrentUserId());
+
+    canUpdateTask = computed(() =>
+        this.permissionService.canUpdateTask(this.projectMembers(), this.currentUserIdComputed())
+    );
+
+    canDeleteTask = computed(() =>
+        this.permissionService.canDeleteTask(this.projectMembers(), this.currentUserIdComputed())
+    );
+
+    canCreateSubtask = computed(() =>
+        this.permissionService.canCreateTask(this.projectMembers(), this.currentUserIdComputed())
+    );
 
     // Computed values
     assignedMember = computed(() => {
@@ -97,6 +116,35 @@ export class TaskDetailsModalComponent {
 
     onClose(): void {
         this.close.emit();
+    }
+
+    toggleMoreMenu(): void {
+        this.showMoreMenu.update(v => !v);
+    }
+
+    openDeleteConfirmation(): void {
+        this.showMoreMenu.set(false);
+        this.showDeleteConfirmation.set(true);
+    }
+
+    closeDeleteConfirmation(): void {
+        this.showDeleteConfirmation.set(false);
+    }
+
+    confirmDelete(): void {
+        this.projectService.deleteTask(this.projectId(), this.phaseId(), this.taskId()).subscribe({
+            next: () => {
+                this.showDeleteConfirmation.set(false);
+                this.close.emit();
+                // Notify parent to refresh
+                this.updated.emit();
+            },
+            error: (err) => {
+                console.error('Error deleting task:', err);
+                this.error.set('Failed to delete task');
+                this.showDeleteConfirmation.set(false);
+            }
+        });
     }
 
     startEditing(field: string): void {

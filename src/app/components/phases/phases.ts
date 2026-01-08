@@ -2,6 +2,9 @@ import { Component, input, inject, signal, computed, effect } from '@angular/cor
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { ProjectService } from '../../services/project.service';
+import { SelectedProjectService } from '../../services/selected-project.service';
+import { PermissionService } from '../../services/permission.service';
+import { AuthService } from '../../services/auth.service';
 import { Phase, Task } from '../../models/phase.model';
 import { ProjectMember } from '../../models/project.model';
 import { ChangeDetectionStrategy } from '@angular/core';
@@ -9,17 +12,20 @@ import { ModalComponent } from '../shared/modal/modal';
 import { ConfirmationDialogComponent } from '../shared/confirmation-dialog/confirmation-dialog';
 import { PhaseFormComponent } from './phase-form/phase-form';
 import { TaskFormComponent } from './task-form/task-form';
-import { DetailModalComponent } from './detail-modal/detail-modal';
+import { PhaseDetailsModalComponent } from './phase-details-modal/phase-details-modal';
 
 @Component({
   selector: 'app-phases',
-  imports: [CommonModule, FormsModule, ModalComponent, ConfirmationDialogComponent, PhaseFormComponent, TaskFormComponent, DetailModalComponent],
+  imports: [CommonModule, FormsModule, ModalComponent, ConfirmationDialogComponent, PhaseFormComponent, TaskFormComponent, PhaseDetailsModalComponent],
   templateUrl: './phases.html',
   styleUrl: './phases.scss',
   changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class PhasesComponent {
   private readonly projectService = inject(ProjectService);
+  private readonly selectedProjectService = inject(SelectedProjectService);
+  private readonly authService = inject(AuthService);
+  private readonly permissionService = inject(PermissionService);
 
   projectId = input.required<number>();
 
@@ -34,11 +40,13 @@ export class PhasesComponent {
   showDeletePhaseDialog = signal(false);
   showDeleteTaskDialog = signal(false);
   showDetailModal = signal(false);
+  showPhaseDetailsModal = signal(false);
 
   // Selected items for edit/delete
   selectedPhase = signal<Phase | null>(null);
   selectedTask = signal<Task | null>(null);
   selectedPhaseIdForTask = signal<number | null>(null);
+  selectedPhaseId = signal<number | null>(null);
 
   // Detail modal
   detailModalMode = signal<'phase' | 'task'>('phase');
@@ -47,16 +55,46 @@ export class PhasesComponent {
 
   // New UI state for list/grid view
   viewMode = signal<'list' | 'grid'>('list');
-  searchQuery = signal('');
-  statusFilter = signal('All Status');
-  sortBy = signal('Sort by Start Date');
+
+  // Filter states
+  searchTerm = signal('');
+  statusFilter = signal<string>('all');
+  sortBy = signal<'name' | 'date' | 'status'>('name');
+  sortOrder = signal<'asc' | 'desc'>('asc');
+
+  // Permission signals
+  currentUserId = computed(() => this.authService.getCurrentUserId());
+
+  canCreatePhase = computed(() =>
+    this.permissionService.canCreatePhase(this.projectMembers(), this.currentUserId())
+  );
+
+  canUpdatePhase = computed(() =>
+    this.permissionService.canUpdatePhase(this.projectMembers(), this.currentUserId())
+  );
+
+  canDeletePhase = computed(() =>
+    this.permissionService.canDeletePhase(this.projectMembers(), this.currentUserId())
+  );
+
+  canCreateTask = computed(() =>
+    this.permissionService.canCreateTask(this.projectMembers(), this.currentUserId())
+  );
+
+  canUpdateTask = computed(() =>
+    this.permissionService.canUpdateTask(this.projectMembers(), this.currentUserId())
+  );
+
+  canDeleteTask = computed(() =>
+    this.permissionService.canDeleteTask(this.projectMembers(), this.currentUserId())
+  );
 
   // Computed filtered and sorted phases
   filteredPhases = computed(() => {
     let result = [...this.phases()];
 
     // Apply search filter
-    const query = this.searchQuery().toLowerCase();
+    const query = this.searchTerm().toLowerCase();
     if (query) {
       result = result.filter(phase =>
         phase.phaseName.toLowerCase().includes(query)
@@ -65,29 +103,26 @@ export class PhasesComponent {
 
     // Apply status filter
     const status = this.statusFilter();
-    if (status !== 'All Status') {
-      result = result.filter(phase => {
-        const phaseStatus = this.getStatusText(phase.status);
-        return phaseStatus === status;
-      });
+    if (status !== 'all') {
+      result = result.filter(phase => phase.status === status);
     }
 
     // Apply sorting
     const sortType = this.sortBy();
-    if (sortType === 'Sort by Start Date') {
+    if (sortType === 'date') {
       result.sort((a, b) => {
         if (!a.startDate) return 1;
         if (!b.startDate) return -1;
         return this.parseDate(a.startDate).getTime() - this.parseDate(b.startDate).getTime();
       });
-    } else if (sortType === 'Sort by End Date') {
+    } else if (sortType === 'name') {
+      result.sort((a, b) => a.phaseName.localeCompare(b.phaseName));
+    } else if (sortType === 'status') {
       result.sort((a, b) => {
-        if (!a.endDate) return 1;
-        if (!b.endDate) return -1;
-        return this.parseDate(a.endDate).getTime() - this.parseDate(b.endDate).getTime();
+        const statusA = this.getStatusText(a.status);
+        const statusB = this.getStatusText(b.status);
+        return statusA.localeCompare(statusB);
       });
-    } else if (sortType === 'Sort by Progress') {
-      result.sort((a, b) => this.getProgressPercentage(b) - this.getProgressPercentage(a));
     }
 
     return result;
@@ -104,10 +139,44 @@ export class PhasesComponent {
 
   private loadPhases(): void {
     this.isLoading.set(true);
+    // Load both phases and project members
     this.projectService.getPhases(this.projectId()).subscribe({
       next: (phases) => {
-        this.phases.set(phases);
-        this.isLoading.set(false);
+        // Load project members if not already loaded
+        if (this.projectMembers().length === 0) {
+          this.projectService.getProjectMembers(this.projectId()).subscribe({
+            next: (members) => {
+              this.projectMembers.set(members);
+              // Map assignee names to phases
+              const phasesWithAssignees = phases.map(phase => {
+                const assignedMember = members.find(m => m.memberId === phase.projectMemberId);
+                return {
+                  ...phase,
+                  assignedToName: assignedMember?.user || undefined
+                };
+              });
+              this.phases.set(phasesWithAssignees);
+              this.isLoading.set(false);
+            },
+            error: (err) => {
+              console.error('Error loading project members:', err);
+              this.phases.set(phases);
+              this.isLoading.set(false);
+            }
+          });
+        } else {
+          // Members already loaded, just map assignee names
+          const members = this.projectMembers();
+          const phasesWithAssignees = phases.map(phase => {
+            const assignedMember = members.find(m => m.memberId === phase.projectMemberId);
+            return {
+              ...phase,
+              assignedToName: assignedMember?.user || undefined
+            };
+          });
+          this.phases.set(phasesWithAssignees);
+          this.isLoading.set(false);
+        }
       },
       error: (err) => {
         console.error('Error loading phases:', err);
@@ -337,9 +406,22 @@ export class PhasesComponent {
   // Detail Modal operations
   openPhaseDetails(event: Event, phase: Phase): void {
     this.stopPropagation(event);
-    this.detailModalMode.set('phase');
-    this.detailModalItem.set(phase);
-    this.showDetailModal.set(true);
+    if (phase.phaseId) {
+      this.selectedPhaseId.set(phase.phaseId);
+      this.showPhaseDetailsModal.set(true);
+    }
+  }
+
+  closePhaseDetailsModal(): void {
+    this.showPhaseDetailsModal.set(false);
+    this.selectedPhaseId.set(null);
+    // Reload phases when modal closes to reflect any updates
+    this.loadPhases();
+  }
+
+  onPhaseDetailsUpdated(): void {
+    // Reload phases to reflect updates
+    this.loadPhases();
   }
 
   openTaskDetails(event: Event, task: Task, phaseId: number): void {
@@ -422,9 +504,10 @@ export class PhasesComponent {
   getStatusText(status?: string): string {
     if (!status) return 'Not Started';
     const statusUpper = status.toUpperCase();
-    if (statusUpper === 'DONE') return 'Completed';
+    if (statusUpper === 'COMPLETED' || statusUpper === 'DONE') return 'Completed';
     if (statusUpper === 'IN_PROGRESS') return 'In Progress';
-    if (statusUpper === 'TO_DO') return 'Not Started';
+    if (statusUpper === 'TO_DO') return 'To Do';
+    if (statusUpper === 'ON_HOLD') return 'On Hold';
     if (statusUpper === 'REVIEW') return 'In Progress';
     return 'Not Started';
   }
@@ -435,6 +518,8 @@ export class PhasesComponent {
       return 'bg-green-50 border border-green-200 text-green-700';
     } else if (statusText === 'In Progress') {
       return 'bg-blue-50 border border-blue-200 text-blue-600';
+    } else if (statusText === 'On Hold') {
+      return 'bg-yellow-50 border border-yellow-200 text-yellow-700';
     } else {
       return 'bg-gray-100 border border-gray-300 text-gray-600';
     }
@@ -502,5 +587,29 @@ export class PhasesComponent {
     if (phase.phaseId) {
       this.togglePhase(phase.phaseId);
     }
+  }
+
+  getInitials(name?: string): string {
+    if (!name) return 'NA';
+    const parts = name.split(' ');
+    if (parts.length >= 2) {
+      return (parts[0][0] + parts[1][0]).toUpperCase();
+    }
+    return name.substring(0, 2).toUpperCase();
+  }
+
+  getAvatarColor(name?: string): string {
+    const colors = [
+      'bg-purple-500',
+      'bg-green-500',
+      'bg-blue-500',
+      'bg-orange-500',
+      'bg-indigo-500',
+      'bg-pink-500',
+      'bg-teal-500'
+    ];
+    if (!name) return colors[0];
+    const index = name.charCodeAt(0) % colors.length;
+    return colors[index];
   }
 }

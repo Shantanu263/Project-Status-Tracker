@@ -155,11 +155,34 @@
           </td>
 
           <!-- Role -->
-          <td class="px-6 py-4 whitespace-nowrap">
-            <span
-              class="px-3 py-1 inline-flex text-xs leading-5 font-semibold rounded-full {{ getRoleColorClass(member.role) }}">
-              {{ getRoleBadgeText(member.role) }}
+          <td class="px-6 py-4 whitespace-nowrap relative">
+            @if (isEditingRole(member.memberId)) {
+            <!-- Role Dropdown -->
+            <div class="relative inline-block">
+              <select (change)="changeProjectRole(member.memberId, $any($event.target).value); $event.stopPropagation()"
+                (blur)="stopEditingRole()"
+                class="px-3 py-1 text-xs font-semibold rounded-full border-2 border-[#8c2d1b] focus:outline-none focus:ring-2 focus:ring-[#8c2d1b]"
+                autofocus>
+                <option value="" disabled selected>Change to...</option>
+                @for (role of getAvailableProjectRoles(member.globalRole, member.role); track role) {
+                <option [value]="role">{{ getProjectRoleDisplayText(role) }}</option>
+                }
+              </select>
+            </div>
+            } @else {
+            <!-- Role Badge (clickable if user has permission) -->
+            @if (canEditMemberRole(member)) {
+            <span (click)="startEditingRole(member.memberId)"
+              class="px-3 py-1 inline-flex text-xs leading-5 font-semibold rounded-full cursor-pointer hover:opacity-80 transition-opacity {{ getProjectRoleColorClass(member.role) }}">
+              {{ getProjectRoleDisplayText(member.role) }}
             </span>
+            } @else {
+            <span
+              class="px-3 py-1 inline-flex text-xs leading-5 font-semibold rounded-full {{ getProjectRoleColorClass(member.role) }}">
+              {{ getProjectRoleDisplayText(member.role) }}
+            </span>
+            }
+            }
           </td>
 
           <!-- Assigned By -->
@@ -226,8 +249,5 @@
 <!-- </div> -->
 
 <!-- Add Members Modal -->
-<app-add-members-modal
-  [isOpen]="showAddMembersModal()"
-  [projectId]="selectedProject()?.projectId || 0"
-  (close)="closeAddMembersModal()"
-  (membersAdded)="onMembersAdded()" />
+<app-add-members-modal [isOpen]="showAddMembersModal()" [projectId]="selectedProject()?.projectId || 0"
+  (close)="closeAddMembersModal()" (membersAdded)="onMembersAdded()" />
