@@ -76,6 +76,14 @@ public class AuthorizationServiceImpl implements AuthorizationService {
     }
 
     @Override
+    public boolean isProjectAdminOfProject(Long projectId) {
+        String email = getCurrentUserEmail();
+        if (email == null) return false;
+
+        return memberRepo.existsByProject_ProjectIdAndUser_EmailAndRole(projectId,email,ProjectRole.SUPER_ADMIN);
+    }
+
+    @Override
     public boolean debugSpEL() {
         System.out.println("SpEL reached the AuthorizationServiceImpl!");
         return true;

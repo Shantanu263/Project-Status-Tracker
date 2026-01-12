@@ -1,5 +1,6 @@
 package com.shantanu.projectstatustracker.models;
 
+import com.fasterxml.jackson.annotation.JsonBackReference;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
@@ -31,6 +32,7 @@ public class ActivityLog {
     @ManyToOne
     @JoinColumn(name = "performed_by")
     @JsonIgnore
+    @JsonBackReference
     private User performedBy;
 
     // Full message shown in UI

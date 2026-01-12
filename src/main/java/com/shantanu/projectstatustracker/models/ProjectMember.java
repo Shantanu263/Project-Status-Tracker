@@ -1,11 +1,16 @@
 package com.shantanu.projectstatustracker.models;
 
 import com.fasterxml.jackson.annotation.JsonBackReference;
+import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonManagedReference;
+import jakarta.annotation.Nullable;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+
+import java.util.List;
 
 @Entity
 @Data
@@ -27,6 +32,7 @@ public class ProjectMember {
 
     @ManyToOne
     @JoinColumn(name = "user_user_id")
+    @JsonBackReference
     private User user;
 
     @Column(name = "role", nullable = false)
@@ -37,11 +43,11 @@ public class ProjectMember {
     @JoinColumn(name = "assigned_by_user_id", nullable = false)
     private User assignedBy;
 
-    private String memberStatus;  //remove this -> not required
+    private Boolean isActive;
 
     @PrePersist
     public void onCreate(){
-        this.memberStatus = "ACTIVE";
+        this.isActive = true;
     }
 
 }

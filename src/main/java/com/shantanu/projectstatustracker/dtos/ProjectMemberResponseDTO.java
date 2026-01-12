@@ -1,6 +1,5 @@
 package com.shantanu.projectstatustracker.dtos;
 
-import com.shantanu.projectstatustracker.models.ProjectRole;
 import lombok.Data;
 
 @Data
@@ -20,6 +19,6 @@ public class ProjectMemberResponseDTO {
 
     private UserResponseDTO assignedBy;
 
-    private String memberStatus;
+    private Boolean isActive;
 
 }

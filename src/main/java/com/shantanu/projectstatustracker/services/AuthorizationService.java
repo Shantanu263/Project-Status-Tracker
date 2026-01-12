@@ -20,4 +20,5 @@ public interface AuthorizationService {
 
     boolean isAdmin();
 
+    boolean isProjectAdminOfProject(Long projectId);
 }

@@ -1,17 +1,14 @@
 package com.shantanu.projectstatustracker.services.impl;
 
 import com.shantanu.projectstatustracker.dtos.MailBody;
+import com.shantanu.projectstatustracker.dtos.UpdatePasswordRequestDTO;
 import com.shantanu.projectstatustracker.dtos.UserLoginRequestDTO;
 import com.shantanu.projectstatustracker.dtos.UserRequestDTO;
 import com.shantanu.projectstatustracker.dtos.mappers.ProjectMemberMapper;
 import com.shantanu.projectstatustracker.globalExceptionHandlers.ResourceNotFoundException;
 import com.shantanu.projectstatustracker.models.*;
 import com.shantanu.projectstatustracker.repositories.*;
-import com.shantanu.projectstatustracker.services.ActivityLogService;
-import com.shantanu.projectstatustracker.services.AuthService;
-import com.shantanu.projectstatustracker.services.EmailService;
-import com.shantanu.projectstatustracker.services.JwtService;
-import jakarta.mail.MessagingException;
+import com.shantanu.projectstatustracker.services.*;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
@@ -36,6 +33,8 @@ public class AuthServiceImpl implements AuthService {
     private final RoleRepo roleRepo;
     private final ActivityLogService activityLogService;
     private final EmailService emailService;
+    private final PasswordEncoder encoder;
+    private final ProjectService projectService;
 
     @Value("${jwt.accessTokenTime}")
     private long accessTokenTime;
@@ -65,7 +64,8 @@ public class AuthServiceImpl implements AuthService {
             user.setStatus("ACTIVE");
             for (InvitedMembers assignment : assignments){
                 //user.setRole(roleRepo.findByName(assignment.getRole()).orElseThrow(() -> new ResourceNotFoundException("Role not found")));
-                user.setRole(roleRepo.findByName("PROJECT HANDLER").orElseThrow(() -> new ResourceNotFoundException("Role not found")));
+                //user.setRole(roleRepo.findByName("PROJECT HANDLER").orElseThrow(() -> new ResourceNotFoundException("Role not found")));
+
                 Project project = projectRepo.findById(assignment.getProjectId())
                         .orElseThrow(()->new ResourceNotFoundException("Project with id("+assignment.getProjectId()+") not found"));
 
@@ -138,6 +138,54 @@ public class AuthServiceImpl implements AuthService {
         String newAccessToken = jwtService.generateToken(email, user.getName(), user.getRole().getName(), accessTokenTime, user.getUserId()); // generate new Access Token
 
         return ResponseEntity.ok(Map.of("accessToken",newAccessToken));
+    }
+
+    @Override
+    public ResponseEntity<Object> updatePassword(Long userId, UpdatePasswordRequestDTO request) {
+
+        User user = userRepo.findById(userId).orElseThrow(() -> new ResourceNotFoundException("User not found"));
+
+        if (!encoder.matches(request.getOldPassword(), user.getPassword())) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                    .body(Map.of("message", "Old password is incorrect"));
+        }
+
+        if (request.getOldPassword().equals(request.getNewPassword())) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                    .body(Map.of("message", "New password must be different from old password"));
+        }
+
+        user.setPassword(encoder.encode(request.getNewPassword()));
+        userRepo.save(user);
+
+        return ResponseEntity.ok(Map.of("message", "Password changed successfully"));
+    }
+
+    @Override
+    public ResponseEntity<Object> updateUsername(Long userId, String username) {
+        User user = userRepo.findById(userId).orElseThrow(() -> new ResourceNotFoundException("User not found"));
+
+        user.setName(username);
+        userRepo.save(user);
+
+        return ResponseEntity.ok(Map.of("message","Username updated successfully"));
+    }
+
+    @Override
+    public ResponseEntity<Object> removeUser(Long userId) {
+        User user = userRepo.findById(userId).orElseThrow(() -> new ResourceNotFoundException("User not found"));
+
+        user.setIsUserActive(false);
+
+        List<ProjectMember> projectMemberList = projectMemberRepo.findByUser_UserId(userId);
+
+        for (ProjectMember projectMember : projectMemberList){
+            projectService.removeProjectMember(projectMember.getProject().getProjectId(),projectMember.getMemberId());
+        }
+
+        userRepo.save(user);
+
+        return ResponseEntity.ok(Map.of("message","User removed successfully"));
     }
 
 }

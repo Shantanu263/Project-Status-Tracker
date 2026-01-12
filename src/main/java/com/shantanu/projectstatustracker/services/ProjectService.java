@@ -36,4 +36,6 @@ public interface ProjectService {
     ResponseEntity<Object> getProjectsDashboard();
 
     ResponseEntity<Object> updateRoleOfProjectMember(Long projectId, Long projectMemberId, ProjectRole projectRole);
+
+    ResponseEntity<Object> removeProjectMember(Long projectId, Long memberId);
 }

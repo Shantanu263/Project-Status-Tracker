@@ -51,6 +51,7 @@ public class Task {
     private String priority;
 
     @ManyToOne
+    @JoinColumn(name = "assigned_to_member_id")
     @JsonIgnore
     private ProjectMember assignedTo;
 

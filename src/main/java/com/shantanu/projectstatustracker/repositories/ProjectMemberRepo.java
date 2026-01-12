@@ -45,4 +45,6 @@ public interface ProjectMemberRepo extends JpaRepository<ProjectMember,Long> {
     ProjectMember findByUser_Email(String userEmail);
 
     ProjectMember findByProject_ProjectIdAndUser_Email(Long projectProjectId, String userEmail);
+
+    List<ProjectMember> findByUser_UserId(Long userUserId);
 }

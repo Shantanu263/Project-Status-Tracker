@@ -23,6 +23,7 @@ import org.springframework.data.domain.Sort;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.*;
 
@@ -41,6 +42,7 @@ public class ProjectServiceImpl implements ProjectService {
     private final HttpServletRequest request;
     private final ActivityLogService activityLogService;
     private final ActivityLogRepo activityLogRepo;
+    private final SubTaskRepo subTaskRepo;
 
     @Override
     public ResponseEntity<Object> getProjects() {
@@ -417,6 +419,46 @@ public class ProjectServiceImpl implements ProjectService {
         return response;
 
     }
+
+    @Override
+    @Transactional
+    public ResponseEntity<Object> removeProjectMember(Long projectId, Long memberId) {
+
+        projectRepo.findById(projectId).orElseThrow(() -> new ResourceNotFoundException("Project Not found"));
+
+        ProjectMember member = projectMemberRepo.findById(memberId)
+                .orElseThrow(() -> new ResourceNotFoundException("User is not an active member of this project"));
+
+//        if (member.getRole().equals(ProjectRole.SUPER_ADMIN)){
+//            if (member.getUser().getRole().getName().equals("ADMIN")){
+//
+//            }
+//        }
+
+        //De-assign active tasks
+        taskRepo.deassignTasks(projectId, memberId);
+
+        //De-assign active subtasks
+        subTaskRepo.deassignSubtasks(projectId, memberId);
+
+        //Remove phase ownership
+        phaseRepo.deassignPhases(projectId, memberId);
+
+        //Soft-remove project membership
+        member.setIsActive(false);
+
+        projectMemberRepo.save(member);
+
+        //(Optional) Activity log
+        //activityLogService.logMemberRemoved(projectId, userId);
+        return ResponseEntity.ok(Map.of("message","Project Member Removed successfully"));
+    }
+
+//    private boolean isLastProjectHead(Long projectId) {
+//        // Implement count check
+//        return false;
+//    }
+
 
     private List<ProjectRadarChartDTO> buildRadarChart(Long userId) {
 

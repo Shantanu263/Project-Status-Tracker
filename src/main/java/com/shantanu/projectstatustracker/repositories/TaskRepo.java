@@ -97,4 +97,16 @@ public interface TaskRepo extends JpaRepository<Task,Long> {
     int countAssignedTasks(Long projectId);
 
     List<Task> findByAssignedTo_MemberId(Long assignedToMemberId);
+
+    @Modifying
+    @Query("""
+        UPDATE Task t
+        SET t.assignedTo = NULL
+        WHERE t.projectPhase.project.projectId = :projectId
+          AND t.assignedTo.memberId = :memberId
+          AND t.status <> 'DONE'
+    """)
+    void deassignTasks(@Param("projectId") Long projectId,
+                       @Param("memberId") Long memberId);
+
 }

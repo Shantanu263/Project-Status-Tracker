@@ -14,5 +14,6 @@ public class UserResponseDTO {
     String email;
     LocalDateTime createdAt;
     RoleResponseDTO role;
+    Boolean isUserActive;
 }
 

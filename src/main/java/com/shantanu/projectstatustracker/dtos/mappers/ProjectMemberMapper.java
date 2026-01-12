@@ -7,7 +7,6 @@ import com.shantanu.projectstatustracker.models.ProjectRole;
 import com.shantanu.projectstatustracker.models.User;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
-import org.springframework.data.domain.Page;
 
 import java.util.List;
 
@@ -18,9 +17,9 @@ public interface ProjectMemberMapper {
     @Mapping(source = "projectMember.project.projectName",target = "project")
     @Mapping(source = "projectMember.role",target = "role")
     @Mapping(source = "projectMember.assignedBy", target = "assignedBy")
-    @Mapping(source = "projectMember.memberStatus", target = "memberStatus")
     @Mapping(source = "projectMember.user.email", target = "email")
     @Mapping(source = "projectMember.user.userId", target = "userId")
+    @Mapping(source = "projectMember.isActive", target = "isActive")
     ProjectMemberResponseDTO mapProjectMember(ProjectMember projectMember);
 
     @Mapping(source = "projectMember.user.name",target = "user")

@@ -3,7 +3,6 @@ package com.shantanu.projectstatustracker.controllers;
 import com.shantanu.projectstatustracker.dtos.AddMemberRequestDTO;
 import com.shantanu.projectstatustracker.dtos.ProjectRequestDTO;
 import com.shantanu.projectstatustracker.dtos.ProjectUpdateRequestDTO;
-import com.shantanu.projectstatustracker.models.ProjectRole;
 import com.shantanu.projectstatustracker.services.ProjectService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
@@ -89,11 +88,11 @@ public class ProjectController {
         return projectService.updateRoleOfProjectMember(projectId,projectMemberId, addMemberRequestDTO.getRoleInProject());
     }
 
-    @PreAuthorize("@auth.isProjectHeadOfProject(#projectId) or @auth.isSuperAdmin()")
-    @DeleteMapping("/{projectId}/project-members/{userId}")
+    @PreAuthorize("@auth.isProjectAdminOfProject(#projectId) or @auth.isSuperAdmin()")
+    @DeleteMapping("/{projectId}/project-members/{memberId}")
     public ResponseEntity<Object> deleteMemberFromProject(@PathVariable(name = "projectId") Long projectId,
-                                                          @PathVariable(name = "userId") Long userId){
-        return projectService.deleteMemberFromProject(projectId,userId);
+                                                          @PathVariable(name = "memberId") Long memberId){
+        return projectService.removeProjectMember(projectId,memberId);
     }
 
     @GetMapping("{projectId}/dashboard")
