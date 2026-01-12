@@ -120,4 +120,70 @@ export class AuthService {
     const member = projectMembers?.find(m => m.userId === currentUserId);
     return member?.role?.toUpperCase() === 'SUPER_ADMIN' || member?.role?.toUpperCase() === 'SUPER ADMIN';
   }
+
+  /**
+   * Token refresh buffer in seconds
+   * Token will be refreshed when it expires within this time window
+   */
+  private readonly TOKEN_REFRESH_BUFFER_SECONDS = 30;
+
+  /**
+   * Get the expiry time of the current access token
+   * @returns Expiry time in seconds (Unix timestamp) or null if token is invalid
+   */
+  getTokenExpiryTime(): number | null {
+    const token = this.getToken();
+    if (!token) return null;
+
+    try {
+      const payload = JSON.parse(atob(token.split('.')[1]));
+      return payload.exp || null;
+    } catch (error) {
+      console.error('Error decoding token expiry:', error);
+      return null;
+    }
+  }
+
+  /**
+   * Check if the access token is expiring soon
+   * @param bufferSeconds Optional custom buffer (defaults to TOKEN_REFRESH_BUFFER_SECONDS)
+   * @returns true if token expires within the buffer time
+   */
+  isTokenExpiringSoon(bufferSeconds?: number): boolean {
+    const expiryTime = this.getTokenExpiryTime();
+    if (!expiryTime) return false;
+
+    const buffer = bufferSeconds ?? this.TOKEN_REFRESH_BUFFER_SECONDS;
+    const currentTime = Math.floor(Date.now() / 1000); // Current time in seconds
+    const timeUntilExpiry = expiryTime - currentTime;
+
+    return timeUntilExpiry <= buffer && timeUntilExpiry > 0;
+  }
+
+  /**
+   * Check if the access token is already expired
+   * @returns true if token is expired
+   */
+  isTokenExpired(): boolean {
+    const expiryTime = this.getTokenExpiryTime();
+    if (!expiryTime) return true;
+
+    const currentTime = Math.floor(Date.now() / 1000);
+    return currentTime >= expiryTime;
+  }
+
+  /**
+   * Determine if token should be proactively refreshed
+   * @returns true if token should be refreshed
+   */
+  shouldRefreshToken(): boolean {
+    const token = this.getToken();
+    const refreshToken = this.getRefreshToken();
+
+    // Need both tokens to refresh
+    if (!token || !refreshToken) return false;
+
+    // Refresh if token is expiring soon or already expired
+    return this.isTokenExpiringSoon() || this.isTokenExpired();
+  }
 }

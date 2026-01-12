@@ -125,6 +125,16 @@ export class PhasesComponent {
       });
     }
 
+    // Default sort by phase ID (ascending) if no other sorting applied
+    // This ensures consistent ordering in both list and grid views
+    if (result.length > 0 && !sortType) {
+      result.sort((a, b) => {
+        const idA = a.phaseId ?? 0;
+        const idB = b.phaseId ?? 0;
+        return idA - idB;
+      });
+    }
+
     return result;
   });
 

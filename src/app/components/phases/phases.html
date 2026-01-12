@@ -49,14 +49,14 @@
         <!-- View Toggle -->
         <div class="flex items-center bg-gray-50 border border-gray-300 rounded-md">
           <button (click)="setViewMode('list')"
-            [class]="viewMode() === 'list' ? 'p-1.5 bg-gray-200 text-blue-600 rounded-l border-r border-gray-300' : 'p-1.5 text-gray-600 hover:text-gray-900 rounded-l border-r border-gray-300'">
+            [class]="viewMode() === 'list' ? 'p-1.5 bg-gray-200 text-[#8c2d1b] rounded-l border-r border-gray-300' : 'p-1.5 text-gray-600 hover:text-gray-900 rounded-l border-r border-gray-300'">
             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 10h16M4 14h16M4 18h16">
               </path>
             </svg>
           </button>
           <button (click)="setViewMode('grid')"
-            [class]="viewMode() === 'grid' ? 'p-1.5 bg-gray-200 text-blue-600 rounded-r' : 'p-1.5 text-gray-600 hover:text-gray-900 rounded-r'">
+            [class]="viewMode() === 'grid' ? 'p-1.5 bg-gray-200 text-[#8c2d1b] rounded-r' : 'p-1.5 text-gray-600 hover:text-gray-900 rounded-r'">
             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                 d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z">
@@ -68,7 +68,7 @@
         <!-- Add Phase Button -->
         @if (canCreatePhase()) {
         <button (click)="openAddPhaseModal()"
-          class="flex items-center gap-1.5 px-3 py-1.5 bg-blue-600 text-white text-sm font-medium rounded-md hover:bg-blue-700 transition-colors">
+          class="flex items-center gap-1.5 px-3 py-1.5 text-white text-sm font-medium bg-[#8c2d1b] rounded-md hover:bg-[#6b2115] transition-colors flex items-center gap-2 cursor-pointer">
           <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path>
           </svg>
@@ -89,12 +89,12 @@
       <!-- Table Header -->
       <div
         class="grid grid-cols-12 gap-4 px-4 py-2 border-b border-gray-200 text-xs font-medium text-gray-600 uppercase tracking-wider sticky top-0 bg-white">
-        <div class="col-span-3">Phase Name</div>
-        <div class="col-span-2">Status</div>
-        <div class="col-span-2">Start Date</div>
-        <div class="col-span-2">End Date</div>
-        <div class="col-span-2">Assignee</div>
-        <div class="col-span-1">Tasks</div>
+        <div class="col-span-3 flex items-center">Phase Name</div>
+        <div class="col-span-2 flex items-center">Status</div>
+        <div class="col-span-2 flex items-center">Start Date</div>
+        <div class="col-span-2 flex items-center">End Date</div>
+        <div class="col-span-2 flex items-center">Assignee</div>
+        <div class="col-span-1 flex items-center">Tasks</div>
       </div>
 
       <!-- Phase Rows -->
@@ -127,7 +127,7 @@
             <span class="text-sm text-gray-400">Unassigned</span>
             }
           </div>
-          <div class="col-span-1 flex items-center">
+          <div class="col-span-1 flex items-center" style="padding-left: 14px;">
             <span class="text-sm text-gray-600">{{ getTaskCount(phase) }}</span>
           </div>
         </div>

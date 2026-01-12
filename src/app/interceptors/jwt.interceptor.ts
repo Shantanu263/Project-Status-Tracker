@@ -1,41 +1,92 @@
 import { HttpInterceptorFn } from '@angular/common/http';
 import { inject } from '@angular/core';
-import { catchError, switchMap, take } from 'rxjs/operators';
-import { throwError, BehaviorSubject } from 'rxjs';
+import { catchError, switchMap, filter, take } from 'rxjs/operators';
+import { throwError, BehaviorSubject, Observable } from 'rxjs';
 import { AuthService } from '../services/auth.service';
 
+// State management for token refresh
 let isRefreshing = false;
 const refreshTokenSubject = new BehaviorSubject<string | null>(null);
 
 export const JwtInterceptor: HttpInterceptorFn = (req, next) => {
   const auth = inject(AuthService);
-  
-  // Skip interceptor for refresh-token endpoint to prevent infinite loop
-  if (req.url.includes('/auth/refresh-token')) {
+
+  // Skip interceptor for auth endpoints to prevent infinite loops
+  if (req.url.includes('/auth/login') ||
+    req.url.includes('/auth/signup') ||
+    req.url.includes('/auth/refresh-token')) {
     return next(req);
   }
 
   const token = auth.getToken();
 
-  if (token) {
-    req = req.clone({
-      setHeaders: { Authorization: `Bearer ${token}` }
-    });
+  // If no token, proceed without authorization header
+  if (!token) {
+    return next(req);
   }
 
+  // Add authorization header to request
+  req = req.clone({
+    setHeaders: { Authorization: `Bearer ${token}` }
+  });
+
+  // PROACTIVE REFRESH: Check if token is expiring soon
+  if (auth.shouldRefreshToken()) {
+    // If refresh is not already in progress, start it
+    if (!isRefreshing) {
+      isRefreshing = true;
+      refreshTokenSubject.next(null);
+
+      return auth.refreshToken().pipe(
+        switchMap(res => {
+          isRefreshing = false;
+          const newToken = res.accessToken;
+          refreshTokenSubject.next(newToken);
+
+          // Retry the original request with the new token
+          const clonedReq = req.clone({
+            setHeaders: { Authorization: `Bearer ${newToken}` }
+          });
+          return next(clonedReq);
+        }),
+        catchError(refreshError => {
+          isRefreshing = false;
+          refreshTokenSubject.next(null);
+          // If proactive refresh fails, logout
+          auth.logoutWithMessage('Session expired. Please login again.');
+          return throwError(() => refreshError);
+        })
+      );
+    } else {
+      // If refresh is already in progress, wait for the new token
+      return refreshTokenSubject.pipe(
+        filter(token => token !== null), // Wait for a valid token
+        take(1),
+        switchMap(newToken => {
+          // Retry the original request with the new token
+          const clonedReq = req.clone({
+            setHeaders: { Authorization: `Bearer ${newToken}` }
+          });
+          return next(clonedReq);
+        })
+      );
+    }
+  }
+
+  // NORMAL REQUEST: Token is not expiring, proceed normally
   return next(req).pipe(
     catchError(error => {
-      // Handle 403 Forbidden response (expired access token)
-      if (error.status === 403) {
+      // FALLBACK: Handle 401/403 errors if proactive refresh didn't catch expiry
+      if (error.status === 401 || error.status === 403) {
         const refreshToken = auth.getRefreshToken();
 
-        // If no refresh token exists, logout with session expired message
+        // If no refresh token exists, logout
         if (!refreshToken) {
           auth.logoutWithMessage('Session expired. Please login again.');
           return throwError(() => error);
         }
 
-        // Prevent multiple simultaneous refresh attempts
+        // If token refresh is not already in progress, start it
         if (!isRefreshing) {
           isRefreshing = true;
           refreshTokenSubject.next(null);
@@ -54,7 +105,8 @@ export const JwtInterceptor: HttpInterceptorFn = (req, next) => {
             }),
             catchError(refreshError => {
               isRefreshing = false;
-              // If refresh fails, logout with session expired message
+              refreshTokenSubject.next(null);
+              // If refresh fails, logout
               auth.logoutWithMessage('Session expired. Please login again.');
               return throwError(() => refreshError);
             })
@@ -62,15 +114,14 @@ export const JwtInterceptor: HttpInterceptorFn = (req, next) => {
         } else {
           // If refresh is already in progress, wait for the new token
           return refreshTokenSubject.pipe(
+            filter(token => token !== null), // Wait for a valid token
             take(1),
             switchMap(newToken => {
-              if (newToken) {
-                const clonedReq = req.clone({
-                  setHeaders: { Authorization: `Bearer ${newToken}` }
-                });
-                return next(clonedReq);
-              }
-              return throwError(() => error);
+              // Retry the original request with the new token
+              const clonedReq = req.clone({
+                setHeaders: { Authorization: `Bearer ${newToken}` }
+              });
+              return next(clonedReq);
             })
           );
         }
