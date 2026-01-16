@@ -30,23 +30,17 @@ public class AdminServiceImpl implements AdminService {
     @Override
     public ResponseEntity<Object> getUsers(int pageNumber, int pageSize, String sortBy, String order, String search) {
 
-        Sort.Direction direction = "desc".equalsIgnoreCase(order) ? Sort.Direction.DESC : Sort.Direction.ASC;
-        String sortProperty = (sortBy == null || sortBy.isBlank()) ? "id" : sortBy;
-        Pageable pageable = PageRequest.of(Math.max(pageNumber, 0), Math.max(pageSize, 1), Sort.by(direction, sortProperty));
+        Sort sort = order.equalsIgnoreCase("desc") ?
+                Sort.by(sortBy).descending() :
+                Sort.by(sortBy).ascending();
 
-        Page<User> page = userRepo.findAll(pageable);
+        Pageable pageable = PageRequest.of(pageNumber, pageSize, sort);
 
-        Map<String, Object> body = new HashMap<>();
-        body.put("content", userMapper.mapUsers(page.getContent()));
-        body.put("page", page.getNumber());
-        body.put("size", page.getSize());
-        body.put("totalElements", page.getTotalElements());
-        body.put("totalPages", page.getTotalPages());
-        body.put("sortBy", sortProperty);
-        body.put("order", direction.name().toLowerCase());
-        body.put("search", search);
+        String searchValue = (search == null || search.isBlank()) ? "" : search;
 
-        return ResponseEntity.ok(body);
+        Page<User> result = userRepo.searchUsers(searchValue, pageable);
+
+        return ResponseEntity.ok(toPaginatedResponse(result));
 
     }
 
@@ -68,6 +62,20 @@ public class AdminServiceImpl implements AdminService {
         userRepo.save(user);
 
         return ResponseEntity.ok(Map.of("message","Assigned role to user: " + req.getRoleName()));
+    }
+
+    public Map<String, Object> toPaginatedResponse(Page<User> page) {
+        Map<String, Object> response = new HashMap<>();
+        response.put("content", page.getContent().stream()
+                .map(userMapper::mapUserToUserResponseDTO)
+                .toList());
+        response.put("page", page.getNumber());
+        response.put("totalElements", page.getTotalElements());
+        response.put("totalPages", page.getTotalPages());
+        response.put("size", page.getSize());
+        response.put("isLast", page.isLast());
+        return response;
+
     }
 
 }
