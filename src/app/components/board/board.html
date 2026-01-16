@@ -10,17 +10,17 @@
             <div class="relative">
                 <select (change)="onPhaseChange(+$any($event.target).value)"
                     [value]="selectedPhase()?.phaseId?.toString() || ''"
-                    class="px-6 py-3 bg-[#8c2d1b] text-white rounded-lg hover:bg-[#6b2115] transition-colors duration-200 font-medium shadow-lg appearance-none cursor-pointer pr-10">
-                    <option class="bg-[#ffffff] text-black" value="" disabled selected>Select Phase</option>
+                    class="w-full cursor-pointer appearance-none rounded-lg border border-gray-300 bg-white px-4 py-2 pr-10 font-medium text-gray-900 transition-all outline-none hover:bg-gray-50 focus:border-transparent focus:ring-2 focus:ring-[#8c2d1b]">
+                    <option value="" disabled selected>Select Phase</option>
                     @for (phase of phases(); track phase.phaseId) {
-                    <option class="bg-[#ffffff] text-black" [value]="phase.phaseId">{{ phase.phaseName }}</option>
+                    <option [value]="phase.phaseId">{{ phase.phaseName }}</option>
                     }
                 </select>
-                <svg class="absolute right-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-white pointer-events-none"
-                    fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                        d="M19 14l-7 7m0 0l-7-7m7 7V3"></path>
-                </svg>
+                <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center pr-3">
+                    <svg class="h-5 w-5 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
+                    </svg>
+                </div>
             </div>
         </div>
     </div>
@@ -83,67 +83,105 @@
                             <!-- Tasks List -->
                             <div class="space-y-2">
                                 @for (task of column.tasks; track task.id) {
-                                <!-- Compact Task Card -->
-                                <div class="bg-white border border-gray-200 rounded-lg p-3 hover:shadow-md transition-all duration-200 cursor-pointer group"
+                                <!--Task Card -->
+                                <div class="bg-white border border-gray-200 rounded-lg p-3 hover:shadow-lg hover:-translate-y-0.5 transition-all duration-200 cursor-pointer group"
                                     (click)="onTaskCardClick(task)" draggable="true"
                                     (dragstart)="onDragStart(task, column.id)" (dragend)="onDragEnd()"
                                     [class.opacity-50]="draggingTask()?.task?.id === task.id"
                                     [class.ring-2]="draggingTask()?.task?.id === task.id">
 
-                                    <!-- Task Header - Title and Priority in one row -->
+                                    <!-- Row 1: Title + Priority Badge -->
                                     <div class="flex items-start justify-between gap-2 mb-2">
-                                        <h4 class="font-medium text-gray-800 text-sm flex-1 line-clamp-2 group-hover:text-[#8c2d1b] transition-colors"
+                                        <h4 class="font-semibold text-gray-900 text-sm flex-1 truncate group-hover:text-[#8c2d1b] transition-colors"
                                             [class.line-through]="task.status === 'DONE'"
-                                            [class.text-gray-500]="task.status === 'DONE'">
+                                            [class.text-gray-500]="task.status === 'DONE'" [title]="task.title">
                                             {{ task.title }}
                                         </h4>
+                                        <!-- Priority Badge -->
                                         <span [ngClass]="priorityColorMap[task.priority]"
                                             class="text-xs font-medium px-2 py-0.5 rounded flex-shrink-0">
                                             {{ task.priority }}
                                         </span>
                                     </div>
 
-                                    <!-- Task Details Row - Description (truncated), Assignee, Date -->
-                                    <div class="flex items-center justify-between gap-2">
-                                        <p class="text-xs text-gray-600 flex-1 line-clamp-1"
-                                            [class.line-through]="task.status === 'DONE'"
-                                            [class.text-gray-400]="task.status === 'DONE'">
-                                            {{ task.description }}
-                                        </p>
+                                    <!-- Row 2: Description -->
+                                    @if (task.description) {
+                                    <p class="text-xs text-gray-500 line-clamp-2 mb-3"
+                                        [class.line-through]="task.status === 'DONE'"
+                                        [class.text-gray-400]="task.status === 'DONE'" [title]="task.description">
+                                        {{ task.description }}
+                                    </p>
+                                    }
 
-                                        <div class="flex items-center gap-2 flex-shrink-0">
-                                            <!-- Assignee -->
+                                    <!-- Row 3: Metadata Row -->
+                                    <div class="flex items-center justify-between gap-2">
+                                        <!-- Left: Assignee Avatar + Start Date -->
+                                        <div class="flex items-center gap-2">
+                                            <!-- Assignee Avatar (only if assigned) -->
                                             @if (task.assignees.length > 0) {
                                             <div class="flex -space-x-1">
-                                                @for (assignee of task.assignees.slice(0, 2); track assignee.name) {
-                                                <div class="w-6 h-6 bg-gradient-to-br from-indigo-500 to-purple-600 rounded-full border-2 border-white flex items-center justify-center text-white text-xs font-semibold"
-                                                    title="{{ assignee.name }}">
+                                                @for (assignee of task.assignees.slice(0, 1); track assignee.name) {
+                                                <div class="w-6 h-6 bg-gradient-to-br from-indigo-500 to-purple-600 rounded-full flex items-center justify-center text-white text-[10px] font-semibold"
+                                                    [title]="assignee.name">
                                                     {{ assignee.initials }}
-                                                </div>
-                                                }
-                                                @if (task.assignees.length > 2) {
-                                                <div class="w-6 h-6 bg-gray-400 rounded-full border-2 border-white flex items-center justify-center text-white text-xs font-semibold"
-                                                    title="+{{ task.assignees.length - 2 }} more">
-                                                    +{{ task.assignees.length - 2 }}
                                                 </div>
                                                 }
                                             </div>
                                             }
 
-                                            <!-- Due Date with Text -->
-                                            @if (task.dueDate) {
-                                            <div class="flex items-center gap-1 text-xs text-gray-500"
-                                                title="{{ `Due on ${formatDate(task.dueDate) | date: 'd MMM, y'}` }}">
-                                                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor"
+                                            <!-- Start Date -->
+                                            @if (task.startDate) {
+                                            <div class="flex items-center gap-1 text-gray-500 text-xs"
+                                                [title]="'Start: ' + formatDate(task.startDate)">
+                                                <!-- <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor"
                                                     viewBox="0 0 24 24">
                                                     <path stroke-linecap="round" stroke-linejoin="round"
                                                         stroke-width="2"
                                                         d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z">
                                                     </path>
+                                                </svg> -->
+                                                <span class="whitespace-nowrap">{{ formatDate(task.startDate) }}</span>
+                                            </div>
+                                            }
+                                        </div>
+
+                                        <!-- Right: Subtasks Icon + Duration Circle -->
+                                        <div class="flex items-center gap-2">
+                                            <!-- Subtasks Icon (only if task has subtasks) -->
+                                            @if (hasSubtasks(task)) {
+                                            <div class="flex items-center" [title]="getSubtaskTooltip(task.subTasks)">
+                                                <svg class="w-4 h-4 text-gray-500" fill="none" stroke="currentColor"
+                                                    viewBox="0 0 24 24">
+                                                    <path stroke-linecap="round" stroke-linejoin="round"
+                                                        stroke-width="2"
+                                                        d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4">
+                                                    </path>
                                                 </svg>
-                                                <span class="text-xs whitespace-nowrap">{{ formatDate(task.dueDate) |
-                                                    date: 'd MMM, y'
-                                                    }}</span>
+                                            </div>
+                                            }
+
+                                            <!-- Duration Circle + Text -->
+                                            @if (getDurationInfo(task.dueDate, task.startDate).show) {
+                                            <div class="flex items-center gap-1.5"
+                                                [title]="getDurationInfo(task.dueDate, task.startDate).tooltip">
+                                                <!-- SVG Pie Chart Circle Indicator -->
+                                                <svg class="w-4 h-4 transition-all" viewBox="0 0 32 32">
+                                                    <!-- Background circle (light gray) -->
+                                                    <circle cx="16" cy="16" r="14" fill="#e5e7eb"
+                                                        [attr.stroke]="getDurationInfo(task.dueDate, task.startDate).circleColor"
+                                                        stroke-width="1.5" />
+                                                    <!-- Filled circle segment (pie slice) using path -->
+                                                    @if (getDurationInfo(task.dueDate, task.startDate).fillPercentage >
+                                                    0) {
+                                                    <path
+                                                        [attr.d]="getPieSlicePath(getDurationInfo(task.dueDate, task.startDate).fillPercentage)"
+                                                        [attr.fill]="getDurationInfo(task.dueDate, task.startDate).circleColor" />
+                                                    }
+                                                </svg>
+                                                <!-- Duration Text (consistent gray color) -->
+                                                <span class="text-xs font-medium text-gray-500">
+                                                    {{ getDurationInfo(task.dueDate, task.startDate).text }}
+                                                </span>
                                             </div>
                                             }
                                         </div>
