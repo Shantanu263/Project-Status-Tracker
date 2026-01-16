@@ -55,15 +55,16 @@ public interface TaskRepo extends JpaRepository<Task,Long> {
     List<Object[]> findUpcomingDeadlines(Long projectId);
 
     @Query(value = """
-    SELECT DATE(t.end_date) AS date, COUNT(*)
+    SELECT DATE(t.completed_at) AS date, COUNT(*) AS count
     FROM tasks t
     JOIN phase p ON t.project_phase_phase_id = p.phase_id
     WHERE p.project_id = :projectId
-      AND t.status = 'DONE'
-    GROUP BY DATE(t.end_date)
-    ORDER BY DATE(t.end_date)
+      AND t.completed_at IS NOT NULL
+    GROUP BY DATE(t.completed_at)
+    ORDER BY DATE(t.completed_at)
     """, nativeQuery = true)
     List<Object[]> getCompletedTasksOverTime(Long projectId);
+
 
     @Query(value = """
     SELECT t.priority, COUNT(*)
