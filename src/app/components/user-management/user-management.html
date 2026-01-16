@@ -9,7 +9,7 @@
                     <p class="text-gray-600 mt-1">Manage system users and their global roles</p>
                 </div>
                 <button
-                    class="px-5 py-2.5 bg-[#8c2d1b] text-white rounded-lg hover:bg-[#6b2115] transition-colors duration-200 font-medium shadow-sm flex items-center gap-2">
+                    class="px-5 py-2.5 bg-[#8c2d1b] text-white rounded-lg hover:bg-[#6b2115] transition-colors duration-200 font-medium shadow-sm flex items-center gap-2 cursor-pointer">
                     <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path>
                     </svg>
@@ -34,7 +34,7 @@
 
                 <!-- Role Filter -->
                 <select (change)="onRoleFilterChange($event)"
-                    class="px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#8c2d1b] focus:border-transparent outline-none bg-white">
+                    class="px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#8c2d1b] focus:border-transparent outline-none bg-white cursor-pointer">
                     <option value="">All Roles</option>
                     <option value="SUPER_ADMIN">Super Admin</option>
                     <option value="ADMIN">Admin</option>
@@ -43,7 +43,7 @@
 
                 <!-- Items Per Page -->
                 <select (change)="onItemsPerPageChange($event)"
-                    class="px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#8c2d1b] focus:border-transparent outline-none bg-white">
+                    class="px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#8c2d1b] focus:border-transparent outline-none bg-white cursor-pointer">
                     <option value="5">5 per page</option>
                     <option value="10" selected>10 per page</option>
                     <option value="25">25 per page</option>
@@ -54,7 +54,7 @@
         </div>
 
         <!-- User Table -->
-        <div class="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden mb-16">
+        <div class="bg-white rounded-lg shadow-sm border border-gray-200 mb-16">
             <!-- Table -->
             <div class="overflow-x-auto">
                 <table class="w-full">
@@ -165,7 +165,8 @@
                     <tbody class="bg-white divide-y divide-gray-200">
 
                         @for (user of users(); track user.userId; let i = $index) {
-                        <tr class="hover:bg-gray-50 transition-colors">
+                        <tr class="hover:bg-gray-50 transition-colors" (mouseenter)="setHoveredUser(user.userId)"
+                            (mouseleave)="setHoveredUser(null)">
                             <td class="px-6 py-4 whitespace-nowrap">
                                 <div class="text-sm font-medium text-gray-900">#{{ user.userId }}</div>
                             </td>
@@ -206,8 +207,90 @@
                                 </span>
                                 }
                             </td>
-                            <td class="px-6 py-4 whitespace-nowrap">
-                                <div class="text-sm text-gray-600">{{ formatDate(user.createdAt) }}</div>
+                            <td class="px-6 py-4 whitespace-nowrap relative">
+                                <div class="flex items-center justify-between">
+                                    <div class="text-sm text-gray-600">{{ formatDate(user.createdAt) }}</div>
+
+                                    <!-- Menu Icon (visible on hover) - CDK Overlay Trigger -->
+                                    <button #menuTrigger="cdkOverlayOrigin" cdkOverlayOrigin
+                                        (click)="toggleMenu(user.userId, $event)"
+                                        [class.opacity-100]="hoveredUserId() === user.userId || isMenuOpen(user.userId)"
+                                        [class.opacity-0]="hoveredUserId() !== user.userId && !isMenuOpen(user.userId)"
+                                        class="p-1 rounded hover:bg-gray-200 transition-all duration-200 ml-2 cursor-pointer">
+                                        <svg class="w-5 h-5 text-gray-600" fill="currentColor" viewBox="0 0 24 24">
+                                            <path
+                                                d="M12 8c1.1 0 2-.9 2-2s-.9-2-2-2-2 .9-2 2 .9 2 2 2zm0 2c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2zm0 6c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2z" />
+                                        </svg>
+                                    </button>
+
+                                    <!-- 
+                                        CDK Connected Overlay - Professional Dropdown Solution
+                                        Why this approach:
+                                        1. Renders in overlay container (outside table DOM)
+                                        2. Table height never changes
+                                        3. Auto-flips to top when no space below
+                                        4. Proper z-index stacking
+                                        5. Built-in backdrop for outside clicks
+                                        6. Never clipped by table overflow
+                                    -->
+                                    <ng-template cdkConnectedOverlay [cdkConnectedOverlayOrigin]="menuTrigger"
+                                        [cdkConnectedOverlayOpen]="isMenuOpen(user.userId)"
+                                        [cdkConnectedOverlayHasBackdrop]="true"
+                                        [cdkConnectedOverlayBackdropClass]="'cdk-overlay-transparent-backdrop'"
+                                        [cdkConnectedOverlayPanelClass]="'dropdown-overlay-panel'"
+                                        (backdropClick)="closeMenu()" (detach)="closeMenu()"
+                                        [cdkConnectedOverlayPositions]="[
+                                            {
+                                                originX: 'end',
+                                                originY: 'bottom',
+                                                overlayX: 'end',
+                                                overlayY: 'top',
+                                                offsetY: 4
+                                            },
+                                            {
+                                                originX: 'end',
+                                                originY: 'top',
+                                                overlayX: 'end',
+                                                overlayY: 'bottom',
+                                                offsetY: -4
+                                            }
+                                        ]">
+
+                                        <div
+                                            class="dropdown-menu-container w-48 bg-white rounded-lg shadow-lg border border-gray-200 overflow-visible">
+                                            <!-- Change Role Option with Submenu -->
+                                            <div class="relative group overflow-visible">
+                                                <button
+                                                    class="w-full px-4 py-2 text-left text-sm text-gray-700 hover:bg-gray-100 flex items-center rounded-t-lg cursor-pointer">
+                                                    <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor"
+                                                        viewBox="0 0 24 24">
+                                                        <path stroke-linecap="round" stroke-linejoin="round"
+                                                            stroke-width="2" d="M15 19l-7-7 7-7" />
+                                                    </svg>
+                                                    <span>Change Role</span>
+                                                </button>
+
+                                                <!-- Role Submenu (appears on left, vertically) -->
+                                                <div
+                                                    class="absolute right-full top-0 mr-1 w-40 bg-white rounded-lg shadow-lg border border-gray-200 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 max-h-60 overflow-y-auto z-50">
+                                                    @for (role of getAvailableRolesForUser(user.role.roleName); track
+                                                    role) {
+                                                    <button (click)="changeRoleViaMenu(user.userId, role)"
+                                                        class="w-full px-4 py-2 text-left text-sm text-gray-700 hover:bg-gray-100 first:rounded-t-lg last:rounded-b-lg block cursor-pointer">
+                                                        {{ role }}
+                                                    </button>
+                                                    }
+                                                </div>
+                                            </div>
+
+                                            <!-- Remove User Option -->
+                                            <button (click)="deleteUser(user.userId)"
+                                                class="w-full px-4 py-2 text-left text-sm text-red-600 hover:bg-red-50 rounded-b-lg cursor-pointer">
+                                                Remove User
+                                            </button>
+                                        </div>
+                                    </ng-template>
+                                </div>
                             </td>
                         </tr>
                         } @empty {
