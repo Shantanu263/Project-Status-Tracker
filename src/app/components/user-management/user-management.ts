@@ -1,19 +1,23 @@
-import { ChangeDetectionStrategy, Component, computed, effect, inject, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, effect, inject, signal, ViewContainerRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { UserManagementService, User } from '../../services/user-management.service';
+import { Overlay, OverlayModule, OverlayRef } from '@angular/cdk/overlay';
+import { ComponentPortal } from '@angular/cdk/portal';
 
 type SortOrder = 'asc' | 'desc';
 type SortColumn = 'userId' | 'name' | 'email' | 'role' | 'createdAt';
 
 @Component({
     selector: 'app-user-management',
-    imports: [CommonModule],
+    imports: [CommonModule, OverlayModule],
     templateUrl: './user-management.html',
     styleUrl: './user-management.scss',
     changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class UserManagementComponent {
     private userManagementService = inject(UserManagementService);
+    private overlay = inject(Overlay);
+    private viewContainerRef = inject(ViewContainerRef);
 
     // Pagination & Filtering
     searchQuery = signal('');
@@ -32,6 +36,12 @@ export class UserManagementComponent {
 
     // Role editing
     editingRoleUserId = signal<number | null>(null);
+
+    // Row-level menu state
+    hoveredUserId = signal<number | null>(null);
+    openMenuUserId = signal<number | null>(null);
+    showRoleSubmenu = signal(false);
+    private overlayRef: OverlayRef | null = null;
 
     // Available roles
     availableRoles = ['SUPER ADMIN', 'ADMIN', 'MEMBER'];
@@ -249,5 +259,63 @@ export class UserManagementComponent {
         } catch (error) {
             return '—';
         }
+    }
+
+    // Row-level menu methods using CDK Overlay
+    setHoveredUser(userId: number | null): void {
+        this.hoveredUserId.set(userId);
+    }
+
+    /**
+     * Toggles the dropdown menu.
+     * Uses cdkConnectedOverlay directive in template for:
+     * 1. Rendering outside table DOM (no table reflow)
+     * 2. Auto-flip positioning (top/bottom based on space)
+     * 3. Proper z-index management
+     * 4. Backdrop for outside click detection
+     */
+    toggleMenu(userId: number, event: Event): void {
+        event.stopPropagation();
+
+        if (this.openMenuUserId() === userId) {
+            this.closeMenu();
+        } else {
+            this.openMenuUserId.set(userId);
+            this.showRoleSubmenu.set(false);
+        }
+    }
+
+    closeMenu(): void {
+        this.openMenuUserId.set(null);
+        this.showRoleSubmenu.set(false);
+    }
+
+    isMenuOpen(userId: number): boolean {
+        return this.openMenuUserId() === userId;
+    }
+
+    changeRoleViaMenu(userId: number, newRole: string): void {
+        this.changeRole(userId, newRole);
+        this.closeMenu();
+    }
+
+    deleteUser(userId: number): void {
+        if (!confirm('Are you sure you want to remove this user? This action cannot be undone.')) {
+            return;
+        }
+
+        this.userManagementService.deleteUser(userId).subscribe({
+            next: () => {
+                // Remove user from the list
+                this.users.update(users => users.filter(user => user.userId !== userId));
+                this.totalElements.update(total => total - 1);
+                this.closeMenu();
+            },
+            error: (error) => {
+                console.error('Error deleting user:', error);
+                alert('Failed to delete user. Please try again.');
+                this.closeMenu();
+            }
+        });
     }
 }

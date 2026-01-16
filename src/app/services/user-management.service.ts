@@ -57,4 +57,8 @@ export class UserManagementService {
     changeUserRole(userId: number, roleName: string): Observable<any> {
         return this.http.put(`${this.apiUrl}/change-role/${userId}`, { roleName });
     }
+
+    deleteUser(userId: number): Observable<any> {
+        return this.http.delete(`${environment.apiUrl}/auth/user/${userId}`);
+    }
 }
