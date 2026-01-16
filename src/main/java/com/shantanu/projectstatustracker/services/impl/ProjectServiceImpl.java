@@ -111,7 +111,7 @@ public class ProjectServiceImpl implements ProjectService {
                 .project(project)
                 .role(ProjectRole.SUPER_ADMIN)
                 .user(userRepo.findByEmail((String) request.getAttribute("email")).orElseThrow(() -> new ResourceNotFoundException("User not found")))
-                .assignedBy(userRepo.findByName("Admin").orElseThrow(() -> new ResourceNotFoundException("Admin not found")))
+//                .assignedBy(userRepo.findByName("Admin").orElseThrow(() -> new ResourceNotFoundException("Admin not found")))
                 .build();
 
         projectMemberRepo.save(admin);
