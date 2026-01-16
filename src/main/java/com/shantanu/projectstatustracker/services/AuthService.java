@@ -19,4 +19,6 @@ public interface AuthService {
     ResponseEntity<Object> updateUsername(Long userId, String username);
 
     ResponseEntity<Object> removeUser(Long userId);
+
+    public ResponseEntity<Object> getUserById(Long userId);
 }
