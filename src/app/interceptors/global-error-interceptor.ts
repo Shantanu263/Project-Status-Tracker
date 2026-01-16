@@ -10,8 +10,8 @@ export const globalHttpErrorInterceptorInterceptor: HttpInterceptorFn = (req, ne
     tap({
       error: (error: HttpErrorResponse) => {
         // Default message 
-        let errorMessage = 'An unexpected error occurred';        
-        
+        let errorMessage = 'An unexpected error occurred';
+
         if (error.error) {
           if (typeof error.error === 'string') {
             errorMessage = error.error;
@@ -20,18 +20,19 @@ export const globalHttpErrorInterceptorInterceptor: HttpInterceptorFn = (req, ne
           }
         }
 
-        if(req.url.includes('/auth/login') || req.url.includes('/auth/signup')){
+        if (req.url.includes('/auth/login') || req.url.includes('/auth/signup')) {
           //console.log(errorMessage);
           snackBar.open(errorMessage, 'Close', {
             duration: 5000
           });
         }
-        else{
-          //console.log(errorMessage);
-        snackBar.open(errorMessage, 'Close', {
-          duration: 5000
-        });
-      }
+        else {
+          if (!req.url.includes('/forgot-password')) {
+            snackBar.open(errorMessage, 'Close', {
+              duration: 5000
+            });
+          }
+        }
       }
     })
   );
