@@ -50,4 +50,9 @@ public class AuthController {
         return authService.removeUser(userId);
     }
 
+    @GetMapping("/user/{userId}")
+    public ResponseEntity<Object> getUserById(@PathVariable(name = "userId") Long userId){
+        return authService.getUserById(userId);
+    }
+
 }
