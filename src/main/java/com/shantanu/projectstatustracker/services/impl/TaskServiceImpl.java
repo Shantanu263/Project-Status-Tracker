@@ -103,6 +103,9 @@ public class TaskServiceImpl implements TaskService {
 
         taskMapper.updateTaskFromDTO(dto,assignedTo,existingTask);
 
+        if (dto.getStatus()!= null && dto.getStatus().equals(Status.DONE)) existingTask.setCompletedAt(new Date());
+        else existingTask.setCompletedAt(null);
+
         taskRepo.save(existingTask);
         
         // Update phase progress with respect to Task Status
@@ -159,6 +162,10 @@ public class TaskServiceImpl implements TaskService {
 
         Status existingStatus = existingTask.getStatus();
         existingTask.setStatus(status);
+
+        if (status.equals(Status.DONE)) existingTask.setCompletedAt(new Date());
+        else existingTask.setCompletedAt(null);
+
         taskRepo.save(existingTask);
         
         // Update phase progress with respect to Task Status
