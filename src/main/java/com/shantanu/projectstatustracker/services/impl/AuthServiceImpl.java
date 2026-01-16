@@ -5,6 +5,7 @@ import com.shantanu.projectstatustracker.dtos.UpdatePasswordRequestDTO;
 import com.shantanu.projectstatustracker.dtos.UserLoginRequestDTO;
 import com.shantanu.projectstatustracker.dtos.UserRequestDTO;
 import com.shantanu.projectstatustracker.dtos.mappers.ProjectMemberMapper;
+import com.shantanu.projectstatustracker.dtos.mappers.UserMapper;
 import com.shantanu.projectstatustracker.globalExceptionHandlers.ResourceNotFoundException;
 import com.shantanu.projectstatustracker.models.*;
 import com.shantanu.projectstatustracker.repositories.*;
@@ -35,6 +36,7 @@ public class AuthServiceImpl implements AuthService {
     private final EmailService emailService;
     private final PasswordEncoder encoder;
     private final ProjectService projectService;
+    private final UserMapper userMapper;
 
     @Value("${jwt.accessTokenTime}")
     private long accessTokenTime;
@@ -186,6 +188,13 @@ public class AuthServiceImpl implements AuthService {
         userRepo.save(user);
 
         return ResponseEntity.ok(Map.of("message","User removed successfully"));
+    }
+
+    @Override
+    public ResponseEntity<Object> getUserById(Long userId){
+        User user = userRepo.findById(userId).orElseThrow(() -> new ResourceNotFoundException("User not found"));
+
+        return ResponseEntity.ok(userMapper.mapUserToUserResponseDTO(user));
     }
 
 }
