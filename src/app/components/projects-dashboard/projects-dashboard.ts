@@ -28,6 +28,7 @@ export class ProjectsDashboard implements AfterViewInit, OnDestroy {
   private progressDistributionChart: Chart | null = null;
   private priorityChart: Chart | null = null;
   private radarChart: Chart | null = null;
+  private viewInitialized = false;
 
   // Fetch dashboard data from backend
   private dashboardDataSignal = toSignal(this.projectService.getProjectsDashboard(), {
@@ -64,23 +65,30 @@ export class ProjectsDashboard implements AfterViewInit, OnDestroy {
   isLoading = computed(() => this.dashboardDataSignal() === null);
 
   constructor() {
-    // Watch for data changes and update charts
+    // Watch for data changes and create/update charts
     effect(() => {
       const data = this.dashboardDataSignal();
-      if (data && this.statusChart && this.progressDistributionChart && this.priorityChart && this.radarChart) {
-        this.updateCharts(data);
+      if (data && this.viewInitialized) {
+        // If charts don't exist yet, create them
+        if (!this.statusChart || !this.progressDistributionChart || !this.priorityChart || !this.radarChart) {
+          setTimeout(() => this.createCharts(data), 0);
+        } else {
+          // Charts exist, just update them
+          this.updateCharts(data);
+        }
       }
-    });
+    }, { allowSignalWrites: true });
   }
 
   ngAfterViewInit(): void {
-    // Initialize charts after view is ready
-    setTimeout(() => {
-      const data = this.dashboardDataSignal();
-      if (data) {
-        this.createCharts(data);
-      }
-    }, 100);
+    // Mark view as initialized
+    this.viewInitialized = true;
+
+    // Try to create charts if data is already available
+    const data = this.dashboardDataSignal();
+    if (data) {
+      setTimeout(() => this.createCharts(data), 0);
+    }
   }
 
   ngOnDestroy(): void {
@@ -166,16 +174,19 @@ export class ProjectsDashboard implements AfterViewInit, OnDestroy {
 
     // Update legend counts in the HTML
     const updateLegendCounts = () => {
-      statusData.forEach(item => {
-        const normalizedStatus = item.status.toLowerCase().replace(/\s+/g, '');
-        const countElement = document.getElementById(`count-${normalizedStatus}`);
-        if (countElement) {
-          countElement.textContent = item.count.toString();
-        }
+      // Use requestAnimationFrame to ensure DOM is ready
+      requestAnimationFrame(() => {
+        statusData.forEach(item => {
+          const normalizedStatus = item.status.toLowerCase().replace(/\s+/g, '');
+          const countElement = document.getElementById(`count-${normalizedStatus}`);
+          if (countElement) {
+            countElement.textContent = item.count.toString();
+          }
+        });
       });
     };
 
-    // Call immediately to populate counts
+    // Call to populate counts
     updateLegendCounts();
 
     const config: ChartConfiguration<'doughnut'> = {
@@ -193,12 +204,12 @@ export class ProjectsDashboard implements AfterViewInit, OnDestroy {
       },
       options: {
         responsive: true,
-        maintainAspectRatio: false,
+        maintainAspectRatio: true,
         cutout: '70%',
         layout: {
           padding: {
             top: 0,
-            bottom: 0,
+            bottom: 51,
             left: 0,
             right: 0
           }
