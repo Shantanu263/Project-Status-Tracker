@@ -10,6 +10,7 @@ import com.shantanu.projectstatustracker.services.EmailService;
 import com.shantanu.projectstatustracker.services.ForgotPasswordService;
 import com.shantanu.projectstatustracker.services.JwtService;
 import jakarta.mail.MessagingException;
+import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -31,6 +32,7 @@ public class ForgotPasswordServiceImpl implements ForgotPasswordService {
     private final EmailService emailService;
     private final JwtService jWTService;
     private final PasswordEncoder encoder;
+    private final HttpServletRequest request;
 
     @Override
     @Transactional
@@ -83,9 +85,10 @@ public class ForgotPasswordServiceImpl implements ForgotPasswordService {
     }
 
     @Override
-    public ResponseEntity<Object> changePassword(String newPassword, Long userId) {
-        User user = userRepo.findById(userId)
-                .orElseThrow(()-> new ResourceNotFoundException("User with User Id: " + userId + " not found"));
+    public ResponseEntity<Object> changePassword(String newPassword) {
+        String email = request.getAttribute("email").toString();
+        User user = userRepo.findByEmail(email)
+                .orElseThrow(()-> new ResourceNotFoundException("User with User email: " + email + " not found"));
 
         if (encoder.matches(newPassword, user.getPassword())) {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST)
