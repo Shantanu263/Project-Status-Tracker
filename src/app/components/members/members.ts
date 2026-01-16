@@ -6,6 +6,7 @@ import { environment } from '../../environments/environment';
 import { SelectedProjectService } from '../../services/selected-project.service';
 import { AddMembersModalComponent } from '../add-members-modal/add-members-modal';
 import { AuthService } from '../../services/auth.service';
+import { OverlayModule } from '@angular/cdk/overlay';
 
 interface AssignedBy {
   userId: number;
@@ -40,7 +41,7 @@ interface MembersResponse {
 @Component({
   selector: 'app-members',
   standalone: true,
-  imports: [CommonModule, FormsModule, AddMembersModalComponent],
+  imports: [CommonModule, FormsModule, AddMembersModalComponent, OverlayModule],
   templateUrl: './members.html',
   styleUrl: './members.scss',
   changeDetection: ChangeDetectionStrategy.OnPush
@@ -57,6 +58,11 @@ export class MembersComponent {
 
   // Role editing
   editingRoleMemberId = signal<string | null>(null);
+
+  // Row-level menu state
+  hoveredMemberId = signal<string | null>(null);
+  openMenuMemberId = signal<string | null>(null);
+  showRoleSubmenu = signal(false);
 
   // Pagination
   currentPage = signal(0);
@@ -493,5 +499,60 @@ export class MembersComponent {
       'PROJECT_VIEWER': 'bg-gray-100 text-gray-700'
     };
     return colorMap[role.toUpperCase().replace(' ', '_')] || 'bg-gray-100 text-gray-700';
+  }
+
+  // Row-level menu methods
+  setHoveredMember(memberId: string | null): void {
+    this.hoveredMemberId.set(memberId);
+  }
+
+  toggleMenu(memberId: string, event: Event): void {
+    event.stopPropagation();
+    if (this.openMenuMemberId() === memberId) {
+      this.openMenuMemberId.set(null);
+      this.showRoleSubmenu.set(false);
+    } else {
+      this.openMenuMemberId.set(memberId);
+      this.showRoleSubmenu.set(false);
+    }
+  }
+
+  closeMenu(): void {
+    this.openMenuMemberId.set(null);
+    this.showRoleSubmenu.set(false);
+  }
+
+  isMenuOpen(memberId: string): boolean {
+    return this.openMenuMemberId() === memberId;
+  }
+
+  changeRoleViaMenu(memberId: string, newRole: string): void {
+    this.changeProjectRole(memberId, newRole);
+    this.closeMenu();
+  }
+
+  deleteMember(memberId: string): void {
+    const project = this.selectedProject();
+    if (!project) return;
+
+    if (!confirm('Are you sure you want to remove this member? This action cannot be undone.')) {
+      return;
+    }
+
+    const url = `${environment.apiUrl}/project/${project.projectId}/project-members/${memberId}`;
+
+    this.http.delete(url).subscribe({
+      next: () => {
+        // Remove member from the list
+        this.members.update(members => members.filter(member => member.memberId !== memberId));
+        this.totalItems.update(total => total - 1);
+        this.closeMenu();
+      },
+      error: (err) => {
+        console.error('Error deleting member:', err);
+        alert('Failed to delete member. Please try again.');
+        this.closeMenu();
+      }
+    });
   }
 }

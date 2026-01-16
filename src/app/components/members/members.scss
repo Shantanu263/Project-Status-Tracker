@@ -1,20 +1,66 @@
-/* Members Component Styles */
-
-::-webkit-scrollbar {
-  width: 8px;
-  height: 8px;
+/* CDK Overlay Panel - allow overflow for submenus */
+::ng-deep .dropdown-overlay-panel {
+  overflow: visible !important;
 }
 
-::-webkit-scrollbar-track {
-  background: rgba(0, 0, 0, 0.05);
-  border-radius: 10px;
-}
+/* Custom scrollbar styling for dropdown menus */
+.dropdown-menu-container {
+  /* No max-height or overflow by default - scrollbars won't appear */
+  /* If content grows beyond viewport, add max-height and overflow-y-auto classes conditionally */
+  
+  /* Ensure submenus can extend beyond container */
+  position: relative;
+  
+  /* Custom scrollbar styling for when overflow is needed */
+  &::-webkit-scrollbar {
+    width: 6px;
+  }
 
-::-webkit-scrollbar-thumb {
-  background: rgba(0, 0, 0, 0.2);
-  border-radius: 10px;
+  &::-webkit-scrollbar-track {
+    background: transparent;
+  }
 
-  &:hover {
-    background: rgba(0, 0, 0, 0.3);
+  &::-webkit-scrollbar-thumb {
+    background: #cbd5e0;
+    border-radius: 3px;
+  }
+
+  &::-webkit-scrollbar-thumb:hover {
+    background: #a0aec0;
+  }
+
+  /* For Firefox */
+  scrollbar-width: thin;
+  scrollbar-color: #cbd5e0 transparent;
+  
+  /* Role submenu styling - ensure it doesn't get clipped */
+  .group {
+    /* Allow submenu to extend beyond */
+    overflow: visible !important;
+  }
+  
+  /* Submenu container - positioned absolutely to the left */
+  .group > div.absolute.right-full {
+    /* Submenu can scroll if content exceeds max-height */
+    /* overflow-y-auto is applied via class, this just ensures styling */
+    &::-webkit-scrollbar {
+      width: 6px;
+    }
+
+    &::-webkit-scrollbar-track {
+      background: transparent;
+    }
+
+    &::-webkit-scrollbar-thumb {
+      background: #cbd5e0;
+      border-radius: 3px;
+    }
+
+    &::-webkit-scrollbar-thumb:hover {
+      background: #a0aec0;
+    }
+
+    scrollbar-width: thin;
+    scrollbar-color: #cbd5e0 transparent;
   }
 }
