@@ -44,9 +44,6 @@ public class Project {
     private LocalDateTime updatedAt;
 
     @ManyToOne
-    private User projectHead;
-
-    @ManyToOne
     private User createdBySuperAdmin;
 
     @ManyToOne
