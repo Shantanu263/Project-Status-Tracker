@@ -30,7 +30,7 @@
       <div class="flex items-center gap-2">
         <!-- Status Filter -->
         <select [(ngModel)]="statusFilter"
-          class="px-3 py-1.5 bg-gray-50 border border-gray-300 rounded-md text-sm text-gray-700 focus:outline-none focus:ring-1 focus:ring-blue-500">
+          class="px-3 py-1.5 bg-gray-50 border border-gray-300 rounded-md text-sm text-gray-700 focus:outline-none focus:ring-1 focus:ring-blue-500 cursor-pointer">
           <option value="all">All Status</option>
           <option value="NOT_STARTED">Not Started</option>
           <option value="IN_PROGRESS">In Progress</option>
@@ -40,7 +40,7 @@
 
         <!-- Sort Dropdown -->
         <select [(ngModel)]="sortBy"
-          class="px-3 py-1.5 bg-gray-50 border border-gray-300 rounded-md text-sm text-gray-700 focus:outline-none focus:ring-1 focus:ring-blue-500">
+          class="px-3 py-1.5 bg-gray-50 border border-gray-300 rounded-md text-sm text-gray-700 focus:outline-none focus:ring-1 focus:ring-blue-500 cursor-pointer">
           <option value="name">Sort by Name</option>
           <option value="date">Sort by Date</option>
           <option value="status">Sort by Status</option>
@@ -49,14 +49,14 @@
         <!-- View Toggle -->
         <div class="flex items-center bg-gray-50 border border-gray-300 rounded-md">
           <button (click)="setViewMode('list')"
-            [class]="viewMode() === 'list' ? 'p-1.5 bg-gray-200 text-[#8c2d1b] rounded-l border-r border-gray-300' : 'p-1.5 text-gray-600 hover:text-gray-900 rounded-l border-r border-gray-300'">
+            [class]="viewMode() === 'list' ? 'p-1.5 bg-gray-200 text-[#8c2d1b] rounded-l border-r border-gray-300' : 'p-1.5 text-gray-600 hover:text-gray-900 rounded-l border-r border-gray-300 cursor-pointer'">
             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 10h16M4 14h16M4 18h16">
               </path>
             </svg>
           </button>
           <button (click)="setViewMode('grid')"
-            [class]="viewMode() === 'grid' ? 'p-1.5 bg-gray-200 text-[#8c2d1b] rounded-r' : 'p-1.5 text-gray-600 hover:text-gray-900 rounded-r'">
+            [class]="viewMode() === 'grid' ? 'p-1.5 bg-gray-200 text-[#8c2d1b] rounded-r' : 'p-1.5 text-gray-600 hover:text-gray-900 rounded-r cursor-pointer'">
             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                 d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z">
