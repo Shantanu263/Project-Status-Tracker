@@ -1,14 +1,19 @@
-import { Injectable } from '@angular/core';
+import { Injectable, signal, inject } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Router } from '@angular/router';
 import { tap, Observable } from 'rxjs';
 import { environment } from '../environments/environment';
+import { ProjectStateService } from './project-state.service';
 
 @Injectable({ providedIn: 'root' })
 export class AuthService {
   private api = environment.apiUrl + '/auth';
+  private http = inject(HttpClient);
+  private router = inject(Router);
+  private projectStateService = inject(ProjectStateService);
 
-  constructor(private http: HttpClient, private router: Router) { }
+  // Signal to store updated username for immediate UI updates
+  private updatedUsername = signal<string | null>(null);
 
   login(email: string, password: string) {
     return this.http.post<{ accessToken: string, refreshToken: string }>(`${this.api}/login`, { email, password }).pipe(
@@ -35,6 +40,9 @@ export class AuthService {
   logout() {
     sessionStorage.removeItem('accessToken');
     sessionStorage.removeItem('refreshToken');
+    this.clearUpdatedUsername();
+    // Clear all project-specific UI state
+    this.projectStateService.clearAllProjectState();
   }
 
   logoutWithMessage(message: string) {
@@ -70,6 +78,13 @@ export class AuthService {
   }
 
   getCurrentUserName(): string | null {
+    // Return updated username if available (for immediate UI updates)
+    const updated = this.updatedUsername();
+    if (updated !== null) {
+      return updated;
+    }
+
+    // Otherwise, get from token
     const token = this.getToken();
     if (!token) return null;
 
@@ -77,6 +92,35 @@ export class AuthService {
       // Decode JWT token (format: header.payload.signature)
       const payload = JSON.parse(atob(token.split('.')[1]));
       return payload.name || payload.sub || null;
+    } catch (error) {
+      console.error('Error decoding token:', error);
+      return null;
+    }
+  }
+
+  /**
+   * Update the username signal for immediate UI updates
+   * This is called when username is updated via the account panel
+   */
+  setUpdatedUsername(username: string | null): void {
+    this.updatedUsername.set(username);
+  }
+
+  /**
+   * Clear the updated username signal (e.g., on logout)
+   */
+  clearUpdatedUsername(): void {
+    this.updatedUsername.set(null);
+  }
+
+  getCurrentUserEmail(): string | null {
+    const token = this.getToken();
+    if (!token) return null;
+
+    try {
+      // Decode JWT token (format: header.payload.signature)
+      const payload = JSON.parse(atob(token.split('.')[1]));
+      return payload.email || null;
     } catch (error) {
       console.error('Error decoding token:', error);
       return null;
