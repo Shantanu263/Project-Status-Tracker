@@ -76,8 +76,6 @@ public class ProjectServiceImpl implements ProjectService {
                 .startDate(projectRequestDTO.getStartDate())
                 .endDate(projectRequestDTO.getEndDate())
                 .priority(projectRequestDTO.getPriority())
-                .projectHead(userRepo.findById(projectRequestDTO.getProjectHeadId())
-                        .orElseThrow(() -> new ResourceNotFoundException("User not found with id: " + projectRequestDTO.getProjectHeadId())))
                 .status("ongoing")
                 .progress(0.00)
                 .createdBySuperAdmin(userRepo.findByName("Admin")
@@ -108,14 +106,6 @@ public class ProjectServiceImpl implements ProjectService {
             projectRepo.save(project);
         }
 
-        //project head not required
-        ProjectMember projectMember = ProjectMember.builder()
-                .project(project)
-                .role(ProjectRole.PROJECT_HEAD)
-                .user(userRepo.findById(projectRequestDTO.getProjectHeadId()).orElseThrow())
-                .assignedBy(userRepo.findByName("Admin").orElseThrow(() -> new ResourceNotFoundException("Admin not found")))
-                .build();
-
         //assigned by not required
         ProjectMember admin = ProjectMember.builder()
                 .project(project)
@@ -124,7 +114,6 @@ public class ProjectServiceImpl implements ProjectService {
                 .assignedBy(userRepo.findByName("Admin").orElseThrow(() -> new ResourceNotFoundException("Admin not found")))
                 .build();
 
-        projectMemberRepo.save(projectMember);
         projectMemberRepo.save(admin);
 
         Long projectId = projectRepo.findByProjectName(project.getProjectName()).getProjectId();
