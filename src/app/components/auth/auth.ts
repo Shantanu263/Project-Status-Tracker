@@ -1,21 +1,23 @@
-import { Component, inject } from '@angular/core';
+import { Component, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule, NgForm } from '@angular/forms';
 import { AuthService } from '../../services/auth.service';
 import { Router } from '@angular/router';
 import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
 import { LucideAngularModule, Eye, EyeOff, Mail, Lock, User, ArrowRight, LogIn } from 'lucide-angular';
+import { ForgotPasswordComponent } from './forgot-password/forgot-password.component';
 
 @Component({
   selector: 'app-auth',
   standalone: true,
-  imports: [CommonModule, FormsModule, LucideAngularModule, MatSnackBarModule],
+  imports: [CommonModule, FormsModule, LucideAngularModule, MatSnackBarModule, ForgotPasswordComponent],
   templateUrl: './auth.html',
   styleUrl: './auth.scss'
 })
 export class AuthComponent {
   isLogin = true;
   showPassword = false;
+  isForgotPasswordOpen = signal(false);
 
   formData = {
     name: '',
@@ -35,6 +37,14 @@ export class AuthComponent {
     this.formData = { name: '', email: '', password: '', confirmPassword: '' };
   }
 
+  openForgotPassword() {
+    this.isForgotPasswordOpen.set(true);
+  }
+
+  closeForgotPassword() {
+    this.isForgotPasswordOpen.set(false);
+  }
+
   submit(form: NgForm) {
     if (!form.valid) {
       return;
@@ -45,7 +55,13 @@ export class AuthComponent {
     if (this.isLogin) {
       this.auth.login(this.formData.email, this.formData.password).subscribe({
         next: () => {
-          this.router.navigate(['/home']);
+          // Show success notification
+          this.snackBar.open('Login successful! Welcome back.', 'Close', {
+            duration: 3000,
+            panelClass: ['success-snackbar']
+          });
+          // Redirect to projects dashboard
+          this.router.navigate(['/home/projects-dashboard']);
         }
       });
     } else {

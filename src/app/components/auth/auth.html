@@ -1,98 +1,133 @@
 <div class="min-h-screen bg-gradient-to-br from-red-50 to-red-100 flex items-center justify-center p-4">
-    <div class="w-full max-w-md">
-      <div class="bg-white rounded-2xl shadow-xl overflow-hidden">
-  
-        <!-- Header -->
-        <div class="bg-gradient-to-r from-red-900 to-red-700 p-8 text-center">
-          <div class="w-16 h-16 bg-white/20 rounded-full flex items-center justify-center mx-auto mb-4">
-            <lucide-icon [name]="LogIn" class="text-white w-8 h-8"></lucide-icon>
-          </div>
-          <h1 class="text-2xl font-bold text-white">
-            {{ isLogin ? 'Welcome Back' : 'Create Account' }}
-          </h1>
-          <p class="text-red-100 mt-2">{{ isLogin ? 'Sign in to continue' : 'Join us today' }}</p>
+  <div class="w-full max-w-md">
+    <div class="bg-white rounded-2xl shadow-xl overflow-hidden">
+
+      <!-- Header -->
+      <div class="bg-gradient-to-r from-red-900 to-red-700 p-8 text-center">
+        <div class="w-16 h-16 bg-white/20 rounded-full flex items-center justify-center mx-auto mb-4">
+          <lucide-icon [name]="LogIn" class="text-white w-8 h-8"></lucide-icon>
         </div>
-  
-        <!-- Form -->
-        <div class="p-8">
-          <form #form="ngForm" (ngSubmit)="submit(form)" class="space-y-6">
-  
-            @if (!isLogin) {
-              <label class="block text-sm font-medium text-gray-700 mb-2">Full Name</label>
-              <div class="relative">
-                <lucide-icon [name]="User" class="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 w-5 h-5 pointer-events-none"></lucide-icon>
-                <input type="text" name="name" [(ngModel)]="formData.name" #nameCtrl="ngModel" class="w-full pl-12 pr-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-900 bg-white" placeholder="Enter your full name" required minlength="2" aria-invalid="{{ nameCtrl.invalid && (nameCtrl.dirty || nameCtrl.touched) }}">
-              </div>
-              @if (nameCtrl.invalid && nameCtrl.touched) {
-                <p class="mt-1 text-sm text-red-600">
-                  @if (nameCtrl.errors?.['required']) { Full name is required. }
-                  @if (nameCtrl.errors?.['minlength']) { Full name must be at least 2 characters. }
-                </p>
-              }
-            }
-  
-            <div>
-              <label class="block text-sm font-medium text-gray-700 mb-2">Email Address</label>
-              <div class="relative">
-                <lucide-icon [name]="Mail" class="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 w-5 h-5 pointer-events-none"></lucide-icon>
-                <input type="email" name="email" [(ngModel)]="formData.email" #emailCtrl="ngModel" class="w-full pl-12 pr-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-900 bg-white" placeholder="youremail@example.com" required email aria-invalid="{{ emailCtrl.invalid && (emailCtrl.dirty || emailCtrl.touched) }}">
-              </div>
-              @if (emailCtrl.invalid && emailCtrl.touched) {
-                <p class="mt-1 text-sm text-red-600">
-                  @if (emailCtrl.errors?.['required']) { Email is required. }
-                  @if (emailCtrl.errors?.['email']) { Enter a valid email address. }
-                </p>
-              }
+        <h1 class="text-2xl font-bold text-white">
+          {{ isLogin ? 'Welcome Back' : 'Create Account' }}
+        </h1>
+        <p class="text-red-100 mt-2">{{ isLogin ? 'Sign in to continue' : 'Join us today' }}</p>
+      </div>
+
+      <!-- Form -->
+      <div class="p-8">
+        <form #form="ngForm" (ngSubmit)="submit(form)" class="space-y-6">
+
+          @if (!isLogin) {
+          <label class="block text-sm font-medium text-gray-700 mb-2">Full Name</label>
+          <div class="relative">
+            <lucide-icon [name]="User"
+              class="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 w-5 h-5 pointer-events-none"></lucide-icon>
+            <input type="text" name="name" [(ngModel)]="formData.name" #nameCtrl="ngModel"
+              class="w-full pl-12 pr-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-900 bg-white"
+              placeholder="Enter your full name" required minlength="2"
+              aria-invalid="{{ nameCtrl.invalid && (nameCtrl.dirty || nameCtrl.touched) }}">
+          </div>
+          @if (nameCtrl.invalid && nameCtrl.touched) {
+          <p class="mt-1 text-sm text-red-600">
+            @if (nameCtrl.errors?.['required']) { Full name is required. }
+            @if (nameCtrl.errors?.['minlength']) { Full name must be at least 2 characters. }
+          </p>
+          }
+          }
+
+          <div>
+            <label class="block text-sm font-medium text-gray-700 mb-2">Email Address</label>
+            <div class="relative">
+              <lucide-icon [name]="Mail"
+                class="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 w-5 h-5 pointer-events-none"></lucide-icon>
+              <input type="email" name="email" [(ngModel)]="formData.email" #emailCtrl="ngModel"
+                class="w-full pl-12 pr-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-900 bg-white"
+                placeholder="youremail@example.com" required email
+                aria-invalid="{{ emailCtrl.invalid && (emailCtrl.dirty || emailCtrl.touched) }}">
             </div>
-  
-            <div>
-              <label class="block text-sm font-medium text-gray-700 mb-2">Password</label>
-              <div class="relative">
-                <lucide-icon [name]="Lock" class="text-gray-500 absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 pointer-events-none"></lucide-icon>
-                <input [type]="showPassword ? 'text' : 'password'" name="password" [(ngModel)]="formData.password" #passwordCtrl="ngModel" class="w-full pl-12 pr-12 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-900 bg-white" placeholder="Enter your password" required minlength="8" aria-invalid="{{ passwordCtrl.invalid && (passwordCtrl.dirty || passwordCtrl.touched) }}">
-                <button type="button" (click)="showPassword = !showPassword" class="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-black pointer-events-auto z-20">
-                  <lucide-icon [name]="showPassword ? EyeOff : Eye" class="w-5 h-5"></lucide-icon>
-                </button>
-              </div>
-              @if (passwordCtrl.invalid && passwordCtrl.touched) {
-                <p class="mt-1 text-sm text-red-600">
-                  @if (passwordCtrl.errors?.['required']) { Password is required. }
-                  @if (passwordCtrl.errors?.['minlength']) { Password must be at least 8 characters. }
-                </p>
-              }
-            </div>
-  
-            @if (!isLogin) {
-              <label class="block text-sm font-medium text-gray-700 mb-2">Confirm Password</label>
-              <div class="relative">
-                <lucide-icon [name]="Lock" class="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 w-5 h-5 pointer-events-none"></lucide-icon>
-                <input [type]="showPassword ? 'text' : 'password'" name="confirmPassword" [(ngModel)]="formData.confirmPassword" #confirmCtrl="ngModel" class="w-full pl-12 pr-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-900 bg-white" placeholder="Confirm your password" required aria-invalid="{{ (confirmCtrl.invalid || formData.confirmPassword && formData.confirmPassword !== formData.password) && (confirmCtrl.dirty || confirmCtrl.touched) }}">
-              </div>
-              @if ((confirmCtrl.invalid || (formData.confirmPassword && formData.confirmPassword !== formData.password)) && confirmCtrl.touched) {
-                <p class="mt-1 text-sm text-red-600">
-                  @if (confirmCtrl.errors?.['required']) { Confirm password is required. }
-                  @if (!confirmCtrl.errors?.['required'] && formData.confirmPassword !== formData.password) { Passwords do not match. }
-                </p>
-              }
-            }
-  
-            <button type="submit" class="w-full bg-gradient-to-r from-red-900 to-red-700 text-white py-3 px-4 rounded-lg flex items-center justify-center" [disabled]="form.invalid || (!isLogin && formData.password !== formData.confirmPassword)">
-              {{ isLogin ? 'Sign In' : 'Create Account' }}
-              <lucide-icon [name]="ArrowRight" class="ml-2 w-5 h-5"></lucide-icon>
-            </button>
-          </form>
-  
-          <div class="mt-6 text-center">
-            <p class="text-gray-600">
-              {{ isLogin ? "Don't have an account?" : "Already have an account?" }}
-              <button (click)="toggleMode()" class="text-red-700 hover:text-red-900 hover:underline ml-1 font-medium">
-                {{ isLogin ? 'Sign up' : 'Sign in' }}
-              </button>
+            @if (emailCtrl.invalid && emailCtrl.touched) {
+            <p class="mt-1 text-sm text-red-600">
+              @if (emailCtrl.errors?.['required']) { Email is required. }
+              @if (emailCtrl.errors?.['email']) { Enter a valid email address. }
             </p>
+            }
           </div>
-  
+
+          <div>
+            <label class="block text-sm font-medium text-gray-700 mb-2">Password</label>
+            <div class="relative">
+              <lucide-icon [name]="Lock"
+                class="text-gray-500 absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 pointer-events-none"></lucide-icon>
+              <input [type]="showPassword ? 'text' : 'password'" name="password" [(ngModel)]="formData.password"
+                #passwordCtrl="ngModel"
+                class="w-full pl-12 pr-12 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-900 bg-white"
+                placeholder="Enter your password" required minlength="8"
+                aria-invalid="{{ passwordCtrl.invalid && (passwordCtrl.dirty || passwordCtrl.touched) }}">
+              <button type="button" (click)="showPassword = !showPassword"
+                class="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-black pointer-events-auto z-20 cursor-pointer">
+                <lucide-icon [name]="showPassword ? EyeOff : Eye" class="w-5 h-5"></lucide-icon>
+              </button>
+            </div>
+            @if (passwordCtrl.invalid && passwordCtrl.touched) {
+            <p class="mt-1 text-sm text-red-600">
+              @if (passwordCtrl.errors?.['required']) { Password is required. }
+              @if (passwordCtrl.errors?.['minlength']) { Password must be at least 8 characters. }
+            </p>
+            }
+            @if (isLogin) {
+            <div class="text-right mt-1">
+              <button type="button" (click)="openForgotPassword()"
+                class="text-sm text-red-700 hover:text-red-900 hover:underline font-medium cursor-pointer">
+                Forgot password?
+              </button>
+            </div>
+            }
+          </div>
+
+          @if (!isLogin) {
+          <label class="block text-sm font-medium text-gray-700 mb-2">Confirm Password</label>
+          <div class="relative">
+            <lucide-icon [name]="Lock"
+              class="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 w-5 h-5 pointer-events-none"></lucide-icon>
+            <input [type]="showPassword ? 'text' : 'password'" name="confirmPassword"
+              [(ngModel)]="formData.confirmPassword" #confirmCtrl="ngModel"
+              class="w-full pl-12 pr-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-900 bg-white"
+              placeholder="Confirm your password" required
+              aria-invalid="{{ (confirmCtrl.invalid || formData.confirmPassword && formData.confirmPassword !== formData.password) && (confirmCtrl.dirty || confirmCtrl.touched) }}">
+          </div>
+          @if ((confirmCtrl.invalid || (formData.confirmPassword && formData.confirmPassword !== formData.password)) &&
+          confirmCtrl.touched) {
+          <p class="mt-1 text-sm text-red-600">
+            @if (confirmCtrl.errors?.['required']) { Confirm password is required. }
+            @if (!confirmCtrl.errors?.['required'] && formData.confirmPassword !== formData.password) { Passwords do not
+            match. }
+          </p>
+          }
+          }
+
+          <button type="submit"
+            class="w-full bg-gradient-to-r from-red-900 to-red-700 text-white py-3 px-4 rounded-lg flex items-center justify-center cursor-pointer"
+            [disabled]="form.invalid || (!isLogin && formData.password !== formData.confirmPassword)">
+            {{ isLogin ? 'Sign In' : 'Create Account' }}
+            <lucide-icon [name]="ArrowRight" class="ml-2 w-5 h-5"></lucide-icon>
+          </button>
+        </form>
+
+        <div class="mt-6 text-center">
+          <p class="text-gray-600">
+            {{ isLogin ? "Don't have an account?" : "Already have an account?" }}
+            <button (click)="toggleMode()"
+              class="text-red-700 hover:text-red-900 hover:underline ml-1 font-medium cursor-pointer">
+              {{ isLogin ? 'Sign up' : 'Sign in' }}
+            </button>
+          </p>
         </div>
+
       </div>
     </div>
   </div>
-  
+</div>
+
+<!-- Forgot Password Modal -->
+<app-forgot-password [isOpen]="isForgotPasswordOpen()" (close)="closeForgotPassword()">
+</app-forgot-password>
