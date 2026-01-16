@@ -20,7 +20,7 @@ public class ProjectRequestDTO {
 
     String priority;
 
-    Long projectHeadId;
+//    Long projectHeadId;
 
     Long templateId;
 
