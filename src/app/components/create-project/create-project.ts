@@ -83,7 +83,7 @@ export class CreateProjectModalComponent {
     }
   ];
 
-  private readonly PROJECT_HEAD_ID = '7';
+  // private readonly PROJECT_HEAD_ID = '7';
   private readonly gradientColors = [
     'from-[#8c2d1b] to-[#6b2115]',
     'from-green-500 to-teal-600',
@@ -135,7 +135,7 @@ export class CreateProjectModalComponent {
       description: formValue.description,
       startDate: formValue.startDate,
       endDate: formValue.endDate,
-      projectHeadId: this.PROJECT_HEAD_ID,
+      // projectHeadId: this.PROJECT_HEAD_ID,
       status: formValue.status,
       priority: formValue.priority
     };

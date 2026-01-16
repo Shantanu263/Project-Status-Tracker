@@ -22,7 +22,7 @@ export class ProjectService {
     description: string;
     startDate: string;
     endDate: string;
-    projectHeadId: string | number;
+    //projectHeadId: string | number;
     templateId: number;
   }): Observable<Project> {
     return this.http.post<Project>(`${this.api}`, payload);
