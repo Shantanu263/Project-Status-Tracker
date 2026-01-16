@@ -1,0 +1,101 @@
+@if (isOpen()) {
+<!-- Backdrop -->
+<div class="panel-backdrop" (click)="onBackdropClick($event)">
+    <!-- Panel -->
+    <div class="account-panel" (click)="$event.stopPropagation()">
+
+        <!-- Header -->
+        <div class="panel-header">
+            <h2 class="panel-title">Account</h2>
+            <button type="button" (click)="closePanel()" class="close-button">
+                <lucide-icon [name]="X" class="w-5 h-5"></lucide-icon>
+            </button>
+        </div>
+
+        <!-- Content -->
+        <div class="panel-content">
+
+            <!-- User Avatar & Role -->
+            <div class="user-section">
+                <div class="avatar">
+                    {{ userInitials() }}
+                </div>
+                <div class="user-info">
+                    <h3 class="username">{{ userDetails()?.name || 'Loading...' }}</h3>
+                    <span class="role-badge">{{ userDetails()?.role?.roleName || 'USER' }}</span>
+                </div>
+            </div>
+
+            <!-- Account Information Section -->
+            <div class="section">
+                <h4 class="section-title">Account Information</h4>
+
+                <!-- Username -->
+                <div class="field-group">
+                    <label class="field-label">Username</label>
+                    @if (!editingUsername()) {
+                    <div class="field-display">
+                        <span class="field-value">{{ userDetails()?.name || 'Loading...' }}</span>
+                        <button type="button" (click)="startEditingUsername()" class="edit-button">
+                            <lucide-icon [name]="Edit2" class="w-4 h-4"></lucide-icon>
+                        </button>
+                    </div>
+                    } @else {
+                    <div class="field-edit">
+                        <input type="text" [formControl]="usernameControl" class="edit-input"
+                            placeholder="Enter username"
+                            [class.error]="usernameControl.invalid && usernameControl.touched">
+                        <div class="edit-actions">
+                            <button type="button" (click)="saveUsername()" class="save-button"
+                                [disabled]="!hasUsernameChanged() || isLoading()"
+                                [class.opacity-50]="!hasUsernameChanged() || isLoading()"
+                                [class.cursor-not-allowed]="!hasUsernameChanged() || isLoading()">
+                                @if (isLoading()) {
+                                <span class="spinner"></span>
+                                } @else {
+                                <lucide-icon [name]="Check" class="w-4 h-4"></lucide-icon>
+                                }
+                            </button>
+                            <button type="button" (click)="cancelEditingUsername()" class="cancel-button"
+                                [disabled]="isLoading()">
+                                <lucide-icon [name]="XIcon" class="w-4 h-4"></lucide-icon>
+                            </button>
+                        </div>
+                    </div>
+                    @if (usernameControl.invalid && usernameControl.touched) {
+                    <p class="error-text">
+                        @if (usernameControl.errors?.['required']) { Username is required. }
+                        @if (usernameControl.errors?.['minlength']) { Username must be at least 2 characters. }
+                    </p>
+                    }
+                    @if (errorMessage()) {
+                    <p class="error-text">{{ errorMessage() }}</p>
+                    }
+                    }
+                </div>
+
+                <!-- Email (Read-only) -->
+                <div class="field-group">
+                    <label class="field-label">Email</label>
+                    <div class="field-display">
+                        <span class="field-value text-gray-500">{{ userDetails()?.email || 'Loading...' }}</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Security Section -->
+            <div class="section">
+                <h4 class="section-title">Security</h4>
+                <button type="button" (click)="openResetPasswordModal()" class="reset-password-button">
+                    Reset Password
+                </button>
+            </div>
+
+        </div>
+    </div>
+</div>
+
+<!-- Reset Password Modal -->
+<app-reset-password-modal [isOpen]="showResetPasswordModal()" [userId]="userId()" (close)="closeResetPasswordModal()">
+</app-reset-password-modal>
+}
