@@ -65,6 +65,10 @@ export class TimelineComponent implements OnInit, AfterViewInit {
     dragState = signal<DragState | null>(null);
     todayPosition = signal<number>(0);
 
+    // Tooltip state
+    hoveredPhase = signal<{ phase: PhaseWithTasks; index: number; x: number; y: number; showAbove: boolean } | null>(null);
+    hoveredTask = signal<{ task: Task; x: number; y: number; showAbove: boolean } | null>(null);
+
     // Loading and error states
     isLoading = signal<boolean>(false);
     errorMessage = signal<string>('');
@@ -861,5 +865,102 @@ export class TimelineComponent implements OnInit, AfterViewInit {
             const scrollbar = this.horizontalScrollbarRef.nativeElement;
             scrollbar.scrollLeft += event.deltaY;
         }
+    }
+
+    /**
+     * Tooltip handlers for phases
+     */
+    onPhaseMouseEnter(event: MouseEvent, phase: PhaseWithTasks, phaseIndex: number) {
+        const barRect = (event.currentTarget as HTMLElement).getBoundingClientRect();
+        const viewportHeight = window.innerHeight;
+        const viewportWidth = window.innerWidth;
+
+        // Use cursor X position
+        let x = event.clientX;
+
+        // Estimate tooltip width (adjust based on content)
+        const tooltipWidth = 250; // Approximate width
+
+        // Get the timeline container bounds (the chart area)
+        const timelineContainer = document.querySelector('.timeline-body-content');
+        if (timelineContainer) {
+            const containerRect = timelineContainer.getBoundingClientRect();
+
+            // Ensure tooltip doesn't overflow left edge
+            if (x - tooltipWidth / 2 < containerRect.left) {
+                x = containerRect.left + tooltipWidth / 2 + 10;
+            }
+
+            // Ensure tooltip doesn't overflow right edge
+            if (x + tooltipWidth / 2 > containerRect.right) {
+                x = containerRect.right - tooltipWidth / 2 - 10;
+            }
+        }
+
+        // Calculate if tooltip should show above or below based on bar position
+        const spaceBelow = viewportHeight - barRect.bottom;
+        const showAbove = spaceBelow < 100;
+
+        const y = showAbove ? barRect.top : barRect.bottom;
+
+        this.hoveredPhase.set({
+            phase,
+            index: phaseIndex,
+            x,
+            y,
+            showAbove
+        });
+    }
+
+    onPhaseMouseLeave() {
+        this.hoveredPhase.set(null);
+    }
+
+    /**
+     * Tooltip handlers for tasks  
+     */
+    onTaskMouseEnter(event: MouseEvent, task: Task) {
+        const barRect = (event.currentTarget as HTMLElement).getBoundingClientRect();
+        const viewportHeight = window.innerHeight;
+        const viewportWidth = window.innerWidth;
+
+        // Use cursor X position
+        let x = event.clientX;
+
+        // Estimate tooltip width (adjust based on content)
+        const tooltipWidth = 250; // Approximate width
+
+        // Get the timeline container bounds (the chart area)
+        const timelineContainer = document.querySelector('.timeline-body-content');
+        if (timelineContainer) {
+            const containerRect = timelineContainer.getBoundingClientRect();
+
+            // Ensure tooltip doesn't overflow left edge
+            if (x - tooltipWidth / 2 < containerRect.left) {
+                x = containerRect.left + tooltipWidth / 2 + 10;
+            }
+
+            // Ensure tooltip doesn't overflow right edge
+            if (x + tooltipWidth / 2 > containerRect.right) {
+                x = containerRect.right - tooltipWidth / 2 - 10;
+            }
+        }
+
+        // Calculate if tooltip should show above or below based on bar position
+        const spaceBelow = viewportHeight - barRect.bottom;
+        const showAbove = spaceBelow < 100;
+
+        const y = showAbove ? barRect.top : barRect.bottom;
+
+        this.hoveredTask.set({
+            task,
+            x,
+            y,
+            showAbove
+        });
+    }
+
+    onTaskMouseLeave() {
+        this.hoveredTask.set(null);
     }
 }

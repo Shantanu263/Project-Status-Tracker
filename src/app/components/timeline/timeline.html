@@ -154,10 +154,11 @@
 
                     <!-- Phase Bar -->
                     @if (phase.startDate && phase.endDate) {
-                    <div class="absolute top-1/2 -translate-y-1/2 group cursor-pointer timeline-bar"
+                    <div class="absolute top-1/2 -translate-y-1/8 group cursor-pointer timeline-bar"
                       [style.left.px]="calculateBarPosition(phase.startDate, phase.endDate).left + 8"
                       [style.width.px]="calculateBarPosition(phase.startDate, phase.endDate).width - 16"
-                      (mousedown)="onBarDragStart($event, createTimelineRow(phase, 'phase'))">
+                      (mousedown)="onBarDragStart($event, createTimelineRow(phase, 'phase'))"
+                      (mouseenter)="onPhaseMouseEnter($event, phase, phaseIndex)" (mouseleave)="onPhaseMouseLeave()">
 
                       <div class="rounded-lg shadow-md hover:shadow-lg transition-all relative overflow-hidden"
                         [style.height.px]="36" [ngClass]="getPhaseColor(phaseIndex)" [class.cursor-move]="!dragState()">
@@ -172,13 +173,6 @@
                           (mousedown)="onBarResizeStart($event, createTimelineRow(phase, 'phase'), 'right')"
                           (click)="$event.stopPropagation()">
                         </div>
-                      </div>
-
-                      <div
-                        class="hidden group-hover:block absolute top-full mt-2 left-0 bg-gray-900 text-white text-xs rounded-lg px-3 py-2 shadow-lg whitespace-nowrap z-30 pointer-events-none">
-                        <div class="font-semibold mb-1">{{ phase.phaseName }}</div>
-                        <div>{{ formatDateFull(phase.startDate) }} - {{ formatDateFull(phase.endDate) }}</div>
-                        <div class="mt-1">Progress: {{ phase.completionPercentage }}%</div>
                       </div>
                     </div>
                     }
@@ -205,7 +199,8 @@
                     <div class="absolute top-1/2 -translate-y-1/2 group cursor-pointer timeline-bar"
                       [style.left.px]="calculateBarPosition(task.startDate, task.endDate).left + 8"
                       [style.width.px]="calculateBarPosition(task.startDate, task.endDate).width - 16"
-                      (mousedown)="onBarDragStart($event, createTimelineRow(task, 'task', phase.phaseId))">
+                      (mousedown)="onBarDragStart($event, createTimelineRow(task, 'task', phase.phaseId))"
+                      (mouseenter)="onTaskMouseEnter($event, task)" (mouseleave)="onTaskMouseLeave()">
 
                       <!-- Task Bar Background -->
                       <div class="shadow-md hover:shadow-lg transition-all relative bg-blue-500" [style.height.px]="28"
@@ -222,15 +217,6 @@
                           (mousedown)="onBarResizeStart($event, createTimelineRow(task, 'task', phase.phaseId), 'right')"
                           (click)="$event.stopPropagation()">
                         </div>
-                      </div>
-
-                      <div
-                        class="hidden group-hover:block absolute top-full mt-2 left-0 bg-gray-900 text-white text-xs rounded-lg px-3 py-2 shadow-lg whitespace-nowrap z-30 pointer-events-none">
-                        <div class="font-semibold mb-1">{{ task.taskName }}</div>
-                        <div>{{ formatDateFull(task.startDate) }} - {{ formatDateFull(task.endDate) }}</div>
-                        @if (task.assignedToName) {
-                        <div class="mt-1">Assigned to: {{ task.assignedToName }}</div>
-                        }
                       </div>
                     </div>
                     }
@@ -274,14 +260,14 @@
   <div
     class="fixed bottom-8 right-8 bg-white rounded-lg shadow-lg border border-gray-200 p-2 flex items-center gap-2 z-40">
     <button (click)="setTimeScale(TimeScale.WEEK)"
-      class="px-3 py-2 rounded text-sm font-medium transition-colors focus:outline-none focus:ring-2 focus:ring-[#8c2d1b] focus:ring-opacity-50"
+      class="px-3 py-2 rounded text-sm font-medium transition-colors focus:outline-none focus:ring-2 focus:ring-[#8c2d1b] focus:ring-opacity-50 cursor-pointer"
       [class.bg-[#8c2d1b]]="timeScale() === TimeScale.WEEK" [class.text-white]="timeScale() === TimeScale.WEEK"
       [class.text-gray-700]="timeScale() !== TimeScale.WEEK" [class.hover:bg-gray-100]="timeScale() !== TimeScale.WEEK"
       [attr.aria-label]="'View by week'" [attr.aria-pressed]="timeScale() === TimeScale.WEEK">
       Week
     </button>
     <button (click)="setTimeScale(TimeScale.MONTH)"
-      class="px-3 py-2 rounded text-sm font-medium transition-colors focus:outline-none focus:ring-2 focus:ring-[#8c2d1b] focus:ring-opacity-50"
+      class="px-3 py-2 rounded text-sm font-medium transition-colors focus:outline-none focus:ring-2 focus:ring-[#8c2d1b] focus:ring-opacity-50 cursor-pointer"
       [class.bg-[#8c2d1b]]="timeScale() === TimeScale.MONTH" [class.text-white]="timeScale() === TimeScale.MONTH"
       [class.text-gray-700]="timeScale() !== TimeScale.MONTH"
       [class.hover:bg-gray-100]="timeScale() !== TimeScale.MONTH" [attr.aria-label]="'View by month'"
@@ -289,7 +275,7 @@
       Month
     </button>
     <button (click)="setTimeScale(TimeScale.QUARTER)"
-      class="px-3 py-2 rounded text-sm font-medium transition-colors focus:outline-none focus:ring-2 focus:ring-[#8c2d1b] focus:ring-opacity-50"
+      class="px-3 py-2 rounded text-sm font-medium transition-colors focus:outline-none focus:ring-2 focus:ring-[#8c2d1b] focus:ring-opacity-50 cursor-pointer"
       [class.bg-[#8c2d1b]]="timeScale() === TimeScale.QUARTER" [class.text-white]="timeScale() === TimeScale.QUARTER"
       [class.text-gray-700]="timeScale() !== TimeScale.QUARTER"
       [class.hover:bg-gray-100]="timeScale() !== TimeScale.QUARTER" [attr.aria-label]="'View by quarter'"
@@ -297,7 +283,7 @@
       Quarter
     </button>
     <button (click)="scrollToToday()"
-      class="px-3 py-2 rounded text-sm font-medium text-gray-700 hover:bg-gray-100 transition-colors focus:outline-none focus:ring-2 focus:ring-[#8c2d1b] focus:ring-opacity-50"
+      class="px-3 py-2 rounded text-sm font-medium text-gray-700 hover:bg-gray-100 transition-colors focus:outline-none focus:ring-2 focus:ring-[#8c2d1b] focus:ring-opacity-50 cursor-pointer"
       [attr.aria-label]="'Scroll to today'" title="Go to today">
       <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
@@ -305,6 +291,32 @@
       </svg>
     </button>
   </div>
+
+  <!-- Floating Phase Tooltip -->
+  @if (hoveredPhase(); as tooltip) {
+  <div
+    class="fixed bg-gray-900 text-white text-xs rounded-lg px-3 py-2 shadow-xl whitespace-nowrap z-[100] pointer-events-none -translate-x-1/2"
+    [style.left.px]="tooltip.x" [style.top.px]="tooltip.showAbove ? tooltip.y - 10 : tooltip.y + 10"
+    [style.transform]="'translateX(-50%) ' + (tooltip.showAbove ? 'translateY(-100%)' : '')">
+    <div class="font-semibold mb-1">{{ tooltip.phase.phaseName }}</div>
+    <div>{{ formatDateFull(tooltip.phase.startDate) }} - {{ formatDateFull(tooltip.phase.endDate) }}</div>
+    <div class="mt-1">Progress: {{ tooltip.phase.completionPercentage }}%</div>
+  </div>
+  }
+
+  <!-- Floating Task Tooltip -->
+  @if (hoveredTask(); as tooltip) {
+  <div
+    class="fixed bg-gray-900 text-white text-xs rounded-lg px-3 py-2 shadow-xl whitespace-nowrap z-[100] pointer-events-none -translate-x-1/2"
+    [style.left.px]="tooltip.x" [style.top.px]="tooltip.showAbove ? tooltip.y - 10 : tooltip.y + 10"
+    [style.transform]="'translateX(-50%) ' + (tooltip.showAbove ? 'translateY(-100%)' : '')">
+    <div class="font-semibold mb-1">{{ tooltip.task.taskName }}</div>
+    <div>{{ formatDateFull(tooltip.task.startDate) }} - {{ formatDateFull(tooltip.task.endDate) }}</div>
+    @if (tooltip.task.assignedToName) {
+    <div class="mt-1">Assigned to: {{ tooltip.task.assignedToName }}</div>
+    }
+  </div>
+  }
   }
 
 
