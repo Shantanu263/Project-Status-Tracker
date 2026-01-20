@@ -358,6 +358,8 @@ export class PhasesComponent {
         next: () => {
           this.loadPhases();
           this.closeDeletePhaseDialog();
+          // Notify other components that phases have been updated
+          this.dataSyncService.notifyPhasesUpdated(this.projectId());
         },
         error: (err) => {
           console.error('Error deleting phase:', err);
@@ -489,6 +491,8 @@ export class PhasesComponent {
         next: () => {
           this.loadPhases();
           this.closeDetailModal();
+          // Notify other components that phases have been updated
+          this.dataSyncService.notifyPhasesUpdated(this.projectId());
         },
         error: (err) => {
           console.error('Error updating phase:', err);

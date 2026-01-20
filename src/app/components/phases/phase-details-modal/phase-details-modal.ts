@@ -9,6 +9,7 @@ import { AuthService } from '../../../services/auth.service';
 import { Phase, Task } from '../../../models/phase.model';
 import { TaskDetailsModalComponent } from '../task-details-modal/task-details-modal';
 import { MatSnackBar } from '@angular/material/snack-bar';
+import { DataSyncService } from '../../../services/data-sync.service';
 
 
 @Component({
@@ -23,6 +24,7 @@ export class PhaseDetailsModalComponent {
     private permissionService = inject(PermissionService);
     private authService = inject(AuthService);
     private snackBar = inject(MatSnackBar);
+    private dataSyncService = inject(DataSyncService);
 
 
     // Inputs
@@ -141,6 +143,8 @@ export class PhaseDetailsModalComponent {
                 this.close.emit();
                 // Notify parent to refresh the list
                 this.updated.emit();
+                // Notify other components that phases have been updated
+                this.dataSyncService.notifyPhasesUpdated(this.projectId());
             },
             error: (err) => {
                 console.error('Error deleting phase:', err);
@@ -214,6 +218,8 @@ export class PhaseDetailsModalComponent {
                 if (current) {
                     this.phaseDetails.set({ ...current, ...updatedPhase });
                 }
+                // Notify other components that phases have been updated
+                this.dataSyncService.notifyPhasesUpdated(this.projectId());
                 // Don't emit updated event to prevent parent from reloading and closing modal
                 // this.updated.emit();
             },
