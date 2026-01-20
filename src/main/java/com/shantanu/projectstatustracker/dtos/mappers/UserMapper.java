@@ -10,7 +10,7 @@ import java.util.List;
 @Mapper(componentModel = "spring" , uses = {RoleMapper.class})
 public interface UserMapper {
 
-    @Mapping(source = "user.isUserActive", target = "isUserActive")
+    @Mapping(source = "user.isUserActive", target = "isActive")
     UserResponseDTO mapUserToUserResponseDTO(User user);
 
     @Mapping(source = "user.role.name",target = "role")

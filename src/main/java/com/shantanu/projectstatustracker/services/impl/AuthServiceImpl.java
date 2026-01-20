@@ -10,6 +10,7 @@ import com.shantanu.projectstatustracker.globalExceptionHandlers.ResourceNotFoun
 import com.shantanu.projectstatustracker.models.*;
 import com.shantanu.projectstatustracker.repositories.*;
 import com.shantanu.projectstatustracker.services.*;
+import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
@@ -19,7 +20,6 @@ import org.springframework.stereotype.Service;
 
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
 
 @RequiredArgsConstructor
 @Service
@@ -37,6 +37,8 @@ public class AuthServiceImpl implements AuthService {
     private final PasswordEncoder encoder;
     private final ProjectService projectService;
     private final UserMapper userMapper;
+    private final InvitedUsersRepo invitedUsersRepo;
+    private final HttpServletRequest servletRequest;
 
     @Value("${jwt.accessTokenTime}")
     private long accessTokenTime;
@@ -48,22 +50,29 @@ public class AuthServiceImpl implements AuthService {
     public ResponseEntity<Object> signUp(UserRequestDTO userRequestDTO) {
 
         if (userRepo.existsByEmail(userRequestDTO.getEmail())){
-            return ResponseEntity.badRequest().body(Map.of("message","User Email Id taken"));
+            User user = userRepo.findByEmail(userRequestDTO.getEmail()).orElseThrow();
+            if (user.getIsUserActive()) return ResponseEntity.badRequest().body(Map.of("message","User Email Id taken"));
+            else return ResponseEntity.badRequest().body(Map.of("message","Account exists but is deactivated. Please contact support or reactivate."));
         }
 
         User user = User.builder()
                 .name(userRequestDTO.getName())
                 .email(userRequestDTO.getEmail())
                 .password(passwordEncoder.encode(userRequestDTO.getPassword()))
-                .status("ACTIVE")
                 .role(roleRepo.findByName("MEMBER").orElseThrow())
                 .build();
+
+        if (invitedUsersRepo.existsByEmail(userRequestDTO.getEmail())){
+            InvitedUsers invitedUser = invitedUsersRepo.findByEmail(user.getEmail());
+            user.setRole(invitedUser.getRole());
+
+            invitedUsersRepo.delete(invitedUser);
+        }
 
         userRepo.save(user);
 
         if (invitedMembersRepo.existsByEmail(userRequestDTO.getEmail())){
             List<InvitedMembers> assignments = invitedMembersRepo.findAllByEmail(userRequestDTO.getEmail());
-            user.setStatus("ACTIVE");
             for (InvitedMembers assignment : assignments){
                 //user.setRole(roleRepo.findByName(assignment.getRole()).orElseThrow(() -> new ResourceNotFoundException("Role not found")));
                 //user.setRole(roleRepo.findByName("PROJECT HANDLER").orElseThrow(() -> new ResourceNotFoundException("Role not found")));
@@ -92,7 +101,7 @@ public class AuthServiceImpl implements AuthService {
         MailBody mailBody = MailBody.builder()
                 .to(user.getEmail())
                 .text(htmlContent)  // add HTML template
-                .subject("")
+                .subject("Account Created | ProjectHub")
                 .build();
 
         emailService.sendHtmlMessageAsync(mailBody);
@@ -106,9 +115,9 @@ public class AuthServiceImpl implements AuthService {
         User user = userRepo.findByEmail(userLoginRequestDTO.getEmail())
                 .orElseThrow(() -> new ResourceNotFoundException("User not found with email: " + userLoginRequestDTO.getEmail()));
 
-        if (user.getRole() == null && !Objects.equals(user.getStatus(), "INVITED")) return new ResponseEntity<>(Map.of("message","Role not assigned to user"), HttpStatus.UNAUTHORIZED);
+        //if (user.getRole() == null && !Objects.equals(user.getStatus(), "INVITED")) return new ResponseEntity<>(Map.of("message","Role not assigned to user"), HttpStatus.UNAUTHORIZED);
 
-
+        if(!user.getIsUserActive()) return new ResponseEntity<>(Map.of("message","User not found"), HttpStatus.UNAUTHORIZED);
 
         if (!passwordEncoder.matches(userLoginRequestDTO.getPassword(), user.getPassword())) {
             return new ResponseEntity<>(Map.of("message","Incorrect Password"), HttpStatus.UNAUTHORIZED);
@@ -195,6 +204,17 @@ public class AuthServiceImpl implements AuthService {
         User user = userRepo.findById(userId).orElseThrow(() -> new ResourceNotFoundException("User not found"));
 
         return ResponseEntity.ok(userMapper.mapUserToUserResponseDTO(user));
+    }
+
+    @Override
+    public ResponseEntity<Object> removeMyAccount(Long userId){
+        User user = userRepo.findById(userId).orElseThrow(() -> new ResourceNotFoundException("User not found"));
+
+        if (!user.getEmail().equals(servletRequest.getAttribute("email"))) {
+            return new ResponseEntity<>(Map.of("message", "You can only remove your own account"), HttpStatus.BAD_REQUEST);
+        }
+
+        return ResponseEntity.ok(removeUser(userId));
     }
 
 }

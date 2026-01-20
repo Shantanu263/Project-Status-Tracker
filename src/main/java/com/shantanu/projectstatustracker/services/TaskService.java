@@ -3,6 +3,7 @@ package com.shantanu.projectstatustracker.services;
 import com.shantanu.projectstatustracker.dtos.SubTaskRequestDTO;
 import com.shantanu.projectstatustracker.dtos.TaskRequestDTO;
 import com.shantanu.projectstatustracker.models.Status;
+import com.shantanu.projectstatustracker.models.SubTask;
 import com.shantanu.projectstatustracker.models.Task;
 import org.springframework.http.ResponseEntity;
 
@@ -64,6 +65,36 @@ public interface TaskService {
                     assignedUsername,
                     t.getStartDate(),
                     t.getEndDate()
+            );
+        }
+    }
+
+    record SubTaskSnapshot(
+            Long subTaskId,
+            String subTaskName,
+            Status status,
+            String priority,
+            Long assignedToId,
+            String assignedToUsername,
+            Date startDate,
+            Date endDate
+    ) {
+        public static SubTaskSnapshot from(SubTask st) {
+            Long assignedId = null;
+            String assignedUsername = null;
+            if (st.getAssignedTo() != null) {
+                assignedId = st.getAssignedTo().getUser().getUserId();
+                assignedUsername = st.getAssignedTo().getUser().getName();
+            }
+            return new SubTaskSnapshot(
+                    st.getSubTaskId(),
+                    st.getSubTaskName(),
+                    st.getStatus(),
+                    st.getPriority(),
+                    assignedId,
+                    assignedUsername,
+                    st.getStartDate(),
+                    st.getEndDate()
             );
         }
     }

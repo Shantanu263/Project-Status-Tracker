@@ -18,6 +18,7 @@ import java.util.List;
 @AllArgsConstructor
 @Table(name = "Users")
 public class User {
+
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long userId;
@@ -26,7 +27,6 @@ public class User {
     private String password;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
-    private String status;
 
     @ManyToOne
     @JoinColumn(name = "role_id")

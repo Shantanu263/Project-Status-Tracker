@@ -6,15 +6,13 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
-//This model is for users that are invited as project members in a project.
-
 @Entity
 @Data
 @Builder
 @AllArgsConstructor
 @NoArgsConstructor
-@Table(name = "invited_members")
-public class InvitedMembers {
+@Table(name = "invited_users")
+public class InvitedUsers {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -22,12 +20,9 @@ public class InvitedMembers {
 
     private String email;
 
-    private Long projectId;
-
-    @Enumerated(EnumType.STRING)
-    private ProjectRole role;
-
     @ManyToOne
-    private User assignedBy;
+    @JoinColumn(name = "role_id")
+    private Role role;
 
 }
+

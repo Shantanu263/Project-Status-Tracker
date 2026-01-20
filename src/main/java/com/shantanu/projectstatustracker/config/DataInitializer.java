@@ -44,7 +44,7 @@ public class DataInitializer implements CommandLineRunner {
             superAdmin.setEmail("superadmin@cybernxt.com");
             superAdmin.setPassword(passwordEncoder.encode("Admin@123"));
             superAdmin.setRole(superAdminRole);
-            superAdmin.setStatus("ACTIVE");
+            //superAdmin.setStatus("ACTIVE");
 
             userRepository.save(superAdmin);
         }

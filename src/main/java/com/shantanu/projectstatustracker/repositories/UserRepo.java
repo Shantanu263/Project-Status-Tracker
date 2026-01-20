@@ -8,14 +8,13 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
-import java.util.List;
 import java.util.Optional;
 
 @Repository
 public interface UserRepo extends JpaRepository<User,Long> {
     Optional<User> findByName(String name);
 
-   List<User> findByStatus(String status);
+   //List<User> findByStatus(String status);
 
     boolean existsByEmail(String email);
 
@@ -30,6 +29,7 @@ public interface UserRepo extends JpaRepository<User,Long> {
             OR LOWER(u.email) LIKE LOWER(CONCAT('%', :search, '%'))
             OR LOWER(u.role.name) LIKE LOWER(CONCAT('%', :search, '%'))
        )
+       AND u.isUserActive = true\s
       \s""")
     Page<User> searchUsers(
             @Param("search") String search,

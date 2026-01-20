@@ -1,6 +1,7 @@
 package com.shantanu.projectstatustracker.repositories;
 
 import com.shantanu.projectstatustracker.models.ActivityLog;
+import com.shantanu.projectstatustracker.models.EntityType;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -23,6 +24,8 @@ public interface ActivityLogRepo extends JpaRepository<ActivityLog, Long> {
             @Param("projectId") Long projectId,
             Pageable pageable
     );
+
+    List<ActivityLog> findTop5ByEntityTypeAndEntityIdOrderByCreatedAtDesc(EntityType entityType, Long entityId);
 
     //List<ActivityLog> findRecentActivity(Long projectId);
 }

@@ -71,6 +71,8 @@ public class ProjectServiceImpl implements ProjectService {
                     HttpStatus.BAD_REQUEST);
         }
 
+        String email = (String) request.getAttribute("email");
+
         Project project = Project.builder()
                 .projectName(projectRequestDTO.getProjectName())
                 .startDate(projectRequestDTO.getStartDate())
@@ -78,7 +80,7 @@ public class ProjectServiceImpl implements ProjectService {
                 .priority(projectRequestDTO.getPriority())
                 .status("ongoing")
                 .progress(0.00)
-                .createdBySuperAdmin(userRepo.findByName("Admin")
+                .createdBySuperAdmin(userRepo.findByEmail(email)
                         .orElseThrow(() -> new ResourceNotFoundException("Admin not found")))
                 .build();
 
@@ -111,7 +113,7 @@ public class ProjectServiceImpl implements ProjectService {
                 .project(project)
                 .role(ProjectRole.SUPER_ADMIN)
                 .user(userRepo.findByEmail((String) request.getAttribute("email")).orElseThrow(() -> new ResourceNotFoundException("User not found")))
-//                .assignedBy(userRepo.findByName("Admin").orElseThrow(() -> new ResourceNotFoundException("Admin not found")))
+                .assignedBy(userRepo.findByEmail(email).orElseThrow(() -> new ResourceNotFoundException("Admin not found")))
                 .build();
 
         projectMemberRepo.save(admin);
@@ -173,6 +175,7 @@ public class ProjectServiceImpl implements ProjectService {
     @Override
     public ResponseEntity<Object> getProjectMembers(Long id) {
         List<ProjectMember> projectMembers = projectMemberRepo.findAllByProject_ProjectId(id);
+        //List<ProjectMember> projectMembers = projectMemberRepo.findAllByProject_ProjectIdAndIsActive(id,true);
         return ResponseEntity.ok(projectMemberMapper.mapProjectMembers(projectMembers));
     }
 
@@ -216,8 +219,14 @@ public class ProjectServiceImpl implements ProjectService {
             User user  = userRepo.findByEmail(addMemberRequestDTO.getEmail())
                     .orElseThrow(() -> new ResourceNotFoundException("User not found"));
 
-            ProjectMember newMember = projectMemberMapper.mapRequestToProjectMember(project,user,assignedBy,addMemberRequestDTO.getRoleInProject());
-            projectMemberRepo.save(newMember);
+            if (projectMemberRepo.existsByProject_ProjectIdAndUser_Email(projectId,addMemberRequestDTO.getEmail())){
+                ProjectMember projectMember = projectMemberRepo.findByProject_ProjectIdAndUser_Email(projectId,addMemberRequestDTO.getEmail());
+                projectMember.setIsActive(true);
+            }
+            else {
+                ProjectMember newMember = projectMemberMapper.mapRequestToProjectMember(project, user, assignedBy, addMemberRequestDTO.getRoleInProject());
+                projectMemberRepo.save(newMember);
+            }
 
             activityLogService.log(
                     projectId,
@@ -268,7 +277,8 @@ public class ProjectServiceImpl implements ProjectService {
     @Override
     public ResponseEntity<Object> getDashboardData(Long projectId) {
         DashboardResponseDTO dto = new DashboardResponseDTO();
-        Project project = projectRepo.findById(projectId).orElseThrow();
+        Project project = projectRepo.findById(projectId)
+                .orElseThrow(() -> new ResourceNotFoundException("Project not found"));
 
         // ----- BASIC COUNTS -----
         dto.setTotalTasks(taskRepo.countByProjectPhase_Project(project));
@@ -389,6 +399,10 @@ public class ProjectServiceImpl implements ProjectService {
         ProjectMember projectMember = projectMemberRepo.findById(projectMemberId)
                 .orElseThrow(() -> new ResourceNotFoundException("Project Member not found"));
 
+        if (projectMember.getUser().getRole().getName().equals("SUPER ADMIN") && request.getAttribute("role")!="SUPER ADMIN") {
+            return new ResponseEntity<>(Map.of("message","Cannot change role of SUPER ADMIN user"),HttpStatus.UNAUTHORIZED);
+        }
+
         projectMember.setRole(projectRole);
 
         projectMemberRepo.save(projectMember);
@@ -418,11 +432,9 @@ public class ProjectServiceImpl implements ProjectService {
         ProjectMember member = projectMemberRepo.findById(memberId)
                 .orElseThrow(() -> new ResourceNotFoundException("User is not an active member of this project"));
 
-//        if (member.getRole().equals(ProjectRole.SUPER_ADMIN)){
-//            if (member.getUser().getRole().getName().equals("ADMIN")){
-//
-//            }
-//        }
+        if (member.getUser().getRole().getName().equals("SUPER ADMIN") && request.getAttribute("role")!="SUPER ADMIN") {
+            return new ResponseEntity<>(Map.of("message","Cannot remove SUPER ADMIN user"),HttpStatus.UNAUTHORIZED);
+        }
 
         //De-assign active tasks
         taskRepo.deassignTasks(projectId, memberId);

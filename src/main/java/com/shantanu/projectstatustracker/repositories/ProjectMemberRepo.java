@@ -33,6 +33,7 @@ public interface ProjectMemberRepo extends JpaRepository<ProjectMember,Long> {
               OR LOWER(pm.user.email) LIKE LOWER(CONCAT('%', :search, '%'))
               OR LOWER(pm.role) LIKE LOWER(CONCAT('%', :search, '%'))
          )
+         AND pm.isActive = true\s
       \s""")
     Page<ProjectMember> searchProjectMembers(
             @Param("projectId") Long projectId,
@@ -47,4 +48,7 @@ public interface ProjectMemberRepo extends JpaRepository<ProjectMember,Long> {
     ProjectMember findByProject_ProjectIdAndUser_Email(Long projectProjectId, String userEmail);
 
     List<ProjectMember> findByUser_UserId(Long userUserId);
+
+    List<ProjectMember> findAllByProject_ProjectIdAndIsActive(Long projectProjectId, Boolean isActive);
+
 }

@@ -13,7 +13,7 @@ import java.util.List;
 public interface ProjectRepo extends JpaRepository<Project,Long> {
     boolean existsByProjectName(String projectName);
 
-    @Query("SELECT p FROM Project p JOIN p.projectMembers m WHERE m.user.email = :email")
+    @Query("SELECT p FROM Project p JOIN p.projectMembers m WHERE m.user.email = :email AND m.isActive = true")
     List<Project> findAllByMemberEmail(@Param("email") String email);
 
     Project findByProjectName(String projectName);

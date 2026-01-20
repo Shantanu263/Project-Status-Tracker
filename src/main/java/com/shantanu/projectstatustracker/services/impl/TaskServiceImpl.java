@@ -38,6 +38,7 @@ public class TaskServiceImpl implements TaskService {
                 .orElseThrow(() -> new ResourceNotFoundException("Phase not found"));
 
         List<Task> tasks = taskRepo.findByProjectPhase_PhaseId(phaseId);
+
         return ResponseEntity.ok(taskMapper.mapTasksToResponse(tasks));
     }
 
@@ -258,6 +259,7 @@ public class TaskServiceImpl implements TaskService {
         SubTask existingSubTask = subTaskRepo.findBySubTaskIdAndTask_TaskId(subTaskId,taskId)
                 .orElseThrow(() -> new ResourceNotFoundException("Sub Task not found"));
 
+        SubTaskSnapshot oldSnapshot = SubTaskSnapshot.from(existingSubTask);
 
         subTaskMapper.updateSubTaskFromDTO(subTaskRequestDTO,assignedTo,existingSubTask);
 
@@ -265,6 +267,17 @@ public class TaskServiceImpl implements TaskService {
 
         // Update task progress with respect to subTask Status
         updateTaskProgress(taskId);
+
+        List<String> changes = detectChanges(oldSnapshot, existingSubTask);
+
+        for (String change : changes) {
+            activityLogService.log(
+                    projectId,
+                    (String) request.getAttribute("email"),
+                    request.getAttribute("username") + " " + change,
+                    EntityType.SUBTASK,
+                    existingSubTask.getSubTaskId());
+        }
 
         return ResponseEntity.ok(Map.of("message","Sub Task updated","update Sub Task",subTaskMapper.mapSubTaskToResponse(existingSubTask)));
     }
@@ -348,6 +361,57 @@ public class TaskServiceImpl implements TaskService {
         if (!Objects.equals(oldTask.endDate(), newTask.getEndDate())) {
             changes.add("updated end date from "
                     + oldTask.endDate() + " to " + newTask.getEndDate());
+        }
+
+        return changes;
+    }
+
+    public static List<String> detectChanges(SubTaskSnapshot oldSubTask, SubTask newSubTask) {
+        List<String> changes = new ArrayList<>();
+
+        // Task Name
+        if (!Objects.equals(oldSubTask.subTaskName(), newSubTask.getSubTaskName())) {
+            changes.add("updated task name from '"
+                    + oldSubTask.subTaskName() + "' to '" + newSubTask.getSubTaskName() + "'");
+        }
+
+        // Status
+        if (!Objects.equals(oldSubTask.status(), newSubTask.getStatus())) {
+            changes.add("updated status from '"
+                    + oldSubTask.status() + "' to '" + newSubTask.getStatus() + "'");
+        }
+
+        // Priority
+        if (!Objects.equals(oldSubTask.priority(), newSubTask.getPriority())) {
+            changes.add("updated priority from '"
+                    + oldSubTask.priority() + "' to '" + newSubTask.getPriority() + "'");
+        }
+
+        // Assigned To (Assuming assignedTo is a User object)
+        if (oldSubTask.assignedToId() == null && newSubTask.getAssignedTo() != null) {
+            changes.add("assigned sub task to '" + newSubTask.getAssignedTo().getUser().getName() + "'");
+        }
+        else if (oldSubTask.assignedToId() != null && newSubTask.getAssignedTo() == null) {
+            changes.add("unassigned the sub task from '" + oldSubTask.assignedToUsername() + "'");
+        }
+        else if (
+                oldSubTask.assignedToId() != null && !Objects.equals(oldSubTask.assignedToId(), newSubTask.getAssignedTo().getUser().getUserId())
+        ) {
+            changes.add("changed assignee from '"
+                    + oldSubTask.assignedToUsername() + "' to '"
+                    + newSubTask.getAssignedTo().getUser().getName() + "'");
+        }
+
+        // Start Date
+        if (!Objects.equals(oldSubTask.startDate(), newSubTask.getStartDate())) {
+            changes.add("updated start date from "
+                    + oldSubTask.startDate() + " to " + newSubTask.getStartDate());
+        }
+
+        // End Date
+        if (!Objects.equals(oldSubTask.endDate(), newSubTask.getEndDate())) {
+            changes.add("updated end date from "
+                    + oldSubTask.endDate() + " to " + newSubTask.getEndDate());
         }
 
         return changes;

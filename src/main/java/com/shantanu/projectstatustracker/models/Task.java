@@ -55,7 +55,7 @@ public class Task {
     @JsonIgnore
     private ProjectMember assignedTo;
 
-    @OneToMany(mappedBy = "task")
+    @OneToMany(mappedBy = "task", cascade = CascadeType.ALL, orphanRemoval = true)
     @JsonManagedReference
     private List<SubTask> subTasks;
 

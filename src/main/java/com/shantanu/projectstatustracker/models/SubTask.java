@@ -53,4 +53,11 @@ public class SubTask {
     @SQLRestriction("parent_type = 'SUBTASK'")
     private List<Comment> comments;
 
+    @OneToMany
+    @JoinColumn(name = "entity_id", referencedColumnName = "sub_task_id",
+            insertable = false, updatable = false,
+            foreignKey = @ForeignKey(name = "none"))
+    @SQLRestriction("entity_type = 'SUBTASK'")
+    private List<ActivityLog> logs;
+
 }

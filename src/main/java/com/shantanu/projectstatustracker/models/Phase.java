@@ -2,7 +2,6 @@ package com.shantanu.projectstatustracker.models;
 
 import com.fasterxml.jackson.annotation.JsonBackReference;
 import com.fasterxml.jackson.annotation.JsonFormat;
-import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonManagedReference;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
@@ -58,7 +57,7 @@ public class Phase {
     @JsonBackReference
     private ProjectMember assignedTo;
 
-    @OneToMany(mappedBy = "projectPhase")
+    @OneToMany(mappedBy = "projectPhase", cascade = CascadeType.ALL, orphanRemoval = true)
     @JsonManagedReference
     List<Task> tasks;
 

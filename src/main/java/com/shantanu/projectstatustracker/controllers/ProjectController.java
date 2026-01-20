@@ -73,7 +73,7 @@ public class ProjectController {
         return projectService.addMemberToProject(projectId,userId,email);
     }
 
-    @PreAuthorize("@auth.isProjectHeadOfProject(#projectId) or @auth.isSuperAdmin()")
+    @PreAuthorize("@auth.isProjectAdminOfProject(#projectId) or @auth.isSuperAdmin()")
     @PostMapping("/{projectId}/project-members/add-user")
     public ResponseEntity<Object> addMemberToProjectUsingEmail(@PathVariable(name = "projectId") Long projectId,
                                                                @RequestBody AddMemberRequestDTO addMemberRequestDTO,

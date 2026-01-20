@@ -49,6 +49,7 @@ public interface TaskRepo extends JpaRepository<Task,Long> {
     LEFT JOIN users u ON m.user_user_id = u.user_id
     WHERE p.project_id = :projectId
       AND t.end_date >= CURRENT_DATE
+      AND t.status <> 'DONE'
     ORDER BY t.end_date ASC
     LIMIT 5
     """, nativeQuery = true)

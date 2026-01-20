@@ -30,4 +30,6 @@ public class SubTaskResponseDTO {
 
     private List<CommentResponseDTO> comments;
 
+    private List<ActivityLogDTO> logs;
+
 }

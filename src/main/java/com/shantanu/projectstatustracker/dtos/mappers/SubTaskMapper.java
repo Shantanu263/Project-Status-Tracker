@@ -5,12 +5,13 @@ import com.shantanu.projectstatustracker.dtos.SubTaskResponseDTO;
 import com.shantanu.projectstatustracker.models.*;
 import org.mapstruct.*;
 
-@Mapper(componentModel = "spring",uses = {CommentMapper.class})
+@Mapper(componentModel = "spring",uses = {CommentMapper.class, ActivityLogMapper.class})
 public interface SubTaskMapper {
 
     @Mapping(source = "subTask.assignedTo.memberId",target = "assignedToProjectMemberId")
     @Mapping(source = "subTask.task.taskId",target = "taskId")
     @Mapping(source = "subTask.comments",target = "comments")
+    @Mapping(source = "subTask.logs", target = "logs")
     SubTaskResponseDTO mapSubTaskToResponse(SubTask subTask);
 //
 //    List<SubTaskResponseDTO> mapSubTasksToResponse(List<SubTask> subTasks);

@@ -55,4 +55,9 @@ public class AuthController {
         return authService.getUserById(userId);
     }
 
+    @DeleteMapping("/user/delete/{userId}")
+    public ResponseEntity<Object> removeMyAccount(@PathVariable(name = "userId") Long userId){
+        return authService.removeMyAccount(userId);
+    }
+
 }

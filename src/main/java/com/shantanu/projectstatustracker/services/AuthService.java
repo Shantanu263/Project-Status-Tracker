@@ -20,5 +20,7 @@ public interface AuthService {
 
     ResponseEntity<Object> removeUser(Long userId);
 
-    public ResponseEntity<Object> getUserById(Long userId);
+    ResponseEntity<Object> getUserById(Long userId);
+
+    ResponseEntity<Object> removeMyAccount(Long userId);
 }

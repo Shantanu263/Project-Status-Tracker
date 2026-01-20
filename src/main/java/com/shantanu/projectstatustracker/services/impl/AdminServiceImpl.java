@@ -1,18 +1,25 @@
 package com.shantanu.projectstatustracker.services.impl;
 
+import com.shantanu.projectstatustracker.dtos.InviteUserDTO;
+import com.shantanu.projectstatustracker.dtos.MailBody;
 import com.shantanu.projectstatustracker.dtos.RoleRequestDTO;
 import com.shantanu.projectstatustracker.dtos.mappers.UserMapper;
 import com.shantanu.projectstatustracker.globalExceptionHandlers.ResourceNotFoundException;
+import com.shantanu.projectstatustracker.models.InvitedUsers;
 import com.shantanu.projectstatustracker.models.Role;
 import com.shantanu.projectstatustracker.models.User;
+import com.shantanu.projectstatustracker.repositories.InvitedUsersRepo;
 import com.shantanu.projectstatustracker.repositories.RoleRepo;
 import com.shantanu.projectstatustracker.repositories.UserRepo;
 import com.shantanu.projectstatustracker.services.AdminService;
+import com.shantanu.projectstatustracker.services.EmailService;
+import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 
@@ -26,6 +33,9 @@ public class AdminServiceImpl implements AdminService {
     private final UserRepo userRepo;
     private final RoleRepo roleRepo;
     private final UserMapper userMapper;
+    private final InvitedUsersRepo invitedUsersRepo;
+    private final EmailService emailService;
+    private final HttpServletRequest servletRequest;
 
     @Override
     public ResponseEntity<Object> getUsers(int pageNumber, int pageSize, String sortBy, String order, String search) {
@@ -44,10 +54,10 @@ public class AdminServiceImpl implements AdminService {
 
     }
 
-    @Override
-    public ResponseEntity<Object> getPendingUsers() {
-        return ResponseEntity.ok(userMapper.mapUsers(userRepo.findByStatus("PENDING")));
-    }
+//    @Override
+//    public ResponseEntity<Object> getPendingUsers() {
+//        return ResponseEntity.ok(userMapper.mapUsers(userRepo.findByStatus("PENDING")));
+//    }
 
     @Override
     public ResponseEntity<Object> approveUser(Long id, RoleRequestDTO req) {
@@ -58,10 +68,40 @@ public class AdminServiceImpl implements AdminService {
                 .orElseThrow(() -> new ResourceNotFoundException("Role not found with name: " + req.getRoleName()));
 
         user.setRole(role);
-        user.setStatus("ACTIVE");
         userRepo.save(user);
 
         return ResponseEntity.ok(Map.of("message","Assigned role to user: " + req.getRoleName()));
+    }
+
+    @Override
+    public ResponseEntity<Object> inviteUser(InviteUserDTO inviteUserDTO) {
+        if (userRepo.existsByEmail(inviteUserDTO.getEmail())) {
+            return new ResponseEntity<>(Map.of("message", "User account with this email already exists!"),
+                    HttpStatus.BAD_REQUEST);
+        }
+
+        InvitedUsers invitedUser = InvitedUsers.builder()
+                .email(inviteUserDTO.getEmail())
+                .role(roleRepo.findByName(inviteUserDTO.getRoleName()).orElseThrow(() -> new ResourceNotFoundException("Role not found")))
+                .build();
+
+        User user = userRepo.findByEmail(servletRequest.getAttribute("email").toString())
+                .orElseThrow(() -> new ResourceNotFoundException("User not found"));
+
+        String htmlContent = emailService.getInviteUserEmailTemplate(invitedUser, user.getName());
+
+        MailBody mailBody = MailBody.builder()
+                .to(invitedUser.getEmail())
+                .text(htmlContent)  // add HTML template
+                .subject("You are invited | ProjectHub")
+                .build();
+
+        emailService.sendHtmlMessageAsync(mailBody);
+
+        invitedUsersRepo.save(invitedUser);
+
+        return ResponseEntity.ok(Map.of("message","Invitation sent to new user"));
+
     }
 
     public Map<String, Object> toPaginatedResponse(Page<User> page) {

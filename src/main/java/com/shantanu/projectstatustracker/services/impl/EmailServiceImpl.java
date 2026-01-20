@@ -1,6 +1,7 @@
 package com.shantanu.projectstatustracker.services.impl;
 
 import com.shantanu.projectstatustracker.dtos.MailBody;
+import com.shantanu.projectstatustracker.models.InvitedUsers;
 import com.shantanu.projectstatustracker.services.EmailService;
 import jakarta.mail.MessagingException;
 import jakarta.mail.internet.MimeMessage;
@@ -93,6 +94,25 @@ public class EmailServiceImpl implements EmailService {
             template = template.replace("[USER_NAME]", userName);
             template = template.replace("[USER_EMAIL]", email);
             template = template.replace("[SENDER_NAME]", "Team ProjectHub");
+
+            return template;
+        } catch (IOException e) {
+            throw new RuntimeException("Failed to load email template", e);
+        }
+    }
+
+    @Override
+    public String getInviteUserEmailTemplate(InvitedUsers invitedUser, String inviterName) {
+        try {
+            // Load template from resources
+            ClassPathResource resource = new ClassPathResource("templates/email/invite-user.html");
+            String template = new String(resource.getInputStream().readAllBytes(), StandardCharsets.UTF_8);
+
+            // Replace placeholders
+            template = template.replace("[INVITER_NAME]", inviterName);
+            template = template.replace("[INVITED_EMAIL]", invitedUser.getEmail());
+            template = template.replace("[USER_ROLE]", invitedUser.getRole().getName());
+            template = template.replace("[SIGNUP_LINK]", "Team ProjectHub");
 
             return template;
         } catch (IOException e) {

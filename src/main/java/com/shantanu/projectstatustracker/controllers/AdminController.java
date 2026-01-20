@@ -1,5 +1,6 @@
 package com.shantanu.projectstatustracker.controllers;
 
+import com.shantanu.projectstatustracker.dtos.InviteUserDTO;
 import com.shantanu.projectstatustracker.dtos.RoleRequestDTO;
 import com.shantanu.projectstatustracker.services.AdminService;
 import lombok.RequiredArgsConstructor;
@@ -24,14 +25,19 @@ public class AdminController {
         return adminService.getUsers(pageNumber, pageSize, sortBy, order, search);
     }
 
-    @GetMapping("/pending-users")
-    public ResponseEntity<Object> getPendingUsers() {
-        return adminService.getPendingUsers();
-    }
+//    @GetMapping("/pending-users")
+//    public ResponseEntity<Object> getPendingUsers() {
+//        return adminService.getPendingUsers();
+//    }
 
     @PutMapping("/change-role/{id}")
-    public ResponseEntity<?> approveUser(@PathVariable Long id, @RequestBody RoleRequestDTO req) {
+    public ResponseEntity<Object> approveUser(@PathVariable Long id, @RequestBody RoleRequestDTO req) {
         return  adminService.approveUser(id,req);
+    }
+
+    @PostMapping("/invite-user")
+    public ResponseEntity<Object> inviteUser(@RequestBody InviteUserDTO inviteUserDTO) {
+        return adminService.inviteUser(inviteUserDTO);
     }
 
 }
