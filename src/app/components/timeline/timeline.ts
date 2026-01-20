@@ -565,7 +565,7 @@ export class TimelineComponent implements OnInit, AfterViewInit {
      */
     getColumnWidth(): number {
         const scale = this.timeScale();
-        const dayWidth = 40; // Base width for one day (60-80px as requested)
+        const dayWidth = 40; // Base width for one day
 
         if (scale === TimeScale.WEEK) {
             // Week column contains 7 days
@@ -642,9 +642,9 @@ export class TimelineComponent implements OnInit, AfterViewInit {
         }
 
         // For MONTH and QUARTER views, use proportional positioning within columns
-        const columnWidth = this.getColumnWidth(); // Uniform width for all columns (280px)
+        const columnWidth = this.getColumnWidth(); 
 
-        // Calculate position by finding which column(s) the bar spans
+        // Calculate position by finding which column the bar spans
         let left = 0;
         let width = 0;
         let cumulativeLeft = 0;
@@ -666,7 +666,7 @@ export class TimelineComponent implements OnInit, AfterViewInit {
             // Calculate width by checking where bar ends
             if (barEnd >= colStart && barEnd <= colEnd) {
                 // Bar ends in this column
-                // Add 1 day to end date to represent end of that day (for width calculation only)
+                // Add 1 day to end date to represent end of that day
                 const barEndPlusOne = new Date(barEnd);
                 barEndPlusOne.setDate(barEndPlusOne.getDate() + 1);
 
