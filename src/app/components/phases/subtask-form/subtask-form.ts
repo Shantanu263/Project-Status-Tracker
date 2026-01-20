@@ -2,6 +2,7 @@ import { Component, input, output, signal, inject, OnInit, computed } from '@ang
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { ChangeDetectionStrategy } from '@angular/core';
+import { MatSnackBar } from '@angular/material/snack-bar';
 import { ProjectMember } from '../../../models/project.model';
 import { ProjectService } from '../../../services/project.service';
 
@@ -23,6 +24,7 @@ interface SubTaskForm {
 })
 export class SubtaskFormComponent implements OnInit {
     private projectService = inject(ProjectService);
+    private snackBar = inject(MatSnackBar);
 
     // Inputs
     isOpen = input.required<boolean>();
@@ -49,6 +51,10 @@ export class SubtaskFormComponent implements OnInit {
     showMemberDropdown = signal(false);
 
     // Computed
+    activeMembers = computed(() =>
+        this.projectMembers().filter(member => member.isActive)
+    );
+
     getSelectedMember = computed(() => {
         const assignedTo = this.subtaskForm().assignedTo;
         if (!assignedTo) return null;
@@ -105,6 +111,14 @@ export class SubtaskFormComponent implements OnInit {
             next: () => {
                 this.isSubmitting.set(false);
                 this.subtaskCreated.emit();
+
+                // Show success notification
+                this.snackBar.open('Subtask created successfully!', 'Close', {
+                    duration: 3000,
+                    horizontalPosition: 'center',
+                    verticalPosition: 'bottom'
+                });
+
                 this.onClose();
             },
             error: (err) => {

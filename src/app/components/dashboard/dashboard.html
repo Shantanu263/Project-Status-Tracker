@@ -125,9 +125,9 @@
 </div>
 
 <!-- Project Phases Timeline -->
-@if (dashboardData()!.phaseProgress.length > 0) {
 <div class="mb-6 rounded-2xl border border-gray-200 bg-white p-8 shadow-sm">
   <h2 class="mb-6 text-xl font-bold text-gray-900">Project Timeline</h2>
+  @if (dashboardData()!.phaseProgress.length > 0) {
   <div class="relative">
     <div class="mb-12 flex items-center justify-between">
       @for (phase of dashboardData()!.phaseProgress; track phase.phaseName; let i = $index; let isLast = $last) {
@@ -165,8 +165,20 @@
       }
     </div>
   </div>
+  } @else {
+  <!-- No Phases Placeholder -->
+  <div class="flex flex-col items-center justify-center py-12">
+    <svg class="w-20 h-20 text-gray-300 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"
+        d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
+    </svg>
+    <p class="text-lg font-semibold text-gray-700 mb-2">No Phases Yet</p>
+    <p class="text-sm text-gray-500 text-center max-w-md">
+      Add phases to this project to visualize the project timeline and track progress across different stages.
+    </p>
+  </div>
+  }
 </div>
-}
 
 <!-- Charts Section -->
 <div class="mb-6">
@@ -175,44 +187,92 @@
   <!-- Charts Grid -->
   <div class="grid grid-cols-1 gap-6 lg:grid-cols-2">
     <!-- Task Distribution Pie Chart -->
-    @if (dashboardData()!.taskDistribution.length > 0) {
     <div class="rounded-2xl border border-gray-200 bg-white p-6 shadow-sm">
       <h3 class="mb-4 text-lg font-semibold text-gray-900">Task Distribution</h3>
+      @if (dashboardData()!.taskDistribution.length > 0) {
       <div class="flex items-center justify-center" style="height: 280px;">
         <canvas id="taskDistributionChart"></canvas>
       </div>
+      } @else {
+      <div class="flex flex-col items-center justify-center" style="height: 280px;">
+        <svg class="w-16 h-16 text-gray-300 mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"
+            d="M11 3.055A9.001 9.001 0 1020.945 13H11V3.055z"></path>
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"
+            d="M20.488 9H15V3.512A9.025 9.025 0 0120.488 9z"></path>
+        </svg>
+        <p class="text-sm font-medium text-gray-600 mb-1">No Task Data Available</p>
+        <p class="text-xs text-gray-500 text-center max-w-xs">
+          Task distribution chart will appear here once tasks are created
+        </p>
+      </div>
+      }
     </div>
-    }
 
     <!-- Phase Completion Bar Chart -->
-    @if (dashboardData()!.phaseProgress.length > 0) {
     <div class="rounded-2xl border border-gray-200 bg-white p-6 shadow-sm">
       <h3 class="mb-4 text-lg font-semibold text-gray-900">Phase Completion</h3>
+      @if (dashboardData()!.phaseProgress.length > 0) {
       <div class="flex items-center justify-center" style="height: 280px;">
         <canvas id="phaseCompletionChart"></canvas>
       </div>
+      } @else {
+      <div class="flex flex-col items-center justify-center" style="height: 280px;">
+        <svg class="w-16 h-16 text-gray-300 mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"
+            d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z">
+          </path>
+        </svg>
+        <p class="text-sm font-medium text-gray-600 mb-1">No Phase Data Available</p>
+        <p class="text-xs text-gray-500 text-center max-w-xs">
+          Phase completion chart will appear here once phases are created
+        </p>
+      </div>
+      }
     </div>
-    }
 
     <!-- Tasks Over Time Line Chart -->
-    @if (dashboardData()!.tasksOverTime.length > 0) {
     <div class="rounded-2xl border border-gray-200 bg-white p-6 shadow-sm">
       <h3 class="mb-4 text-lg font-semibold text-gray-900">Tasks Completed Over Time</h3>
+      @if (dashboardData()!.tasksOverTime.length > 0) {
       <div class="flex items-center justify-center" style="height: 280px;">
         <canvas id="tasksOverTimeChart"></canvas>
       </div>
+      } @else {
+      <div class="flex flex-col items-center justify-center" style="height: 280px;">
+        <svg class="w-16 h-16 text-gray-300 mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"
+            d="M7 12l3-3 3 3 4-4M8 21l4-4 4 4M3 4h18M4 4h16v12a1 1 0 01-1 1H5a1 1 0 01-1-1V4z"></path>
+        </svg>
+        <p class="text-sm font-medium text-gray-600 mb-1">No Timeline Data Available</p>
+        <p class="text-xs text-gray-500 text-center max-w-xs">
+          Task completion timeline will appear here once tasks are completed
+        </p>
+      </div>
+      }
     </div>
-    }
 
     <!-- Task Priority Distribution -->
-    @if (dashboardData()!.priorityDistribution.length > 0) {
     <div class="rounded-2xl border border-gray-200 bg-white p-6 shadow-sm">
       <h3 class="mb-4 text-lg font-semibold text-gray-900">Task Priority Distribution</h3>
+      @if (dashboardData()!.priorityDistribution.length > 0) {
       <div class="flex items-center justify-center" style="height: 280px;">
         <canvas id="priorityDistributionChart"></canvas>
       </div>
+      } @else {
+      <div class="flex flex-col items-center justify-center" style="height: 280px;">
+        <svg class="w-16 h-16 text-gray-300 mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"
+            d="M3 4a1 1 0 011-1h12a1 1 0 011 1v2a1 1 0 01-1 1H4a1 1 0 01-1-1V4zM3 10a1 1 0 011-1h6a1 1 0 011 1v6a1 1 0 01-1 1H4a1 1 0 01-1-1v-6zM14 9a1 1 0 00-1 1v6a1 1 0 001 1h6a1 1 0 001-1v-6a1 1 0 00-1-1h-6z">
+          </path>
+        </svg>
+        <p class="text-sm font-medium text-gray-600 mb-1">No Priority Data Available</p>
+        <p class="text-xs text-gray-500 text-center max-w-xs">
+          Priority distribution chart will appear here once tasks have priorities assigned
+        </p>
+      </div>
+      }
     </div>
-    }
   </div>
 </div>
 

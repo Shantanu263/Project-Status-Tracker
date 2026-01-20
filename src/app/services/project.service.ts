@@ -4,7 +4,8 @@ import { Project, ProjectMember } from '../models/project.model';
 import { DashboardData, ProjectsDashboardData } from '../models/dashboard.model';
 import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
-import { Phase, Task, Comment } from '../models/phase.model';
+import { map } from 'rxjs/operators';
+import type { Phase, Task, Comment } from '../models/phase.model';
 
 @Injectable({
   providedIn: 'root'
@@ -36,7 +37,16 @@ export class ProjectService {
   }
 
   getProjects(): Observable<Project[]> {
-    return this.http.get<Project[]>(`${this.api}`);
+    return this.http.get<Project[]>(`${this.api}`).pipe(
+      map(projects => {
+        // Sort by createdAt descending (newest first)
+        return projects.sort((a, b) => {
+          const dateA = new Date(a.createdAt || 0).getTime();
+          const dateB = new Date(b.createdAt || 0).getTime();
+          return dateB - dateA; // Descending order
+        });
+      })
+    );
   }
 
   getDashboardData(projectId: number): Observable<DashboardData> {

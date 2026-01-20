@@ -54,10 +54,11 @@ export interface DragState {
     barId: string;
     type: 'move' | 'resize-left' | 'resize-right';
     startX: number;
-    startLeft: number;
-    startWidth: number;
+    startLeft?: number;
+    startWidth?: number;
     originalStartDate: string;
     originalEndDate: string;
+    initialTooltipY?: number; // Initial Y position for fixed tooltip vertical position
 }
 
 export interface TimelineBounds {

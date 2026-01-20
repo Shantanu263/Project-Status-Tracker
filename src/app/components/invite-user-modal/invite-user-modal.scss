@@ -1,0 +1,33 @@
+.modal-backdrop {
+    background: rgba(0, 0, 0, .32);
+    animation: fadeInBackdrop 0.2s ease-in-out;
+}
+
+.modal-content-wrapper {
+    animation: slideUp 0.3s ease-out;
+}
+
+@keyframes slideUp {
+    from {
+        opacity: 0;
+        transform: translateY(20px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+::ng-deep .snackbar-success {
+    background-color: #10b981 !important;
+    color: white !important;
+}
+
+::ng-deep .snackbar-success .mat-mdc-snack-bar-label {
+    color: white !important;
+}
+
+::ng-deep .snackbar-success .mat-mdc-button {
+    color: white !important;
+}

@@ -8,7 +8,7 @@
                     <h1 class="text-3xl font-bold text-gray-900">User Management</h1>
                     <p class="text-gray-600 mt-1">Manage system users and their global roles</p>
                 </div>
-                <button
+                <button (click)="openInviteUserModal()"
                     class="px-5 py-2.5 bg-[#8c2d1b] text-white rounded-lg hover:bg-[#6b2115] transition-colors duration-200 font-medium shadow-sm flex items-center gap-2 cursor-pointer">
                     <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path>
@@ -341,3 +341,7 @@
 
     </div>
 </div>
+
+<!-- Invite User Modal -->
+<app-invite-user-modal [isOpen]="showInviteUserModal()" (close)="closeInviteUserModal()"
+    (usersInvited)="onUsersInvited()" />

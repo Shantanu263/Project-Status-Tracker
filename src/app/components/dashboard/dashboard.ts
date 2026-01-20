@@ -3,6 +3,7 @@ import { CommonModule } from '@angular/common';
 import { ProjectService } from '../../services/project.service';
 import { SelectedProjectService } from '../../services/selected-project.service';
 import { DashboardData } from '../../models/dashboard.model';
+import { DataSyncService } from '../../services/data-sync.service';
 
 @Component({
   selector: 'app-dashboard',
@@ -14,6 +15,7 @@ import { DashboardData } from '../../models/dashboard.model';
 export class DashboardComponent implements AfterViewInit {
   private projectService = inject(ProjectService);
   private selectedProjectService = inject(SelectedProjectService);
+  private readonly dataSyncService = inject(DataSyncService);
 
   projectName = input<string>('Project Dashboard');
   projectStatus = input<string>('Active');
@@ -28,6 +30,19 @@ export class DashboardComponent implements AfterViewInit {
       const selectedProject = this.selectedProjectService.selectedProject();
       if (selectedProject?.projectId) {
         this.loadDashboardData(selectedProject.projectId);
+      }
+    });
+
+    this.dataSyncService.phasesUpdated$.subscribe(projectId => {
+      if (projectId === this.selectedProjectService.selectedProject()?.projectId) {
+        this.loadDashboardData(projectId);
+      }
+    });
+
+    // Subscribe to task updates from other components
+    this.dataSyncService.tasksUpdated$.subscribe(({ projectId }) => {
+      if (projectId === this.selectedProjectService.selectedProject()?.projectId) {
+        this.loadDashboardData(projectId);
       }
     });
   }

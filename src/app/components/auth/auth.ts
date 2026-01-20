@@ -2,6 +2,7 @@ import { Component, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule, NgForm } from '@angular/forms';
 import { AuthService } from '../../services/auth.service';
+import { ProjectService } from '../../services/project.service';
 import { Router } from '@angular/router';
 import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
 import { LucideAngularModule, Eye, EyeOff, Mail, Lock, User, ArrowRight, LogIn } from 'lucide-angular';
@@ -29,6 +30,7 @@ export class AuthComponent {
   Eye = Eye; EyeOff = EyeOff; Mail = Mail; Lock = Lock; User = User; ArrowRight = ArrowRight; LogIn = LogIn;
 
   private auth = inject(AuthService);
+  private projectService = inject(ProjectService);
   private router = inject(Router);
   private snackBar = inject(MatSnackBar);
 
@@ -55,23 +57,37 @@ export class AuthComponent {
     if (this.isLogin) {
       this.auth.login(this.formData.email, this.formData.password).subscribe({
         next: () => {
-          // Show success notification
-          this.snackBar.open('Login successful! Welcome back.', 'Close', {
-            duration: 3000,
-            panelClass: ['success-snackbar']
+          // Check user's projects to determine redirect destination
+          this.projectService.getProjects().subscribe({
+            next: (projects) => {
+              // Smart redirect based on project assignments
+              const destination = projects.length > 0
+                ? '/home/projects-dashboard'  // User has projects - show dashboard
+                : '/home';                      // No projects - show placeholder
+
+              // Show success notification
+              this.snackBar.open('Login successful! Welcome back.', 'Close', {
+                duration: 3000,
+                panelClass: ['success-snackbar']
+              });
+
+              // Navigate to appropriate destination
+              this.router.navigate([destination]);
+            },
+            error: (err) => {
+              console.error('Error fetching projects:', err);
+              // Fallback to home if there's an error
+              this.router.navigate(['/home']);
+            }
           });
-          // Redirect to projects dashboard
-          this.router.navigate(['/home/projects-dashboard']);
         }
       });
     } else {
       this.auth.signup(this.formData.name, this.formData.email, this.formData.password).subscribe({
         next: () => {
-          // Show success message
+          // Show success message at bottom center (default position)
           this.snackBar.open('Account created successfully! Please login.', 'Close', {
             duration: 4000,
-            horizontalPosition: 'end',
-            verticalPosition: 'top',
             panelClass: ['success-snackbar']
           });
           // Switch to login mode

@@ -11,6 +11,7 @@ import { TaskFormComponent } from '../phases/task-form/task-form';
 import { SubtaskDetailsModalComponent } from '../phases/subtask-details-modal/subtask-details-modal';
 import { HttpClient } from '@angular/common/http';
 import { environment } from '../../environments/environment';
+import { DataSyncService } from '../../services/data-sync.service';
 
 interface TaskWithPhase extends Task {
     phaseName: string;
@@ -28,6 +29,7 @@ export class TasksComponent implements OnInit {
     private projectService = inject(ProjectService);
     private authService = inject(AuthService);
     private http = inject(HttpClient);
+    private dataSyncService = inject(DataSyncService);
 
     // Inputs
     projectId = input.required<number>();
@@ -35,6 +37,7 @@ export class TasksComponent implements OnInit {
     // State
     allTasks = signal<TaskWithPhase[]>([]);
     projectMembers = signal<ProjectMember[]>([]);
+    phases = signal<{ phaseId: number; phaseName: string }[]>([]);
     currentUserMemberId = signal<number | string | null>(null);
     searchQuery = signal<string>('');
     selectedPhase = signal<string>('all');
@@ -57,7 +60,7 @@ export class TasksComponent implements OnInit {
     sortDirection = signal<'asc' | 'desc'>('asc');
 
     // Computed
-    phases = computed(() => {
+    phaseNames = computed(() => {
         const tasks = this.allTasks();
         const phaseNames = new Set(tasks.map(t => t.phaseName));
         return Array.from(phaseNames).sort();
@@ -211,6 +214,20 @@ export class TasksComponent implements OnInit {
 
     ngOnInit(): void {
         this.loadTasks();
+
+        // Subscribe to phase updates from other components
+        this.dataSyncService.phasesUpdated$.subscribe(projectId => {
+            if (projectId === this.projectId()) {
+                this.loadTasks();
+            }
+        });
+
+        // Subscribe to task updates from other components
+        this.dataSyncService.tasksUpdated$.subscribe(({ projectId }) => {
+            if (projectId === this.projectId()) {
+                this.loadTasks();
+            }
+        });
     }
 
     loadTasks(): void {
@@ -223,6 +240,13 @@ export class TasksComponent implements OnInit {
         }).subscribe({
             next: ({ phases, members }) => {
                 this.projectMembers.set(members);
+
+                // Store phases for the task form dropdown
+                const phasesData = phases.map(p => ({
+                    phaseId: p.phaseId!,
+                    phaseName: p.phaseName
+                }));
+                this.phases.set(phasesData);
 
                 // Find current user's project member ID
                 const currentUserId = this.authService.getCurrentUserId();
@@ -490,6 +514,8 @@ export class TasksComponent implements OnInit {
             next: () => {
                 this.loadTasks();
                 this.closeCreateTaskModal();
+                // Notify other components that tasks have been updated
+                this.dataSyncService.notifyTasksUpdated(projectId, task.projectPhaseId!);
             },
             error: (err) => {
                 console.error('Error creating task:', err);
@@ -566,5 +592,12 @@ export class TasksComponent implements OnInit {
     getSortIcon(column: string): string {
         if (this.sortColumn() !== column) return '';
         return this.sortDirection() === 'asc' ? '↑' : '↓';
+    }
+
+    // Check if a member is inactive (removed from project)
+    isMemberRemoved(memberId?: number | string): boolean {
+        if (!memberId) return false;
+        const member = this.projectMembers().find(m => m.memberId === memberId);
+        return member ? !member.isActive : false;
     }
 }

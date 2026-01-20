@@ -217,7 +217,7 @@
                             <div class="member-list-item" (click)="clearMemberSelection()">
                                 <span class="placeholder">No Member</span>
                             </div>
-                            @for (member of projectMembers(); track member.memberId) {
+                            @for (member of activeProjectMembers(); track member.memberId) {
                             <div class="member-list-item" (click)="selectMember(member)">
                                 <div class="member-display">
                                     <div [class]="'avatar ' + getAvatarColor(member)">

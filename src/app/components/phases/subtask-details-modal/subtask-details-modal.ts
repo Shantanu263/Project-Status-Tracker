@@ -6,6 +6,8 @@ import { ProjectMember } from '../../../models/project.model';
 import { ProjectService } from '../../../services/project.service';
 import { AuthService } from '../../../services/auth.service';
 import { SubTask, Comment, Log } from '../../../models/phase.model';
+import { MatSnackBar } from '@angular/material/snack-bar';
+
 
 @Component({
     selector: 'app-subtask-details-modal',
@@ -17,6 +19,8 @@ import { SubTask, Comment, Log } from '../../../models/phase.model';
 export class SubtaskDetailsModalComponent {
     private projectService = inject(ProjectService);
     private authService = inject(AuthService);
+    private snackBar = inject(MatSnackBar);
+
 
     // Inputs
     isOpen = input.required<boolean>();
@@ -54,6 +58,8 @@ export class SubtaskDetailsModalComponent {
         if (!subtask || !subtask.assignedToProjectMemberId) return null;
         return members.find(m => m.memberId === subtask.assignedToProjectMemberId) || null;
     });
+
+    activeProjectMembers = computed(() => this.projectMembers().filter(member => member.isActive));
 
     recentLogs = computed(() => {
         const subtask = this.subtaskDetails();
@@ -120,6 +126,12 @@ export class SubtaskDetailsModalComponent {
                 this.showDeleteConfirmation.set(false);
             }
         });
+        // Show success notification
+        this.snackBar.open('Subtask deleted successfully!', 'Close', {
+            duration: 3000,
+            horizontalPosition: 'center',
+            verticalPosition: 'bottom'
+        });
     }
 
     startEditing(field: string): void {
@@ -150,7 +162,7 @@ export class SubtaskDetailsModalComponent {
     }
 
     updateAssignedMember(memberId: number | null): void {
-        this.updateField('assignedTo', memberId);
+        this.updateField('assignedToProjectMemberId', memberId);
     }
 
     updateStartDate(newDate: string): void {
@@ -178,11 +190,9 @@ export class SubtaskDetailsModalComponent {
             this.subTaskId(),
             updates
         ).subscribe({
-            next: (updatedSubtask) => {
-                const current = this.subtaskDetails();
-                if (current) {
-                    this.subtaskDetails.set({ ...current, ...updatedSubtask });
-                }
+            next: () => {
+                // Reload full subtask details to ensure all fields are up-to-date
+                this.loadSubtaskDetails();
                 this.updated.emit();
             },
             error: (err) => {

@@ -8,6 +8,8 @@ import { PermissionService } from '../../../services/permission.service';
 import { AuthService } from '../../../services/auth.service';
 import { Phase, Task } from '../../../models/phase.model';
 import { TaskDetailsModalComponent } from '../task-details-modal/task-details-modal';
+import { MatSnackBar } from '@angular/material/snack-bar';
+
 
 @Component({
     selector: 'app-phase-details-modal',
@@ -20,6 +22,8 @@ export class PhaseDetailsModalComponent {
     private projectService = inject(ProjectService);
     private permissionService = inject(PermissionService);
     private authService = inject(AuthService);
+    private snackBar = inject(MatSnackBar);
+
 
     // Inputs
     isOpen = input.required<boolean>();
@@ -62,6 +66,8 @@ export class PhaseDetailsModalComponent {
         if (!phase || !phase.projectMemberId) return null;
         return members.find(m => m.memberId === phase.projectMemberId) || null;
     });
+
+    activeProjectMembers = computed(() => this.projectMembers().filter(member => member.isActive));
 
     phaseTasks = computed(() => {
         const phase = this.phaseDetails();
@@ -141,6 +147,12 @@ export class PhaseDetailsModalComponent {
                 this.error.set('Failed to delete phase');
                 this.showDeleteConfirmation.set(false);
             }
+        });
+        // Show success notification
+        this.snackBar.open('Phase deleted successfully!', 'Close', {
+            duration: 3000,
+            horizontalPosition: 'center',
+            verticalPosition: 'bottom'
         });
     }
 

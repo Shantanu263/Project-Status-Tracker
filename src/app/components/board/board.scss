@@ -17,7 +17,9 @@
   }
 }
 
-.overflow-y-autoe {
-  height: 518px;
+.board-scrollable-area {
+  height: calc(100vh - 250px);
   overflow-y: auto;
+  padding-bottom: 10px;
+  padding-right: 25px;
 }

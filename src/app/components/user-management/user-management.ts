@@ -3,13 +3,14 @@ import { CommonModule } from '@angular/common';
 import { UserManagementService, User } from '../../services/user-management.service';
 import { Overlay, OverlayModule, OverlayRef } from '@angular/cdk/overlay';
 import { ComponentPortal } from '@angular/cdk/portal';
+import { InviteUserModalComponent } from '../invite-user-modal/invite-user-modal';
 
 type SortOrder = 'asc' | 'desc';
 type SortColumn = 'userId' | 'name' | 'email' | 'role' | 'createdAt';
 
 @Component({
     selector: 'app-user-management',
-    imports: [CommonModule, OverlayModule],
+    imports: [CommonModule, OverlayModule, InviteUserModalComponent],
     templateUrl: './user-management.html',
     styleUrl: './user-management.scss',
     changeDetection: ChangeDetectionStrategy.OnPush
@@ -18,6 +19,9 @@ export class UserManagementComponent {
     private userManagementService = inject(UserManagementService);
     private overlay = inject(Overlay);
     private viewContainerRef = inject(ViewContainerRef);
+
+    // Modal state
+    showInviteUserModal = signal(false);
 
     // Pagination & Filtering
     searchQuery = signal('');
@@ -80,7 +84,9 @@ export class UserManagementComponent {
             searchParam
         ).subscribe({
             next: (response) => {
-                this.users.set(response.content);
+                // Filter to show only active users
+                const activeUsers = response.content.filter(user => user.isActive);
+                this.users.set(activeUsers);
                 this.totalPages.set(response.totalPages);
                 this.totalElements.set(response.totalElements);
             },
@@ -317,5 +323,18 @@ export class UserManagementComponent {
                 this.closeMenu();
             }
         });
+    }
+
+    // Invite User Modal methods
+    openInviteUserModal(): void {
+        this.showInviteUserModal.set(true);
+    }
+
+    closeInviteUserModal(): void {
+        this.showInviteUserModal.set(false);
+    }
+
+    onUsersInvited(): void {
+        this.loadUsers();
     }
 }

@@ -10,6 +10,7 @@ import { TaskFormComponent } from '../phases/task-form/task-form';
 import { TaskDetailsModalComponent } from '../phases/task-details-modal/task-details-modal';
 import { Task } from '../../models/phase.model';
 import { ProjectMember } from '../../models/project.model';
+import { DataSyncService } from '../../services/data-sync.service';
 
 type TaskStatus = 'TO_DO' | 'IN_PROGRESS' | 'REVIEW' | 'DONE';
 
@@ -46,6 +47,7 @@ interface TaskCard {
   startDate: string;
   dueDate: string;
   assignees: { initials: string; name: string }[];
+  assignedToProjectMemberId?: number;
   status: TaskStatus;
   subTasks?: SubTask[];
 }
@@ -71,6 +73,7 @@ export class BoardComponent {
   private readonly selectedProjectService = inject(SelectedProjectService);
   private readonly projectService = inject(ProjectService);
   private readonly projectStateService = inject(ProjectStateService);
+  private readonly dataSyncService = inject(DataSyncService);
 
   phases = signal<PhaseResponse[]>([]);
   selectedPhase = signal<PhaseResponse | null>(null);
@@ -159,6 +162,23 @@ export class BoardComponent {
         }
       }
     }, { allowSignalWrites: true });
+
+    // Subscribe to phase updates from other components
+    this.dataSyncService.phasesUpdated$.subscribe(projectId => {
+      const currentProject = this.selectedProject();
+      if (currentProject && projectId === currentProject.projectId) {
+        this.loadPhases();
+      }
+    });
+
+    // Subscribe to task updates from other components
+    this.dataSyncService.tasksUpdated$.subscribe(({ projectId, phaseId }) => {
+      const currentProject = this.selectedProject();
+      const currentPhase = this.selectedPhase();
+      if (currentProject && projectId === currentProject.projectId && currentPhase && phaseId === currentPhase.phaseId) {
+        this.loadTasksForPhase(currentPhase);
+      }
+    });
   }
 
   loadProjectMembers(): void {
@@ -303,6 +323,7 @@ export class BoardComponent {
         if (member) {
           taskCard.assignees = [{ initials: this.getInitials(member.user), name: member.user }];
         }
+        taskCard.assignedToProjectMemberId = task.assignedToProjectMemberId;
       }
 
       const column = columns.find(col => col.statusValue === taskStatus);
@@ -339,6 +360,13 @@ export class BoardComponent {
       .join('')
       .toUpperCase()
       .substring(0, 2);
+  }
+
+  // Check if a member is inactive (removed from project)
+  isMemberRemoved(memberId?: number): boolean {
+    if (!memberId) return false;
+    const member = this.projectMembers().find(m => Number(m.memberId) === memberId);
+    return member ? !member.isActive : false;
   }
 
   // Drag and Drop handlers
@@ -393,6 +421,8 @@ export class BoardComponent {
           this.columns.set([...columns]);
         }
         this.draggingTask.set(null);
+        // Notify other components that tasks have been updated
+        this.dataSyncService.notifyTasksUpdated(project.projectId, phase.phaseId);
       },
       error: (err) => {
         this.error.set('Failed to update task status');
@@ -440,6 +470,8 @@ export class BoardComponent {
       next: () => {
         this.loadTasksForPhase(phase);
         this.closeTaskModal();
+        // Notify other components that tasks have been updated
+        this.dataSyncService.notifyTasksUpdated(project.projectId, phase.phaseId);
       },
       error: (err) => {
         this.error.set('Failed to create task');

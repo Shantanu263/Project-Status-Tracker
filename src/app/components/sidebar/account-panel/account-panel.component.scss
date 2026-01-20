@@ -104,7 +104,6 @@
 .avatar {
     width: 3.5rem;
     height: 3.5rem;
-    background: linear-gradient(to br, #7f1d1d, #991b1b);
     color: white;
     border-radius: 50%;
     display: flex;
@@ -113,14 +112,19 @@
     font-size: 1.25rem;
     font-weight: 700;
     flex-shrink: 0;
-    box-shadow: 0 0 0 3px #fef2f2, 0 0 0 6px transparent;
+
+    /* Gradient border effect */
+    //border: 3px solid transparent;
     background-image:
-        linear-gradient(to br, #7f1d1d, #991b1b),
+        linear-gradient(135deg, #7f1d1d, #e63030),
         linear-gradient(135deg, #667eea 0%, #764ba2 25%, #f093fb 50%, #4facfe 75%, #00f2fe 100%);
     background-origin: border-box;
     background-clip: padding-box, border-box;
-    border: 3px solid transparent;
+
+    /* Optional soft ring */
+    box-shadow: 0 0 0 3px #fef2f2;
 }
+
 
 .user-info {
     flex: 1;

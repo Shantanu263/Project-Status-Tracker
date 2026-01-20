@@ -62,6 +62,8 @@ export class ProjectsDashboard implements AfterViewInit, OnDestroy {
     return data?.projectCardDTOS || [];
   });
 
+  hasNoProjects = computed(() => this.projects().length === 0);
+
   isLoading = computed(() => this.dashboardDataSignal() === null);
 
   constructor() {

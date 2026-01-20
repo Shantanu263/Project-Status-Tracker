@@ -172,7 +172,7 @@
             </div>
             } @else {
             <!-- Role Badge (clickable if user has permission) -->
-            @if (canEditMemberRole(member)) {
+            @if (canManageMembers()) {
             <span (click)="startEditingRole(member.memberId)"
               class="px-3 py-1 inline-flex text-xs leading-5 font-semibold rounded-full cursor-pointer hover:opacity-80 transition-opacity {{ getProjectRoleColorClass(member.role) }}">
               {{ getProjectRoleDisplayText(member.role) }}
@@ -194,7 +194,8 @@
                 <div class="text-sm text-gray-600">{{ member.assignedBy.role.roleName }}</div>
               </div>
 
-              <!-- Menu Icon (visible on hover) - CDK Overlay Trigger -->
+              <!-- Menu Icon (only visible if user can manage members) -->
+              @if (canManageMembers()) {
               <button #menuTrigger="cdkOverlayOrigin" cdkOverlayOrigin (click)="toggleMenu(member.memberId, $event)"
                 [class.opacity-100]="hoveredMemberId() === member.memberId || isMenuOpen(member.memberId)"
                 [class.opacity-0]="hoveredMemberId() !== member.memberId && !isMenuOpen(member.memberId)"
@@ -258,6 +259,7 @@
                   </button>
                 </div>
               </ng-template>
+              }
             </div>
           </td>
         </tr>

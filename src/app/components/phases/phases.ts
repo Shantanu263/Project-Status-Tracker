@@ -5,6 +5,7 @@ import { ProjectService } from '../../services/project.service';
 import { SelectedProjectService } from '../../services/selected-project.service';
 import { PermissionService } from '../../services/permission.service';
 import { AuthService } from '../../services/auth.service';
+import { DataSyncService } from '../../services/data-sync.service';
 import { Phase, Task } from '../../models/phase.model';
 import { ProjectMember } from '../../models/project.model';
 import { ChangeDetectionStrategy } from '@angular/core';
@@ -26,6 +27,7 @@ export class PhasesComponent {
   private readonly selectedProjectService = inject(SelectedProjectService);
   private readonly authService = inject(AuthService);
   private readonly permissionService = inject(PermissionService);
+  private readonly dataSyncService = inject(DataSyncService);
 
   projectId = input.required<number>();
 
@@ -142,6 +144,13 @@ export class PhasesComponent {
     effect(() => {
       const id = this.projectId();
       if (id) {
+        this.loadPhases();
+      }
+    });
+
+    // Subscribe to task updates from other components
+    this.dataSyncService.tasksUpdated$.subscribe(({ projectId }) => {
+      if (projectId === this.projectId()) {
         this.loadPhases();
       }
     });
@@ -311,10 +320,18 @@ export class PhasesComponent {
   }
 
   onPhaseSubmit(phase: Phase): void {
+    // Validate that we received a proper Phase object, not an event
+    if (!phase || typeof phase !== 'object' || 'isTrusted' in phase || !phase.phaseName) {
+      console.warn('Invalid phase submission detected and blocked:', phase);
+      return;
+    }
+
     this.projectService.createPhase(this.projectId(), phase).subscribe({
       next: () => {
         this.loadPhases();
         this.closePhaseModal();
+        // Notify other components that phases have been updated
+        this.dataSyncService.notifyPhasesUpdated(this.projectId());
       }
       // ,
       // error: (err) => {
@@ -375,6 +392,8 @@ export class PhasesComponent {
         next: () => {
           this.loadTasks(phaseId);
           this.closeTaskModal();
+          // Notify other components that tasks have been updated
+          this.dataSyncService.notifyTasksUpdated(this.projectId(), phaseId);
         },
         error: (err) => {
           console.error('Error creating task:', err);
@@ -621,5 +640,11 @@ export class PhasesComponent {
     if (!name) return colors[0];
     const index = name.charCodeAt(0) % colors.length;
     return colors[index];
+  }
+
+  isMemberRemoved(memberId?: number | string): boolean {
+    if (!memberId) return false;
+    const member = this.projectMembers().find(m => m.memberId === memberId);
+    return member ? !member.isActive : false;
   }
 }

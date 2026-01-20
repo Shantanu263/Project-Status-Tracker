@@ -6,6 +6,7 @@ export interface ProjectMember {
   project: string;
   role: string;
   memberStatus: string;
+  isActive: boolean;
   assignedBy?: {
     userId: number;
     name: string;

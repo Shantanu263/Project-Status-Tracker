@@ -1,6 +1,7 @@
-import { Component, input, output, ChangeDetectionStrategy, OnInit, inject, effect, signal } from '@angular/core';
+import { Component, input, output, ChangeDetectionStrategy, OnInit, inject, effect, signal, computed } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
+import { MatSnackBar } from '@angular/material/snack-bar';
 import { Phase } from '../../../models/phase.model';
 import { ProjectMember } from '../../../models/project.model';
 import { ProjectService } from '../../../services/project.service';
@@ -18,6 +19,7 @@ import { ProjectService } from '../../../services/project.service';
 export class PhaseFormComponent implements OnInit {
     private fb = inject(FormBuilder);
     private projectService = inject(ProjectService);
+    private snackBar = inject(MatSnackBar);
 
     phase = input<Phase | null>(null);
     projectId = input.required<number>();
@@ -31,6 +33,11 @@ export class PhaseFormComponent implements OnInit {
     showMemberDropdown = signal(false);
     private isSubmitting = false;
     private initialized = false;
+
+    // Computed property to filter only active members
+    activeMembers = computed(() =>
+        this.projectMembers().filter(member => member.isActive)
+    );
 
     constructor() {
         effect(() => {
@@ -116,6 +123,14 @@ export class PhaseFormComponent implements OnInit {
             };
             this.isSubmitting = true;
             this.submit.emit(phase);
+
+            // Show success notification
+            this.snackBar.open('Phase created successfully!', 'Close', {
+                duration: 3000,
+                horizontalPosition: 'center',
+                verticalPosition: 'bottom'
+            });
+
             // Reset flag after emit
             setTimeout(() => {
                 this.isSubmitting = false;

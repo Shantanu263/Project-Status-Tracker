@@ -17,6 +17,7 @@ import { TimelineService } from '../../services/timeline.service';
 import { ProjectService } from '../../services/project.service';
 import { SelectedProjectService } from '../../services/selected-project.service';
 import { Phase, Task } from '../../models/phase.model';
+import { DataSyncService } from '../../services/data-sync.service';
 import {
     TimeScale,
     TimelineGridCell,
@@ -31,6 +32,12 @@ interface PhaseWithTasks extends Phase {
     completionPercentage: number;
 }
 
+// Extended interface to store actual day count for each column
+interface TimelineGridCellExtended extends TimelineGridCell {
+    actualDays?: number; // Actual number of days in this column
+    monthLabel?: string; // Month label for week columns (e.g., "Jan / Feb")
+}
+
 @Component({
     selector: 'app-timeline',
     imports: [CommonModule, FormsModule],
@@ -42,6 +49,7 @@ export class TimelineComponent implements OnInit, AfterViewInit {
     private timelineService = inject(TimelineService);
     private projectService = inject(ProjectService);
     private selectedProjectService = inject(SelectedProjectService);
+    private readonly dataSyncService = inject(DataSyncService);
 
     // ViewChild references for scroll synchronization
     @ViewChild('timelineHeader') timelineHeaderRef!: ElementRef<HTMLDivElement>;
@@ -57,7 +65,10 @@ export class TimelineComponent implements OnInit, AfterViewInit {
 
     // Timeline configuration
     timeScale = signal<TimeScale>(TimeScale.WEEK);
-    timelineColumns = signal<TimelineGridCell[]>([]);
+    timelineColumns = signal<TimelineGridCellExtended[]>([]);
+
+    // Live resize state for visual feedback during drag
+    liveResizeState = signal<{ barId: string; left: number; width: number; startDate: string; endDate: string } | null>(null);
     timelineBounds = signal<TimelineBounds | null>(null);
 
     // UI state
@@ -147,6 +158,19 @@ export class TimelineComponent implements OnInit, AfterViewInit {
         if (project?.projectId) {
             this.loadPhases(project.projectId);
         }
+
+        this.dataSyncService.phasesUpdated$.subscribe(projectId => {
+            if (projectId === this.selectedProject().projectId) {
+                this.loadPhases(projectId);
+            }
+        });
+
+        // Subscribe to task updates from other components
+        this.dataSyncService.tasksUpdated$.subscribe(({ projectId }) => {
+            if (projectId === this.selectedProject().projectId) {
+                this.loadPhases(projectId);
+            }
+        });
     }
 
     ngAfterViewInit() {
@@ -348,9 +372,10 @@ export class TimelineComponent implements OnInit, AfterViewInit {
 
     /**
      * Generate timeline columns based on time scale
+     * Now includes actualDays for accurate width calculation
      */
-    generateTimelineColumns(startDate: Date, endDate: Date): TimelineGridCell[] {
-        const columns: TimelineGridCell[] = [];
+    generateTimelineColumns(startDate: Date, endDate: Date): TimelineGridCellExtended[] {
+        const columns: TimelineGridCellExtended[] = [];
         const scale = this.timeScale();
         const today = new Date();
         today.setHours(0, 0, 0, 0);
@@ -359,35 +384,71 @@ export class TimelineComponent implements OnInit, AfterViewInit {
         let columnId = 0;
 
         if (scale === TimeScale.WEEK) {
-            // Weekly columns
+            // Week view: Create weekly columns with daily sub-labels
             while (currentDate <= endDate) {
                 const weekStart = new Date(currentDate);
                 const weekEnd = new Date(currentDate);
                 weekEnd.setDate(weekEnd.getDate() + 6);
 
+                // Generate daily labels and track months in this week
+                const dailyLabels: string[] = [];
+                const monthsInWeek = new Set<number>();
+
+                for (let dayOffset = 0; dayOffset <= 6; dayOffset++) {
+                    const dayDate = new Date(weekStart);
+                    dayDate.setDate(dayDate.getDate() + dayOffset);
+
+                    if (dayDate > endDate) break;
+
+                    const dayNum = dayDate.getDate();
+                    dailyLabels.push(`${dayNum}`); // Just the number
+                    monthsInWeek.add(dayDate.getMonth());
+                }
+
+                // Generate month label for this week
+                const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+                const monthsArray = Array.from(monthsInWeek).sort();
+                const monthLabel = monthsArray.map(m => monthNames[m]).join(' / ');
+
                 const isCurrent = today >= weekStart && today <= weekEnd;
+
+                // Calculate actual days in this week column
+                const actualDays = Math.ceil((weekEnd.getTime() - weekStart.getTime()) / (1000 * 60 * 60 * 24)) + 1;
 
                 columns.push({
                     id: `week-${columnId++}`,
-                    label: `Week ${columnId}`,
+                    label: dailyLabels.join('|'), // Day numbers separated by |
                     startDate: weekStart,
                     endDate: weekEnd,
                     isCurrent,
-                    isToday: isCurrent
-                });
+                    isToday: isCurrent,
+                    actualDays: actualDays,
+                    monthLabel: monthLabel // Add month label for week header
+                } as any); // Cast to bypass type checking for now
 
                 currentDate.setDate(currentDate.getDate() + 7);
             }
         } else if (scale === TimeScale.MONTH) {
-            // Monthly columns
+            // Month view: Show full month names
+            let previousYear = -1;
             while (currentDate <= endDate) {
                 const monthStart = new Date(currentDate.getFullYear(), currentDate.getMonth(), 1);
                 const monthEnd = new Date(currentDate.getFullYear(), currentDate.getMonth() + 1, 0);
 
                 const isCurrent = today >= monthStart && today <= monthEnd;
 
-                const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
-                const label = `${monthNames[monthStart.getMonth()]} ${monthStart.getFullYear()}`;
+                const monthNames = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
+                const currentYear = monthStart.getFullYear();
+
+                // Show year only when it changes
+                const label = previousYear !== -1 && previousYear !== currentYear
+                    ? `${monthNames[monthStart.getMonth()]} ${currentYear}`
+                    : monthNames[monthStart.getMonth()];
+
+                previousYear = currentYear;
+
+                // Calculate actual days in this month
+                const actualDays = monthEnd.getDate(); // Last day of month = number of days
 
                 columns.push({
                     id: `month-${columnId++}`,
@@ -395,13 +456,14 @@ export class TimelineComponent implements OnInit, AfterViewInit {
                     startDate: monthStart,
                     endDate: monthEnd,
                     isCurrent,
-                    isToday: isCurrent
+                    isToday: isCurrent,
+                    actualDays: actualDays
                 });
 
                 currentDate.setMonth(currentDate.getMonth() + 1);
             }
         } else if (scale === TimeScale.QUARTER) {
-            // Quarterly columns
+            // Quarter view: Show month ranges
             while (currentDate <= endDate) {
                 const quarter = Math.floor(currentDate.getMonth() / 3);
                 const quarterStart = new Date(currentDate.getFullYear(), quarter * 3, 1);
@@ -409,7 +471,13 @@ export class TimelineComponent implements OnInit, AfterViewInit {
 
                 const isCurrent = today >= quarterStart && today <= quarterEnd;
 
-                const label = `Q${quarter + 1} ${quarterStart.getFullYear()}`;
+                const monthNames = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
+                const startMonth = monthNames[quarter * 3];
+                const endMonth = monthNames[quarter * 3 + 2];
+                const label = `${startMonth} - ${endMonth}`;
+
+                // Calculate actual days in this quarter
+                const actualDays = Math.ceil((quarterEnd.getTime() - quarterStart.getTime()) / (1000 * 60 * 60 * 24)) + 1;
 
                 columns.push({
                     id: `quarter-${columnId++}`,
@@ -417,7 +485,8 @@ export class TimelineComponent implements OnInit, AfterViewInit {
                     startDate: quarterStart,
                     endDate: quarterEnd,
                     isCurrent,
-                    isToday: isCurrent
+                    isToday: isCurrent,
+                    actualDays: actualDays
                 });
 
                 currentDate.setMonth(currentDate.getMonth() + 3);
@@ -447,7 +516,19 @@ export class TimelineComponent implements OnInit, AfterViewInit {
             return;
         }
 
-        // More accurate calculation: find which column today falls into
+        const scale = this.timeScale();
+        const dayWidth = this.getDayWidth();
+
+        // For WEEK view, use simple day-based positioning and center in day column
+        if (scale === TimeScale.WEEK) {
+            const daysSinceStart = Math.floor((today.getTime() - bounds.startDate.getTime()) / (1000 * 60 * 60 * 24));
+            // Add 0.5 day width to center the marker in the day column
+            const position = (daysSinceStart * dayWidth) + (dayWidth / 2);
+            this.todayPosition.set(Math.max(0, position));
+            return;
+        }
+
+        // For MONTH and QUARTER views, use proportional positioning within columns
         const columnWidth = this.getColumnWidth();
         let position = 0;
 
@@ -480,17 +561,50 @@ export class TimelineComponent implements OnInit, AfterViewInit {
 
     /**
      * Get column width based on time scale
+     * Returns the total width of a column (week = 7 days, month = full month, quarter = 3 months)
      */
     getColumnWidth(): number {
         const scale = this.timeScale();
-        if (scale === TimeScale.WEEK) return 128; // 32rem
-        if (scale === TimeScale.MONTH) return 160; // 40rem
-        if (scale === TimeScale.QUARTER) return 200; // 50rem
-        return 128;
+        const dayWidth = 40; // Base width for one day (60-80px as requested)
+
+        if (scale === TimeScale.WEEK) {
+            // Week column contains 7 days
+            return dayWidth * 7; // 490px for a week
+        }
+        if (scale === TimeScale.MONTH) {
+            // Month view: approximate average month length
+            return dayWidth * 7; // ~2100px for a month
+        }
+        if (scale === TimeScale.QUARTER) {
+            // Quarter view: 3 months
+            return dayWidth * 7; // ~6300px for a quarter
+        }
+        return dayWidth * 7;
     }
 
     /**
-     * Calculate bar position and width
+     * Get the width of a single day cell (used for all calculations)
+     */
+    getDayWidth(): number {
+        return 40; // Must match dayWidth in getColumnWidth()
+    }
+
+    /**
+     * Get column width by index (uses actualDays for accurate calculation)
+     */
+    getColumnWidthByIndex(columnIndex: number): number {
+        const columns = this.timelineColumns();
+        if (columnIndex < 0 || columnIndex >= columns.length) {
+            return this.getColumnWidth();
+        }
+        const column = columns[columnIndex];
+        const dayWidth = this.getDayWidth();
+        return (column.actualDays || 7) * dayWidth;
+    }
+
+    /**
+     * Calculate bar position and width based on precise date alignment
+     * Uses uniform column widths with proportional date-based positioning
      */
     calculateBarPosition(startDate: string | undefined, endDate: string | undefined): { left: number; width: number } {
         if (!startDate || !endDate) {
@@ -498,7 +612,8 @@ export class TimelineComponent implements OnInit, AfterViewInit {
         }
 
         const bounds = this.timelineBounds();
-        if (!bounds) {
+        const columns = this.timelineColumns();
+        if (!bounds || columns.length === 0) {
             return { left: 0, width: 0 };
         }
 
@@ -509,16 +624,79 @@ export class TimelineComponent implements OnInit, AfterViewInit {
             return { left: 0, width: 0 };
         }
 
-        const startDays = Math.ceil((barStart.getTime() - bounds.startDate.getTime()) / (1000 * 60 * 60 * 24));
-        const durationDays = Math.ceil((barEnd.getTime() - barStart.getTime()) / (1000 * 60 * 60 * 24));
+        const dayWidth = this.getDayWidth();
+        const scale = this.timeScale();
 
-        const columnWidth = this.getColumnWidth();
-        const totalWidth = this.timelineColumns().length * columnWidth;
+        // For WEEK view, use simple day-based positioning for exact alignment
+        if (scale === TimeScale.WEEK) {
+            // Calculate days from timeline start
+            const startDays = Math.floor((barStart.getTime() - bounds.startDate.getTime()) / (1000 * 60 * 60 * 24));
+            const endDays = Math.floor((barEnd.getTime() - bounds.startDate.getTime()) / (1000 * 60 * 60 * 24));
 
-        const left = (startDays / bounds.totalDays) * totalWidth;
-        const width = (durationDays / bounds.totalDays) * totalWidth;
+            // Position based on exact day offsets
+            const left = startDays * dayWidth;
+            // Width includes the end day (+1 to extend through end date)
+            const width = Math.max((endDays - startDays + 1) * dayWidth, dayWidth);
 
-        return { left: Math.max(0, left), width: Math.max(20, width) };
+            return { left: Math.max(0, left), width };
+        }
+
+        // For MONTH and QUARTER views, use proportional positioning within columns
+        const columnWidth = this.getColumnWidth(); // Uniform width for all columns (280px)
+
+        // Calculate position by finding which column(s) the bar spans
+        let left = 0;
+        let width = 0;
+        let cumulativeLeft = 0;
+
+        for (let i = 0; i < columns.length; i++) {
+            const column = columns[i];
+            const colStart = column.startDate;
+            const colEnd = column.endDate;
+
+            // Check if bar starts in this column
+            if (barStart >= colStart && barStart <= colEnd) {
+                // Calculate proportional offset within this column
+                const colDuration = colEnd.getTime() - colStart.getTime();
+                const offsetFromColStart = barStart.getTime() - colStart.getTime();
+                const percentIntoColumn = colDuration > 0 ? offsetFromColStart / colDuration : 0;
+                left = cumulativeLeft + (percentIntoColumn * columnWidth);
+            }
+
+            // Calculate width by checking where bar ends
+            if (barEnd >= colStart && barEnd <= colEnd) {
+                // Bar ends in this column
+                // Add 1 day to end date to represent end of that day (for width calculation only)
+                const barEndPlusOne = new Date(barEnd);
+                barEndPlusOne.setDate(barEndPlusOne.getDate() + 1);
+
+                const colDuration = colEnd.getTime() - colStart.getTime();
+                const offsetFromColStart = barEndPlusOne.getTime() - colStart.getTime();
+                const percentIntoColumn = colDuration > 0 ? offsetFromColStart / colDuration : 1;
+                const endPosition = cumulativeLeft + (percentIntoColumn * columnWidth);
+                width = endPosition - left;
+                break;
+            } else if (barStart <= colEnd && barEnd > colEnd) {
+                // Bar spans through this column
+                if (barStart >= colStart) {
+                    // Bar started in this column, add remaining width
+                    const colDuration = colEnd.getTime() - colStart.getTime();
+                    const offsetFromColStart = barStart.getTime() - colStart.getTime();
+                    const percentIntoColumn = colDuration > 0 ? offsetFromColStart / colDuration : 0;
+                    width += columnWidth - (percentIntoColumn * columnWidth);
+                } else if (barStart < colStart) {
+                    // Bar started before this column, add full column width
+                    width += columnWidth;
+                }
+            }
+
+            cumulativeLeft += columnWidth;
+        }
+
+        // Ensure minimum width of one day
+        width = Math.max(width, dayWidth);
+
+        return { left: Math.max(0, left), width };
     }
 
     /**
@@ -527,10 +705,7 @@ export class TimelineComponent implements OnInit, AfterViewInit {
     setTimeScale(scale: TimeScale) {
         this.timeScale.set(scale);
         this.calculateTimeline(this.phases());
-        // Auto-center on today after view change (instant, no animation)
-        setTimeout(() => {
-            this.scrollToToday(false);
-        }, 100);
+        // Don't auto-scroll - only scroll to today on initial load or when user clicks button
     }
 
     scrollToToday(smooth: boolean = true) {
@@ -584,49 +759,166 @@ export class TimelineComponent implements OnInit, AfterViewInit {
 
     //Drag and resize handlers  
     onBarDragStart(event: MouseEvent, row: TimelineRow) {
+        if ((event.target as HTMLElement).classList.contains('cursor-ew-resize')) {
+            return;
+        }
+
         event.preventDefault();
         event.stopPropagation();
 
         if (!row.startDate || !row.endDate) return;
 
-        const position = this.calculateBarPosition(row.startDate, row.endDate);
+        // Get initial Y position from bar element
+        const barElement = (event.target as HTMLElement).closest('.timeline-bar') as HTMLElement;
+        const barRect = barElement?.getBoundingClientRect();
+        const initialY = barRect ? barRect.top + (barRect.height / 2) : event.clientY;
 
         this.dragState.set({
-            barId: row.id,
+            barId: `${row.type}-${row.type === 'task' ? row.taskId : row.phaseId}`,
             type: 'move',
             startX: event.clientX,
-            startLeft: position.left,
-            startWidth: position.width,
             originalStartDate: row.startDate,
-            originalEndDate: row.endDate
+            originalEndDate: row.endDate,
+            initialTooltipY: initialY
         });
     }
 
-    onBarResizeStart(event: MouseEvent, row: TimelineRow, handle: 'left' | 'right') {
+    onBarResizeStart(event: MouseEvent, row: TimelineRow, direction: 'left' | 'right') {
         event.preventDefault();
         event.stopPropagation();
 
-        if (!row.startDate || !row.endDate) return;
-
-        const position = this.calculateBarPosition(row.startDate, row.endDate);
+        // Get initial Y position from bar element
+        const barElement = (event.target as HTMLElement).closest('.timeline-bar') as HTMLElement;
+        const barRect = barElement?.getBoundingClientRect();
+        const initialY = barRect ? barRect.top + (barRect.height / 2) : event.clientY;
 
         this.dragState.set({
-            barId: row.id,
-            type: handle === 'left' ? 'resize-left' : 'resize-right',
+            type: `resize-${direction}`,
+            barId: `${row.type}-${row.type === 'task' ? row.taskId : row.phaseId}`,
             startX: event.clientX,
-            startLeft: position.left,
-            startWidth: position.width,
-            originalStartDate: row.startDate,
-            originalEndDate: row.endDate
+            originalStartDate: row.startDate || '',
+            originalEndDate: row.endDate || '',
+            initialTooltipY: initialY // Store initial Y position
         });
     }
 
     @HostListener('document:mousemove', ['$event'])
     onMouseMove(event: MouseEvent) {
         const drag = this.dragState();
-        if (!drag) return;
+        if (!drag) {
+            // Clear live resize state if drag ended
+            if (this.liveResizeState()) {
+                this.liveResizeState.set(null);
+            }
+            return;
+        }
+
+        event.preventDefault();
 
         const deltaX = event.clientX - drag.startX;
+        const dayWidth = this.getDayWidth();
+        const deltaDays = Math.round(deltaX / dayWidth);
+
+        const bounds = this.timelineBounds();
+        if (!bounds) return;
+
+        const originalStart = this.timelineService.parseDate(drag.originalStartDate);
+        const originalEnd = this.timelineService.parseDate(drag.originalEndDate);
+        if (!originalStart || !originalEnd) return;
+
+        // Calculate original duration in days
+        const originalDuration = Math.ceil((originalEnd.getTime() - originalStart.getTime()) / (1000 * 60 * 60 * 24));
+
+        // Calculate new dates based on drag type
+        let newStart: Date, newEnd: Date;
+        if (drag.type === 'move') {
+            // Move: shift both dates by same amount, keep duration
+            newStart = new Date(originalStart);
+            newStart.setDate(newStart.getDate() + deltaDays);
+            newEnd = new Date(originalEnd);
+            newEnd.setDate(newEnd.getDate() + deltaDays);
+        } else if (drag.type === 'resize-left') {
+            // Resize left: adjust start only
+            newStart = new Date(originalStart);
+            newStart.setDate(newStart.getDate() + deltaDays);
+            newEnd = originalEnd;
+            // Ensure minimum 1 day
+            if (newStart >= newEnd) {
+                newStart = new Date(newEnd);
+                newStart.setDate(newStart.getDate() - 1);
+            }
+        } else {
+            // Resize right: adjust end only
+            newStart = originalStart;
+            newEnd = new Date(originalEnd);
+            newEnd.setDate(newEnd.getDate() + deltaDays);
+            // Ensure minimum 1 day
+            if (newEnd <= newStart) {
+                newEnd = new Date(newStart);
+                newEnd.setDate(newEnd.getDate() + 1);
+            }
+        }
+
+        // Calculate visual position
+        const newStartStr = this.timelineService.formatDateForAPI(newStart);
+        const newEndStr = this.timelineService.formatDateForAPI(newEnd);
+        const newPosition = this.calculateBarPosition(newStartStr, newEndStr);
+
+        // Update live resize state
+        this.liveResizeState.set({
+            barId: drag.barId,
+            left: newPosition.left,
+            width: newPosition.width,
+            startDate: newStartStr,
+            endDate: newEndStr
+        });
+
+        // Update tooltip at bar's position (fixed Y, horizontal with bar)
+        // Convert bar position (container-relative) to viewport coordinates
+        const timelineBody = document.querySelector('.timeline-body-content') as HTMLElement;
+        let tooltipX = 0;
+
+        if (timelineBody) {
+            const containerRect = timelineBody.getBoundingClientRect();
+            const scrollLeft = timelineBody.querySelector('.timeline-body-inner')?.scrollLeft || 0;
+            // Bar position is relative to scrolled content, convert to viewport
+            tooltipX = containerRect.left + (newPosition.left + (newPosition.width / 2)) - scrollLeft;
+        } else {
+            // Fallback to just using bar center
+            tooltipX = newPosition.left + (newPosition.width / 2);
+        }
+
+        const barY = drag.initialTooltipY || event.clientY;
+        const showAbove = (window.innerHeight - barY) < 100;
+
+        if (drag.barId.startsWith('phase-')) {
+            const phaseId = parseInt(drag.barId.replace('phase-', ''));
+            const phase = this.phases().find(p => p.phaseId === phaseId);
+            if (phase) {
+                this.hoveredPhase.set({
+                    phase: { ...phase, startDate: newStartStr, endDate: newEndStr },
+                    index: 0,
+                    x: tooltipX,
+                    y: barY,
+                    showAbove
+                });
+            }
+        } else if (drag.barId.startsWith('task-')) {
+            const taskId = parseInt(drag.barId.replace('task-', ''));
+            let task: any = null;
+            for (const phase of this.phases()) {
+                task = phase.tasks?.find(t => t.taskId === taskId);
+                if (task) break;
+            }
+            if (task) {
+                this.hoveredTask.set({
+                    task: { ...task, startDate: newStartStr, endDate: newEndStr },
+                    x: tooltipX,
+                    y: barY,
+                    showAbove
+                });
+            }
+        }
     }
 
     @HostListener('document:mouseup', ['$event'])
@@ -634,22 +926,33 @@ export class TimelineComponent implements OnInit, AfterViewInit {
         const drag = this.dragState();
         if (!drag) return;
 
+        event.stopPropagation();
+        event.preventDefault();
+
         const deltaX = event.clientX - drag.startX;
         const bounds = this.timelineBounds();
         if (!bounds) {
+            // Always clear states even if bounds missing
             this.dragState.set(null);
+            this.liveResizeState.set(null);
+            this.hoveredPhase.set(null);
+            this.hoveredTask.set(null);
             return;
         }
 
-        const columnWidth = this.getColumnWidth();
-        const totalWidth = this.timelineColumns().length * columnWidth;
-        const deltaDays = Math.round((deltaX / totalWidth) * bounds.totalDays);
+        // Calculate delta in days
+        const dayWidth = this.getDayWidth();
+        const deltaDays = Math.round(deltaX / dayWidth);
 
         const originalStart = this.timelineService.parseDate(drag.originalStartDate);
         const originalEnd = this.timelineService.parseDate(drag.originalEndDate);
 
         if (!originalStart || !originalEnd) {
+            // Always clear states even if parsing failed
             this.dragState.set(null);
+            this.liveResizeState.set(null);
+            this.hoveredPhase.set(null);
+            this.hoveredTask.set(null);
             return;
         }
 
@@ -665,16 +968,28 @@ export class TimelineComponent implements OnInit, AfterViewInit {
             newStart = new Date(originalStart);
             newStart.setDate(newStart.getDate() + deltaDays);
             newEnd = originalEnd;
+            if (newStart >= newEnd) {
+                newStart = new Date(newEnd);
+                newStart.setDate(newStart.getDate() - 1);
+            }
         } else {
             newStart = originalStart;
             newEnd = new Date(originalEnd);
             newEnd.setDate(newEnd.getDate() + deltaDays);
+            if (newEnd <= newStart) {
+                newEnd = new Date(newStart);
+                newEnd.setDate(newEnd.getDate() + 1);
+            }
         }
 
         // Update the phase or task dates
         this.updateBarDates(drag.barId, newStart, newEnd);
 
+        // Always clear drag state, live resize state, and tooltips
         this.dragState.set(null);
+        this.liveResizeState.set(null);
+        this.hoveredPhase.set(null);
+        this.hoveredTask.set(null);
     }
 
 
@@ -813,7 +1128,10 @@ export class TimelineComponent implements OnInit, AfterViewInit {
             }
         }
 
-        return totalHeight;
+        // Ensure minimum height to fill viewport (approximately)
+        // This ensures grid lines extend to fill empty space
+        const minHeight = 600; // Minimum height for grid display
+        return Math.max(totalHeight, minHeight);
     }
 
 

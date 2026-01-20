@@ -54,13 +54,32 @@
         <div class="timeline-header-scroll flex-1 overflow-x-scroll overflow-y-hidden bg-gray-50" #timelineHeader>
           <div class="timeline-header-content flex" [style.width.px]="timelineColumns().length * getColumnWidth()">
             @for (column of timelineColumns(); track column.id) {
-            <div class="px-4 py-4 border-r border-gray-200 text-center text-sm font-medium text-gray-700 flex-shrink-0"
-              [style.width.px]="getColumnWidth()" [class.bg-blue-50]="column.isCurrent">
-              <div>{{ column.label }}</div>
-              <div class="text-xs text-gray-500 mt-1">
-                {{ formatDate(column.startDate.toISOString()) }} - {{ formatDate(column.endDate.toISOString()) }}
+            <!-- Week View: Two-row header with months on top, numbers at bottom -->
+            @if (timeScale() === TimeScale.WEEK) {
+            <div class="timeline-week-column border-r border-gray-300 flex-shrink-0 flex flex-col"
+              [style.width.px]="getColumnWidth()" [class.bg-blue-50]="column.isCurrent" style="padding-bottom: 3px;">
+              <!-- Top row: Month label(s) -->
+              <div class="w-full text-center text-xs font-medium text-gray-600 py-1 border-b border-gray-200">
+                {{ column.monthLabel || '' }}
+              </div>
+              <!-- Bottom row: Day numbers -->
+              <div class="flex flex-1">
+                @for (dayLabel of column.label.split('|'); track $index) {
+                <div class="text-center text-sm font-medium text-gray-700 flex-1 flex items-end justify-center pb-2"
+                  [style.width.px]="getDayWidth()" [class.border-r]="$index < column.label.split('|').length - 1"
+                  [class.border-gray-100]="$index < column.label.split('|').length - 1">
+                  <div class="text-xs">{{ dayLabel }}</div>
+                </div>
+                }
               </div>
             </div>
+            } @else {
+            <!-- Month/Quarter View: Simple centered label -->
+            <div class="px-4 py-3 border-r border-gray-300 text-center font-medium text-gray-700 flex-shrink-0"
+              [style.width.px]="getColumnWidth()" [class.bg-blue-50]="column.isCurrent" style="padding-bottom: 20px;">
+              <div class="text-sm">{{ column.label }}</div>
+            </div>
+            }
             }
           </div>
         </div>
@@ -139,6 +158,27 @@
                   [style.width.px]="timelineColumns().length * getColumnWidth()"
                   [style.min-height.px]="getTotalTimelineHeight()">
 
+                  <!-- Background Grid - extends full height -->
+                  <div class="absolute inset-0 flex timeline-grid pointer-events-none">
+                    @for (column of timelineColumns(); track column.id) {
+                    <!-- Week View: Show week boundaries only -->
+                    @if (timeScale() === TimeScale.WEEK) {
+                    <div class="border-r border-gray-200 flex-shrink-0 flex" [style.width.px]="getColumnWidth()"
+                      [class.bg-blue-50]="column.isCurrent" [class.bg-opacity-20]="column.isCurrent">
+                      @for (day of [0,1,2,3,4,5,6]; track day) {
+                      <div class="flex-1" [style.width.px]="getDayWidth()">
+                      </div>
+                      }
+                    </div>
+                    } @else {
+                    <!-- Month/Quarter View: Single column cell -->
+                    <div class="border-r border-gray-200 flex-shrink-0" [style.width.px]="getColumnWidth()"
+                      [class.bg-blue-50]="column.isCurrent" [class.bg-opacity-20]="column.isCurrent">
+                    </div>
+                    }
+                    }
+                  </div>
+
                   <!-- Timeline Rows (Grid + Bars) -->
                   @for (phase of phases(); track phase.phaseId; let phaseIndex = $index) {
                   <!-- Phase Row -->
@@ -146,19 +186,36 @@
                     <!-- Grid Cells Background -->
                     <div class="absolute inset-0 flex timeline-grid">
                       @for (column of timelineColumns(); track column.id) {
-                      <div class="border-r border-gray-100 flex-shrink-0" [style.width.px]="getColumnWidth()"
+                      <!-- Week View: Show daily subdivisions with light borders -->
+                      @if (timeScale() === TimeScale.WEEK) {
+                      <div class="border-r border-gray-200 flex-shrink-0 flex" [style.width.px]="getColumnWidth()"
+                        [class.bg-blue-50]="column.isCurrent" [class.bg-opacity-20]="column.isCurrent">
+                        @for (day of [0,1,2,3,4,5,6]; track day) {
+                        <div class="flex-1" [style.width.px]="getDayWidth()">
+                        </div>
+                        }
+                      </div>
+                      } @else {
+                      <!-- Month/Quarter View: Single column cell -->
+                      <div class="border-r border-gray-200 flex-shrink-0" [style.width.px]="getColumnWidth()"
                         [class.bg-blue-50]="column.isCurrent" [class.bg-opacity-20]="column.isCurrent">
                       </div>
+                      }
                       }
                     </div>
 
                     <!-- Phase Bar -->
                     @if (phase.startDate && phase.endDate) {
-                    <div class="absolute top-1/2 -translate-y-1/8 group cursor-pointer timeline-bar"
-                      [style.left.px]="calculateBarPosition(phase.startDate, phase.endDate).left + 8"
-                      [style.width.px]="calculateBarPosition(phase.startDate, phase.endDate).width - 16"
+                    @let barId = 'phase-' + phase.phaseId;
+                    @let liveResize = liveResizeState();
+                    @let isBeingResized = liveResize && liveResize.barId === barId;
+                    @let barPosition = isBeingResized ? { left: liveResize.left, width: liveResize.width } :
+                    calculateBarPosition(phase.startDate, phase.endDate);
+                    <div class="absolute top-1/2 -translate-y-1/2 group cursor-pointer timeline-bar"
+                      [style.left.px]="barPosition.left + 8" [style.width.px]="barPosition.width - 16"
                       (mousedown)="onBarDragStart($event, createTimelineRow(phase, 'phase'))"
-                      (mouseenter)="onPhaseMouseEnter($event, phase, phaseIndex)" (mouseleave)="onPhaseMouseLeave()">
+                      (mouseenter)="onPhaseMouseEnter($event, phase, phaseIndex)" (mouseleave)="onPhaseMouseLeave()"
+                      [attr.data-bar-id]="barId">
 
                       <div class="rounded-lg shadow-md hover:shadow-lg transition-all relative overflow-hidden"
                         [style.height.px]="36" [ngClass]="getPhaseColor(phaseIndex)" [class.cursor-move]="!dragState()">
@@ -188,19 +245,36 @@
                     <!-- Grid Cells Background -->
                     <div class="absolute inset-0 flex timeline-grid">
                       @for (column of timelineColumns(); track column.id) {
-                      <div class="border-r border-gray-100 flex-shrink-0" [style.width.px]="getColumnWidth()"
+                      <!-- Week View: Show daily subdivisions with light borders -->
+                      @if (timeScale() === TimeScale.WEEK) {
+                      <div class="border-r border-gray-200 flex-shrink-0 flex" [style.width.px]="getColumnWidth()"
+                        [class.bg-blue-50]="column.isCurrent" [class.bg-opacity-20]="column.isCurrent">
+                        @for (day of [0,1,2,3,4,5,6]; track day) {
+                        <div class="flex-1" [style.width.px]="getDayWidth()">
+                        </div>
+                        }
+                      </div>
+                      } @else {
+                      <!-- Month/Quarter View: Single column cell -->
+                      <div class="border-r border-gray-200 flex-shrink-0" [style.width.px]="getColumnWidth()"
                         [class.bg-blue-50]="column.isCurrent" [class.bg-opacity-20]="column.isCurrent">
                       </div>
+                      }
                       }
                     </div>
 
                     <!-- Task Bar -->
                     @if (task.startDate && task.endDate) {
+                    @let barId = 'task-' + task.taskId;
+                    @let liveResize = liveResizeState();
+                    @let isBeingResized = liveResize && liveResize.barId === barId;
+                    @let barPosition = isBeingResized ? { left: liveResize.left, width: liveResize.width } :
+                    calculateBarPosition(task.startDate, task.endDate);
                     <div class="absolute top-1/2 -translate-y-1/2 group cursor-pointer timeline-bar"
-                      [style.left.px]="calculateBarPosition(task.startDate, task.endDate).left + 8"
-                      [style.width.px]="calculateBarPosition(task.startDate, task.endDate).width - 16"
+                      [style.left.px]="barPosition.left + 8" [style.width.px]="barPosition.width - 16"
                       (mousedown)="onBarDragStart($event, createTimelineRow(task, 'task', phase.phaseId))"
-                      (mouseenter)="onTaskMouseEnter($event, task)" (mouseleave)="onTaskMouseLeave()">
+                      (mouseenter)="onTaskMouseEnter($event, task)" (mouseleave)="onTaskMouseLeave()"
+                      [attr.data-bar-id]="barId">
 
                       <!-- Task Bar Background -->
                       <div class="shadow-md hover:shadow-lg transition-all relative bg-blue-500" [style.height.px]="28"

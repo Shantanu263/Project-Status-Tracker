@@ -9,6 +9,9 @@ import { AuthService } from '../../../services/auth.service';
 import { Task } from '../../../models/phase.model';
 import { SubtaskDetailsModalComponent } from '../subtask-details-modal/subtask-details-modal';
 import { SubtaskFormComponent } from '../subtask-form/subtask-form';
+import { MatSnackBar } from '@angular/material/snack-bar';
+import { DataSyncService } from '../../../services/data-sync.service';
+
 
 
 @Component({
@@ -22,6 +25,9 @@ export class TaskDetailsModalComponent {
     private projectService = inject(ProjectService);
     private permissionService = inject(PermissionService);
     private authService = inject(AuthService);
+    private snackBar = inject(MatSnackBar);
+    private dataSyncService = inject(DataSyncService);
+
 
     // Inputs
     isOpen = input.required<boolean>();
@@ -78,6 +84,8 @@ export class TaskDetailsModalComponent {
         if (!task || !task.assignedToProjectMemberId) return null;
         return members.find(m => m.memberId === task.assignedToProjectMemberId) || null;
     });
+
+    activeProjectMembers = computed(() => this.projectMembers().filter(member => member.isActive));
 
     recentLogs = computed(() => {
         const task = this.taskDetails();
@@ -138,12 +146,20 @@ export class TaskDetailsModalComponent {
                 this.close.emit();
                 // Notify parent to refresh
                 this.updated.emit();
+                // Notify other components that tasks have been updated
+                this.dataSyncService.notifyTasksUpdated(this.projectId(), this.phaseId());
             },
             error: (err) => {
                 console.error('Error deleting task:', err);
                 this.error.set('Failed to delete task');
                 this.showDeleteConfirmation.set(false);
             }
+        });
+        // Show success notification
+        this.snackBar.open('Task deleted successfully!', 'Close', {
+            duration: 3000,
+            horizontalPosition: 'center',
+            verticalPosition: 'bottom'
         });
     }
 
@@ -175,7 +191,7 @@ export class TaskDetailsModalComponent {
     }
 
     updateAssignedMember(memberId: number | null): void {
-        this.updateField('assignedTo', memberId);
+        this.updateField('assignedToProjectMemberId', memberId);
     }
 
     updateStartDate(newDate: string): void {
@@ -202,14 +218,13 @@ export class TaskDetailsModalComponent {
             this.taskId(),
             updates
         ).subscribe({
-            next: (updatedTask) => {
-                // Merge backend response with current state
-                const current = this.taskDetails();
-                if (current) {
-                    this.taskDetails.set({ ...current, ...updatedTask });
-                }
+            next: () => {
+                // Reload full task details to ensure all fields are up-to-date
+                this.loadTaskDetails();
                 // Notify parent to refresh
                 this.updated.emit();
+                // Notify other components that tasks have been updated
+                this.dataSyncService.notifyTasksUpdated(this.projectId(), this.phaseId());
             },
             error: (err) => {
                 console.error('Error updating task:', err);

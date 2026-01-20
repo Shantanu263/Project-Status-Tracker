@@ -5,12 +5,12 @@ import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
 import { CreateProjectModalComponent } from '../create-project/create-project';
 import { SelectedProjectService } from '../../services/selected-project.service';
 import { ProjectService } from '../../services/project.service';
-import { toSignal } from '@angular/core/rxjs-interop';
 import { SidebarStateService } from '../../services/sidebar-state.service';
 import { LucideAngularModule, User } from 'lucide-angular';
-import { Router } from '@angular/router';
+import { Router, NavigationEnd } from '@angular/router';
 import { AuthService } from '../../services/auth.service';
 import { AccountPanelComponent } from './account-panel/account-panel.component';
+import { filter } from 'rxjs/operators';
 
 
 
@@ -49,14 +49,15 @@ export class SidebarComponent {
     return role === 'SUPER ADMIN' || role === 'ADMIN';
   });
 
-  projects = toSignal(this.projectService.getProjects(), {
-    initialValue: []
-  });
+  projects = signal<any[]>([]);
 
   selectedProjectId = signal<number | null>(null);
   private readonly selectedProject = computed(() => this.selectedProjectService.getSelectedProject()());
 
   constructor() {
+    // Load projects initially
+    this.loadProjects();
+
     effect(() => {
       const project = this.selectedProject();
       if (project?.projectId) {
@@ -65,6 +66,25 @@ export class SidebarComponent {
         this.selectedProjectId.set(null);
       }
     }, { allowSignalWrites: true });
+
+    // Watch for route changes to refresh projects list
+    // This ensures the sidebar updates when a project is deleted
+    this.router.events.pipe(
+      filter(event => event instanceof NavigationEnd)
+    ).subscribe(() => {
+      this.loadProjects();
+    });
+  }
+
+  private loadProjects(): void {
+    this.projectService.getProjects().subscribe({
+      next: (projects) => this.projects.set(projects),
+      error: (err) => console.error('Error loading projects:', err)
+    });
+  }
+
+  refreshProjects(): void {
+    this.loadProjects();
   }
 
   selectProject(project: any) {
@@ -79,7 +99,7 @@ export class SidebarComponent {
   }
 
   createProject() {
-    this.dialog.open(CreateProjectModalComponent, {
+    const dialogRef = this.dialog.open(CreateProjectModalComponent, {
       panelClass: 'create-project-dialog',
       autoFocus: false,
       restoreFocus: false,
@@ -87,6 +107,13 @@ export class SidebarComponent {
       maxWidth: '56rem',
       height: '90vh',
       maxHeight: '90vh'
+    });
+
+    dialogRef.afterClosed().subscribe(result => {
+      if (result?.projectId) {
+        // Refresh the projects list to show the newly created project
+        this.refreshProjects();
+      }
     });
   }
 

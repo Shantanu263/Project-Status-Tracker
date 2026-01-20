@@ -27,6 +27,7 @@ interface ProjectMember {
   assignedBy: AssignedBy;
   memberStatus: string;
   globalRole?: string;
+  isActive: boolean;
 }
 
 interface MembersResponse {
@@ -144,7 +145,9 @@ export class MembersComponent {
 
     this.http.get<MembersResponse>(url, { params }).subscribe({
       next: (response) => {
-        this.members.set(response.items);
+        // Filter to show only active members
+        const activeMembers = response.items.filter(member => member.isActive);
+        this.members.set(activeMembers);
         this.totalPages.set(response.totalPages);
         this.totalItems.set(response.totalItems);
         this.loading.set(false);
@@ -425,6 +428,28 @@ export class MembersComponent {
     // PROJECT_VIEWER cannot edit anyone
     return false;
   }
+
+  /**
+   * Check if current user can manage members (remove or change roles)
+   * Only SUPER ADMIN (global or project-level) can manage members
+   */
+  canManageMembers(): boolean {
+    const currentUserGlobalRole = this.authService.getUserRole();
+    const currentUserProjectRole = this.currentUserProjectRole();
+
+    // Global SUPER_ADMIN can manage members
+    if (currentUserGlobalRole?.toUpperCase().replace(' ', '_') === 'SUPER_ADMIN') {
+      return true;
+    }
+
+    // Project SUPER_ADMIN can manage members
+    if (currentUserProjectRole?.toUpperCase().replace(' ', '_') === 'SUPER_ADMIN') {
+      return true;
+    }
+
+    return false;
+  }
+
 
   getAvailableProjectRoles(memberGlobalRole: string | undefined, memberProjectRole: string): string[] {
     const currentUserGlobalRole = this.authService.getUserRole();

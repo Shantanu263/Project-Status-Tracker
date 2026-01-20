@@ -135,13 +135,34 @@ export class ProjectContentComponent {
 
     this.projectService.deleteProject(project.projectId).subscribe({
       next: () => {
+        // Clear the current selected project immediately
+        this.selectedProjectService.setSelectedProject(null);
+
+        // Show success message
         this.showSnackbarMessage('Project deleted successfully');
-        setTimeout(() => {
-          this.router.navigate(['/home']);
-        }, 1500);
+
+        // Navigate to home first to avoid routing conflicts
+        this.router.navigate(['/home']).then(() => {
+          // After navigation, reload projects and select next available one
+          this.projectService.getProjects().subscribe({
+            next: (projects) => {
+              if (projects.length > 0) {
+                // If there are other projects, navigate to the first one
+                const firstProject = projects[0];
+                // Use setTimeout to ensure the navigation happens after the current cycle
+                setTimeout(() => {
+                  this.router.navigate(['/home/projects', firstProject.projectId, 'summary']);
+                }, 100);
+              }
+              // If no projects, stay on /home which will show the no-projects placeholder
+            },
+            error: (err) => {
+              console.error('Error reloading projects after deletion:', err);
+            }
+          });
+        });
       },
       error: (err) => {
-        this.showSnackbarMessage('Failed to delete project');
         console.error(err);
       }
     });
@@ -168,7 +189,31 @@ export class ProjectContentComponent {
   }
 
   onProjectDeleted() {
-    // Navigate to home after deletion
-    this.router.navigate(['/home']);
+    // Clear the current selected project immediately
+    this.selectedProjectService.setSelectedProject(null);
+
+    // Show success message
+    this.showSnackbarMessage('Project deleted successfully');
+
+    // Navigate to home first to avoid routing conflicts
+    this.router.navigate(['/home']).then(() => {
+      // After navigation, reload projects and select next available one
+      this.projectService.getProjects().subscribe({
+        next: (projects) => {
+          if (projects.length > 0) {
+            // If there are other projects, navigate to the first one
+            const firstProject = projects[0];
+            // Use setTimeout to ensure the navigation happens after the current cycle
+            setTimeout(() => {
+              this.router.navigate(['/home/projects', firstProject.projectId, 'summary']);
+            }, 100);
+          }
+          // If no projects, stay on /home which will show the no-projects placeholder
+        },
+        error: (err) => {
+          console.error('Error reloading projects after deletion:', err);
+        }
+      });
+    });
   }
 }

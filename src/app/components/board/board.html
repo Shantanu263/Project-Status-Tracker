@@ -47,7 +47,7 @@
     @if (!loading()) {
     <div>
         <!-- Scrollable Container with both headers and content -->
-        <div class="overflow-y-auto" style="height: 400px; padding-bottom: 10px; padding-right: 25px;">
+        <div class="board-scrollable-area" style="padding-bottom: 45px;">
             <div class="flex flex-col">
                 <!-- Column Headers (Sticky) -->
                 <div class="sticky top-0 z-10 grid grid-cols-4 gap-4 mb-0">
@@ -74,9 +74,9 @@
                 <div class="grid grid-cols-4 gap-4">
                     @for (column of columns(); track column.id) {
                     <div class="bg-white rounded-b-xl shadow-sm border border-gray-200 border-t-0 flex flex-col"
-                        [style.min-height.px]="columnHeight()" (dragover)="onDragOver($event)"
-                        (drop)="onDrop(column.id, $event)" (mouseenter)="onColumnHover(column.id)"
-                        (mouseleave)="onColumnLeave()" [class.bg-gray-50]="draggingTask() !== null">
+                        (dragover)="onDragOver($event)" (drop)="onDrop(column.id, $event)"
+                        (mouseenter)="onColumnHover(column.id)" (mouseleave)="onColumnLeave()"
+                        [class.bg-gray-50]="draggingTask() !== null">
 
                         <!-- Tasks Container -->
                         <div class="p-3 space-y-2">
@@ -119,12 +119,29 @@
                                         <div class="flex items-center gap-2">
                                             <!-- Assignee Avatar (only if assigned) -->
                                             @if (task.assignees.length > 0) {
-                                            <div class="flex -space-x-1">
-                                                @for (assignee of task.assignees.slice(0, 1); track assignee.name) {
-                                                <div class="w-6 h-6 bg-gradient-to-br from-indigo-500 to-purple-600 rounded-full flex items-center justify-center text-white text-[10px] font-semibold"
-                                                    [title]="assignee.name">
-                                                    {{ assignee.initials }}
+                                            <div class="flex items-center gap-1">
+                                                <div class="flex -space-x-1">
+                                                    @for (assignee of task.assignees.slice(0, 1); track assignee.name) {
+                                                    <div class="w-6 h-6 bg-gradient-to-br from-indigo-500 to-purple-600 rounded-full flex items-center justify-center text-white text-[10px] font-semibold"
+                                                        [title]="assignee.name">
+                                                        {{ assignee.initials }}
+                                                    </div>
+                                                    }
                                                 </div>
+                                                @if (isMemberRemoved(task.assignedToProjectMemberId)) {
+                                                <span class="flex items-center" role="img"
+                                                    aria-label="Member removed from project"
+                                                    title="Member removed from project"
+                                                    (click)="$event.stopPropagation()"
+                                                    (mousedown)="$event.stopPropagation()">
+                                                    <svg class="w-3.5 h-3.5 text-orange-500 flex-shrink-0" fill="none"
+                                                        stroke="currentColor" viewBox="0 0 24 24">
+                                                        <path stroke-linecap="round" stroke-linejoin="round"
+                                                            stroke-width="2"
+                                                            d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z">
+                                                        </path>
+                                                    </svg>
+                                                </span>
                                                 }
                                             </div>
                                             }

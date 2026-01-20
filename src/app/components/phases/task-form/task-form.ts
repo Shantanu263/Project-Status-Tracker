@@ -1,6 +1,7 @@
-import { Component, input, output, ChangeDetectionStrategy, OnInit, inject, signal, effect } from '@angular/core';
+import { Component, input, output, ChangeDetectionStrategy, OnInit, inject, signal, effect, computed } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
+import { MatSnackBar } from '@angular/material/snack-bar';
 import { Task } from '../../../models/phase.model';
 import { ProjectService } from '../../../services/project.service';
 import { ProjectMember } from '../../../models/project.model';
@@ -18,6 +19,7 @@ import { ProjectMember } from '../../../models/project.model';
 export class TaskFormComponent implements OnInit {
     private fb = inject(FormBuilder);
     private projectService = inject(ProjectService);
+    private snackBar = inject(MatSnackBar);
 
     isOpen = input<boolean>(false);
     task = input<Task | null>(null);
@@ -37,6 +39,14 @@ export class TaskFormComponent implements OnInit {
     showStatusDropdown = signal(false);
     private initialized = false;
     private lastInitializedTaskId: number | undefined = undefined;
+
+    // Computed property to filter only active members
+    activeMembers = computed(() =>
+        this.projectMembers().filter(member => member.isActive)
+    );
+
+    // Computed to ensure phases is always an array
+    availablePhases = computed(() => this.phases() || []);
 
     constructor() {
         // Initialize form immediately to prevent undefined errors
@@ -106,6 +116,13 @@ export class TaskFormComponent implements OnInit {
             if (task.taskName && task.taskName.trim()) {
                 this.isSubmittingSignal.set(true);
                 this.taskSubmit.emit(task);
+
+                // Show success notification
+                this.snackBar.open('Task created successfully!', 'Close', {
+                    duration: 3000,
+                    horizontalPosition: 'center',
+                    verticalPosition: 'bottom'
+                });
             }
         } else {
             this.taskForm.markAllAsTouched();

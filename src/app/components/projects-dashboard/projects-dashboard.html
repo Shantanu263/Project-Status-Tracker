@@ -9,6 +9,40 @@
                 <p class="mt-4 text-gray-600">Loading dashboard data...</p>
             </div>
         </div>
+        } @else if (hasNoProjects()) {
+        <!-- No Projects Assigned Placeholder -->
+        <div class="text-center py-20 px-4">
+            <svg class="w-32 h-32 mx-auto text-gray-200 mb-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1"
+                    d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z"></path>
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1" d="M9 12h6m-3-3v6"></path>
+            </svg>
+            <h2 class="text-3xl font-bold text-gray-800 mb-4">
+                No Projects Assigned
+            </h2>
+            <p class="text-lg text-gray-600 max-w-2xl mx-auto mb-8 leading-relaxed">
+                You haven't been assigned to any projects yet. To get started, please reach out to your project
+                administrator
+                or team lead who can grant you access to the projects you need.
+            </p>
+            <div class="bg-blue-50 border-l-4 border-blue-400 rounded-r-lg p-6 max-w-2xl mx-auto text-left">
+                <div class="flex items-start">
+                    <svg class="w-6 h-6 text-blue-600 mr-3 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor"
+                        viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                    </svg>
+                    <div>
+                        <h3 class="text-base font-semibold text-blue-900 mb-2">Need Help Getting Started?</h3>
+                        <p class="text-sm text-blue-800 leading-relaxed">
+                            Contact your administrator to request access to projects. Once you're added as a member,
+                            you'll be able
+                            to view project details, track progress, and collaborate with your team.
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </div>
         } @else {
         <!-- KPI / Summary Cards Section -->
         <div class="mb-6 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-5">

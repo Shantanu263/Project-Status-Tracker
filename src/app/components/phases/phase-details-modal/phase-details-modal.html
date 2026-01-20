@@ -194,7 +194,7 @@
                             <div class="member-list-item" (click)="clearMemberSelection()">
                                 <span class="placeholder">No Member</span>
                             </div>
-                            @for (member of projectMembers(); track member.memberId) {
+                            @for (member of activeProjectMembers(); track member.memberId) {
                             <div class="member-list-item" (click)="selectMember(member)">
                                 <div class="member-display">
                                     <div [class]="'avatar ' + getAvatarColor(member)">
@@ -225,7 +225,7 @@
                             <div class="relative">
                                 <input type="date" [value]="formatDate(phaseDetails()!.startDate)"
                                     (change)="updateStartDate($any($event.target).value)" [disabled]="!canUpdatePhase()"
-                                    class="w-full cursor-pointer appearance-none rounded-lg border border-gray-300 bg-white px-4 py-3 pr-10 font-medium text-gray-900 transition-all outline-none hover:bg-gray-50 focus:border-transparent focus:ring-2 focus:ring-[#8c2d1b] disabled:opacity-50 disabled:cursor-not-allowed" />
+                                    class="w-full cursor-pointer appearance-none rounded-lg border border-gray-300 bg-white px-4 py-3 font-medium text-gray-900 transition-all outline-none hover:bg-gray-50 focus:border-transparent focus:ring-2 focus:ring-[#8c2d1b] disabled:opacity-50 disabled:cursor-not-allowed" />
                             </div>
                         </div>
 
@@ -235,7 +235,7 @@
                             <div class="relative">
                                 <input type="date" [value]="formatDate(phaseDetails()!.endDate)"
                                     (change)="updateEndDate($any($event.target).value)" [disabled]="!canUpdatePhase()"
-                                    class="w-full cursor-pointer appearance-none rounded-lg border border-gray-300 bg-white px-4 py-3 pr-10 font-medium text-gray-900 transition-all outline-none hover:bg-gray-50 focus:border-transparent focus:ring-2 focus:ring-[#8c2d1b] disabled:opacity-50 disabled:cursor-not-allowed" />
+                                    class="w-full cursor-pointer appearance-none rounded-lg border border-gray-300 bg-white px-4 py-3 font-medium text-gray-900 transition-all outline-none hover:bg-gray-50 focus:border-transparent focus:ring-2 focus:ring-[#8c2d1b] disabled:opacity-50 disabled:cursor-not-allowed" />
                             </div>
                         </div>
                     </div>

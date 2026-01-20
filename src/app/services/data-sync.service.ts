@@ -1,0 +1,34 @@
+import { Injectable } from '@angular/core';
+import { Subject } from 'rxjs';
+
+@Injectable({
+    providedIn: 'root'
+})
+export class DataSyncService {
+    // Phase updates
+    private phasesUpdated = new Subject<number>();
+    phasesUpdated$ = this.phasesUpdated.asObservable();
+
+    // Task updates
+    private tasksUpdated = new Subject<{ projectId: number; phaseId: number }>();
+    tasksUpdated$ = this.tasksUpdated.asObservable();
+
+    // Subtask updates
+    private subtasksUpdated = new Subject<{ projectId: number; phaseId: number; taskId: number }>();
+    subtasksUpdated$ = this.subtasksUpdated.asObservable();
+
+    // Call this when phases are created, updated, or deleted
+    notifyPhasesUpdated(projectId: number): void {
+        this.phasesUpdated.next(projectId);
+    }
+
+    // Call this when tasks are created, updated, or deleted
+    notifyTasksUpdated(projectId: number, phaseId: number): void {
+        this.tasksUpdated.next({ projectId, phaseId });
+    }
+
+    // Call this when subtasks are created, updated, or deleted
+    notifySubtasksUpdated(projectId: number, phaseId: number, taskId: number): void {
+        this.subtasksUpdated.next({ projectId, phaseId, taskId });
+    }
+}

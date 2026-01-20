@@ -13,6 +13,7 @@ export interface User {
     email: string;
     role: UserRole;
     createdAt: string;
+    isActive: boolean;
 }
 
 export interface PaginatedUsersResponse {
