@@ -58,7 +58,7 @@ public class ForgotPasswordServiceImpl implements ForgotPasswordService {
         forgotPasswordOTP.setExpirationTime(new Date(System.currentTimeMillis() + 90 * 1000));
 
         try {
-            emailService.sendHtmlMessage(mailBody);  // Use HTML email method
+            emailService.sendCriticalHtmlMessage(mailBody,false);  // Use HTML email method
             forgotPasswordOTPRepo.save(forgotPasswordOTP);
             return ResponseEntity.ok(Map.of("message", "Email sent for verification"));
         } catch (MessagingException e) {

@@ -1,6 +1,7 @@
 package com.shantanu.projectstatustracker.services.impl;
 
 import com.shantanu.projectstatustracker.dtos.MailBody;
+import com.shantanu.projectstatustracker.globalExceptionHandlers.DisabledException;
 import com.shantanu.projectstatustracker.models.InvitedUsers;
 import com.shantanu.projectstatustracker.services.EmailService;
 import jakarta.mail.MessagingException;
@@ -25,6 +26,12 @@ import java.nio.charset.StandardCharsets;
 public class EmailServiceImpl implements EmailService {
     private final JavaMailSender javaMailSender;
     private static final Logger log = LoggerFactory.getLogger(EmailServiceImpl.class);
+
+    @Value("${app.notification-mail.enabled:true}")
+    private boolean notificationMailEnabled;
+
+    @Value("${app.critical-mail.enabled:true}")
+    private boolean criticalMailEnabled;
 
     @Value("${spring.mail.username}")
     String myEmailId;
@@ -53,13 +60,30 @@ public class EmailServiceImpl implements EmailService {
         javaMailSender.send(message);
     }
 
-    @Async
-    public void sendHtmlMessageAsync(MailBody mailBody) {
-        try {
-            sendHtmlMessage(mailBody);
-        } catch (MessagingException e) {
-            log.error("Failed to send async email", e);
+    @Override
+    public void sendCriticalHtmlMessage(MailBody mailBody, boolean isAsync) throws MessagingException {
+        //check if mail enabled
+        if (!criticalMailEnabled) {
+            log.info("Critical Mail sending is disabled. Skipping email to {}", mailBody.to());
+            throw new DisabledException("Critical Email service disabled. Email not sent");
         }
+        if (!isAsync)sendHtmlMessage(mailBody);
+        else sendHtmlMessageAsync(mailBody);
+    }
+
+    @Override
+    public void sendNotificationHtmlMessage(MailBody mailBody, boolean isAsync) throws MessagingException {
+        if (!notificationMailEnabled) {
+            log.info("Notification Mail sending is disabled. Skipping email to {}", mailBody.to());
+            return;
+        }
+        if (!isAsync)sendHtmlMessage(mailBody);
+        else sendHtmlMessageAsync(mailBody);
+    }
+
+    @Async
+    public void sendHtmlMessageAsync(MailBody mailBody) throws MessagingException {
+        sendHtmlMessage(mailBody);
     }
 
     public String getOtpEmailTemplate(String userName, String otp) {

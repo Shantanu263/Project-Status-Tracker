@@ -13,8 +13,11 @@ import com.shantanu.projectstatustracker.repositories.RoleRepo;
 import com.shantanu.projectstatustracker.repositories.UserRepo;
 import com.shantanu.projectstatustracker.services.AdminService;
 import com.shantanu.projectstatustracker.services.EmailService;
+import jakarta.mail.MessagingException;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
@@ -36,6 +39,7 @@ public class AdminServiceImpl implements AdminService {
     private final InvitedUsersRepo invitedUsersRepo;
     private final EmailService emailService;
     private final HttpServletRequest servletRequest;
+    private static final Logger log = LoggerFactory.getLogger(AdminServiceImpl.class);
 
     @Override
     public ResponseEntity<Object> getUsers(int pageNumber, int pageSize, String sortBy, String order, String search) {
@@ -96,7 +100,11 @@ public class AdminServiceImpl implements AdminService {
                 .subject("You are invited | ProjectHub")
                 .build();
 
-        emailService.sendHtmlMessageAsync(mailBody);
+        try {
+            emailService.sendNotificationHtmlMessage(mailBody,true);
+        } catch (MessagingException e){
+            log.error("Failed to send email", e);
+        }
 
         invitedUsersRepo.save(invitedUser);
 

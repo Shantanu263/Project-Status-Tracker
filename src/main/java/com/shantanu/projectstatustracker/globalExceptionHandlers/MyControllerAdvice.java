@@ -42,4 +42,9 @@ public class MyControllerAdvice {
                 .body(Map.of("error", "Malformed JSON request"));
     }
 
+    @ExceptionHandler(DisabledException.class)
+    public ResponseEntity<Map<String,String>> optionDisabled(DisabledException e) {
+        return ResponseEntity.status(HttpStatus.EXPECTATION_FAILED).body(Map.of("message",e.getMessage()));
+    }
+
 }

@@ -10,8 +10,11 @@ import com.shantanu.projectstatustracker.globalExceptionHandlers.ResourceNotFoun
 import com.shantanu.projectstatustracker.models.*;
 import com.shantanu.projectstatustracker.repositories.*;
 import com.shantanu.projectstatustracker.services.*;
+import jakarta.mail.MessagingException;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -39,6 +42,7 @@ public class AuthServiceImpl implements AuthService {
     private final UserMapper userMapper;
     private final InvitedUsersRepo invitedUsersRepo;
     private final HttpServletRequest servletRequest;
+    private static final Logger log = LoggerFactory.getLogger(AuthServiceImpl.class);
 
     @Value("${jwt.accessTokenTime}")
     private long accessTokenTime;
@@ -104,7 +108,11 @@ public class AuthServiceImpl implements AuthService {
                 .subject("Account Created | ProjectHub")
                 .build();
 
-        emailService.sendHtmlMessageAsync(mailBody);
+        try{
+            emailService.sendNotificationHtmlMessage(mailBody,true);
+        } catch (MessagingException e){
+            log.error("Failed to send email", e);
+        }
 
         //Return response
         return ResponseEntity.ok(Map.of("message","User signed up successfully"));
