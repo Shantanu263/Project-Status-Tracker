@@ -698,7 +698,7 @@ export class TimelineComponent implements OnInit, AfterViewInit {
             // Calculate width by checking where bar ends
             if (barEnd >= colStart && barEnd <= colEnd) {
                 // Bar ends in this column
-                // Add 1 day to end date to represent end of that day (for width calculation only)
+                // Add 1 day to end date to represent end of that day
                 const barEndPlusOne = new Date(barEnd);
                 barEndPlusOne.setDate(barEndPlusOne.getDate() + 1);
 
