@@ -85,8 +85,9 @@
                                 @for (task of column.tasks; track task.id) {
                                 <!--Task Card -->
                                 <div class="bg-white border border-gray-200 rounded-lg p-3 hover:shadow-lg hover:-translate-y-0.5 transition-all duration-200 cursor-pointer group"
-                                    (click)="onTaskCardClick(task)" draggable="true"
-                                    (dragstart)="onDragStart(task, column.id)" (dragend)="onDragEnd()"
+                                    (click)="onTaskCardClick(task)" [attr.draggable]="canUpdateTask()"
+                                    (dragstart)="canUpdateTask() && onDragStart(task, column.id)"
+                                    (dragend)="canUpdateTask() && onDragEnd()"
                                     [class.opacity-50]="draggingTask()?.task?.id === task.id"
                                     [class.ring-2]="draggingTask()?.task?.id === task.id">
 

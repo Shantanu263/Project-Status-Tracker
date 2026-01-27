@@ -39,10 +39,14 @@
 
                             <select formControlName="memberRole"
                                 class="px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#8c2d1b] focus:border-transparent transition-all duration-200 outline-none bg-white sm:w-48">
-                                <option value="SUPER_ADMIN">Project Admin</option>
-                                <option value="PROJECT_HEAD">Project Head</option>
-                                <option value="PROJECT_HANDLER">Project Handler</option>
-                                <option value="PROJECT_VIEWER">Project Viewer</option>
+                                @for (role of allowedRoles(); track role) {
+                                <option [value]="role">
+                                    @if (role === 'SUPER_ADMIN') { Project Admin }
+                                    @else if (role === 'PROJECT_HEAD') { Project Head }
+                                    @else if (role === 'PROJECT_HANDLER') { Project Handler }
+                                    @else if (role === 'PROJECT_VIEWER') { Project Viewer }
+                                </option>
+                                }
                             </select>
 
                             <button type="button" (click)="addMember()" [disabled]="isLoading()"

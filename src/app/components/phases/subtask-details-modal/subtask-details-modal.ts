@@ -43,6 +43,7 @@ export class SubtaskDetailsModalComponent {
     showMemberDropdown = signal(false);
     showMoreMenu = signal(false);
     showDeleteConfirmation = signal(false);
+    hasUnsavedChanges = signal(false); // Track if changes were made
 
     // Comment state
     editingCommentId = signal<number | null>(null);
@@ -59,7 +60,11 @@ export class SubtaskDetailsModalComponent {
         return members.find(m => m.memberId === subtask.assignedToProjectMemberId) || null;
     });
 
-    activeProjectMembers = computed(() => this.projectMembers().filter(member => member.isActive));
+    activeProjectMembers = computed(() =>
+        this.projectMembers().filter(member =>
+            member.isActive && member.role !== 'PROJECT_VIEWER'
+        )
+    );
 
     recentLogs = computed(() => {
         const subtask = this.subtaskDetails();
@@ -71,8 +76,13 @@ export class SubtaskDetailsModalComponent {
 
     constructor() {
         effect(() => {
-            if (this.isOpen() && this.projectId() && this.phaseId() && this.taskId() && this.subTaskId()) {
+            const isOpenState = this.isOpen();
+            if (isOpenState && this.projectId() && this.phaseId() && this.taskId() && this.subTaskId()) {
                 this.loadSubtaskDetails();
+            }
+            // Reset unsaved changes flag when modal opens
+            if (isOpenState) {
+                this.hasUnsavedChanges.set(false);
             }
         }, { allowSignalWrites: true });
     }
@@ -96,6 +106,11 @@ export class SubtaskDetailsModalComponent {
     }
 
     onClose(): void {
+        // Only notify parent component if changes were made
+        if (this.hasUnsavedChanges()) {
+            this.updated.emit();
+            this.hasUnsavedChanges.set(false);
+        }
         this.close.emit();
     }
 
@@ -174,7 +189,13 @@ export class SubtaskDetailsModalComponent {
     }
 
     private updateField(field: string, value: any): void {
-        const updates: any = { [field]: value };
+        // Map frontend field names to backend API field names
+        const fieldMapping: { [key: string]: string } = {
+            'assignedToProjectMemberId': 'assignedTo'
+        };
+
+        const apiFieldName = fieldMapping[field] || field;
+        const updates: any = { [apiFieldName]: value };
 
         // Immediately update the local state for instant feedback
         const currentSubtask = this.subtaskDetails();
@@ -190,10 +211,16 @@ export class SubtaskDetailsModalComponent {
             this.subTaskId(),
             updates
         ).subscribe({
-            next: () => {
-                // Reload full subtask details to ensure all fields are up-to-date
-                this.loadSubtaskDetails();
-                this.updated.emit();
+            next: (updatedSubtask) => {
+                // Merge backend response with current state (no full reload to avoid flickering)
+                const current = this.subtaskDetails();
+                if (current) {
+                    this.subtaskDetails.set({ ...current, ...updatedSubtask });
+                }
+                // Mark that changes were made (will notify on modal close)
+                this.hasUnsavedChanges.set(true);
+                // Don't notify immediately to avoid reloading while modal is open
+                // this.updated.emit();
             },
             error: (err) => {
                 console.error('Error updating subtask:', err);

@@ -1,7 +1,10 @@
-import { Component, input, output, signal, inject, ChangeDetectionStrategy } from '@angular/core';
+import { Component, input, output, signal, inject, ChangeDetectionStrategy, computed } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormBuilder, FormGroup, Validators, ReactiveFormsModule } from '@angular/forms';
 import { ProjectService } from '../../services/project.service';
+import { PermissionService } from '../../services/permission.service';
+import { AuthService } from '../../services/auth.service';
+import { ProjectMember } from '../../models/project.model';
 
 interface MemberToAdd {
     email: string;
@@ -20,10 +23,13 @@ interface MemberToAdd {
 export class AddMembersModalComponent {
     private fb = inject(FormBuilder);
     private projectService = inject(ProjectService);
+    private permissionService = inject(PermissionService);
+    private authService = inject(AuthService);
 
     // Input/Output
     isOpen = input.required<boolean>();
     projectId = input.required<number>();
+    projectMembers = input<ProjectMember[]>([]);
     close = output<void>();
     membersAdded = output<void>();
 
@@ -32,6 +38,12 @@ export class AddMembersModalComponent {
     isLoading = signal(false);
     membersBeingAdded = signal(0);
     errorMessage = signal<string | null>(null);
+
+    // Computed: Get allowed roles based on current user's permissions
+    allowedRoles = computed(() => {
+        const currentUserId = this.authService.getCurrentUserId();
+        return this.permissionService.getAllowedRolesToAdd(this.projectMembers(), currentUserId);
+    });
 
     // Form
     memberForm: FormGroup;

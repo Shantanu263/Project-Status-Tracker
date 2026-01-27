@@ -80,6 +80,62 @@ export class PermissionService {
     }
 
     /**
+     * Get allowed roles that current user can assign when adding/changing members
+     * Rules:
+     * - SUPER_ADMIN (global/project): Can assign all roles
+     * - PROJECT_HEAD: Cannot assign SUPER_ADMIN
+     * - PROJECT_HANDLER: Cannot assign SUPER_ADMIN or PROJECT_HEAD
+     * - PROJECT_VIEWER: Can ONLY assign PROJECT_VIEWER
+     */
+    getAllowedRolesToAdd(projectMembers: ProjectMember[], currentUserId: number | null): string[] {
+        const allRoles = ['SUPER_ADMIN', 'PROJECT_HEAD', 'PROJECT_HANDLER', 'PROJECT_VIEWER'];
+
+        // Global SUPER_ADMIN can assign all roles
+        if (this.authService.isSuperAdmin()) {
+            return allRoles;
+        }
+
+        const projectRole = this.getCurrentUserProjectRole(projectMembers, currentUserId);
+
+        switch (projectRole) {
+            case 'SUPER_ADMIN':
+                return allRoles; // Can assign all roles
+            case 'PROJECT_HEAD':
+                return ['PROJECT_HEAD', 'PROJECT_HANDLER', 'PROJECT_VIEWER']; // Cannot assign SUPER_ADMIN
+            case 'PROJECT_HANDLER':
+                return ['PROJECT_HANDLER', 'PROJECT_VIEWER']; // Cannot assign SUPER_ADMIN or PROJECT_HEAD
+            case 'PROJECT_VIEWER':
+                return ['PROJECT_VIEWER']; // Can ONLY assign PROJECT_VIEWER
+            default:
+                return []; // No permission
+        }
+    }
+
+    /**
+     * Check if user can update phase timeline (drag/resize in timeline component)
+     * Allowed: SUPER_ADMIN (global) or SUPER_ADMIN/PROJECT_HEAD (project)
+     */
+    canUpdatePhaseTimeline(projectMembers: ProjectMember[], currentUserId: number | null): boolean {
+        // Global SUPER_ADMIN can always update
+        if (this.authService.isSuperAdmin()) {
+            return true;
+        }
+
+        // Check project role - only SUPER_ADMIN and PROJECT_HEAD
+        const projectRole = this.getCurrentUserProjectRole(projectMembers, currentUserId);
+        return projectRole === 'SUPER_ADMIN' || projectRole === 'PROJECT_HEAD';
+    }
+
+    /**
+     * Check if user can update task timeline (drag/resize in timeline component)
+     * Allowed: SUPER_ADMIN (global) or any project member except PROJECT_VIEWER
+     */
+    canUpdateTaskTimeline(projectMembers: ProjectMember[], currentUserId: number | null): boolean {
+        // Same rules as canUpdateTask
+        return this.canCreateOrUpdateTask(projectMembers, currentUserId);
+    }
+
+    /**
      * Alias methods for clarity
      */
     canCreatePhase = this.canCreateOrUpdatePhase.bind(this);

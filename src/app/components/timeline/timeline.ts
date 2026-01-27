@@ -1,16 +1,4 @@
-import {
-    Component,
-    ChangeDetectionStrategy,
-    signal,
-    computed,
-    inject,
-    OnInit,
-    AfterViewInit,
-    ViewChild,
-    ElementRef,
-    effect,
-    HostListener
-} from '@angular/core';
+import { Component, ChangeDetectionStrategy, signal, computed, inject, OnInit, AfterViewInit, ViewChild, ElementRef, effect, HostListener } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { TimelineService } from '../../services/timeline.service';
@@ -18,6 +6,9 @@ import { ProjectService } from '../../services/project.service';
 import { SelectedProjectService } from '../../services/selected-project.service';
 import { Phase, Task } from '../../models/phase.model';
 import { DataSyncService } from '../../services/data-sync.service';
+import { PermissionService } from '../../services/permission.service';
+import { AuthService } from '../../services/auth.service';
+import { ProjectMember } from '../../models/project.model';
 import {
     TimeScale,
     TimelineGridCell,
@@ -50,6 +41,8 @@ export class TimelineComponent implements OnInit, AfterViewInit {
     private projectService = inject(ProjectService);
     private selectedProjectService = inject(SelectedProjectService);
     private readonly dataSyncService = inject(DataSyncService);
+    private readonly permissionService = inject(PermissionService);
+    private readonly authService = inject(AuthService);
 
     // ViewChild references for scroll synchronization
     @ViewChild('timelineHeader') timelineHeaderRef!: ElementRef<HTMLDivElement>;
@@ -83,6 +76,20 @@ export class TimelineComponent implements OnInit, AfterViewInit {
     // Loading and error states
     isLoading = signal<boolean>(false);
     errorMessage = signal<string>('');
+
+    // Project members for permission checks
+    projectMembers = signal<ProjectMember[]>([]);
+
+    // Permission computed signals
+    canUpdatePhaseTimeline = computed(() => {
+        const currentUserId = this.authService.getCurrentUserId();
+        return this.permissionService.canUpdatePhaseTimeline(this.projectMembers(), currentUserId);
+    });
+
+    canUpdateTaskTimeline = computed(() => {
+        const currentUserId = this.authService.getCurrentUserId();
+        return this.permissionService.canUpdateTaskTimeline(this.projectMembers(), currentUserId);
+    });
 
     // Computed values
     timelineRows = computed(() => {
@@ -169,6 +176,22 @@ export class TimelineComponent implements OnInit, AfterViewInit {
         this.dataSyncService.tasksUpdated$.subscribe(({ projectId }) => {
             if (projectId === this.selectedProject().projectId) {
                 this.loadPhases(projectId);
+            }
+        });
+
+        // Subscribe to project member updates from other components
+        this.dataSyncService.projectMembersUpdated$.subscribe(projectId => {
+            const project = this.selectedProject();
+            if (project && projectId === project.projectId) {
+                // Reload project members
+                this.projectService.getProjectMembers(projectId).subscribe({
+                    next: (members) => {
+                        this.projectMembers.set(members);
+                    },
+                    error: (err) => {
+                        console.error('Error loading project members:', err);
+                    }
+                });
             }
         });
     }
@@ -259,6 +282,16 @@ export class TimelineComponent implements OnInit, AfterViewInit {
     loadPhases(projectId: number) {
         this.isLoading.set(true);
         this.errorMessage.set('');
+
+        // Load project members for permission checks
+        this.projectService.getProjectMembers(projectId).subscribe({
+            next: (members) => {
+                this.projectMembers.set(members);
+            },
+            error: (err) => {
+                console.error('Error loading project members:', err);
+            }
+        });
 
         this.projectService.getPhases(projectId).subscribe({
             next: (phases) => {
@@ -565,7 +598,7 @@ export class TimelineComponent implements OnInit, AfterViewInit {
      */
     getColumnWidth(): number {
         const scale = this.timeScale();
-        const dayWidth = 40; // Base width for one day (60-80px as requested)
+        const dayWidth = 40; // Base width for one day 
 
         if (scale === TimeScale.WEEK) {
             // Week column contains 7 days
@@ -583,14 +616,14 @@ export class TimelineComponent implements OnInit, AfterViewInit {
     }
 
     /**
-     * Get the width of a single day cell (used for all calculations)
+     * Get the width of a single day cell 
      */
     getDayWidth(): number {
-        return 40; // Must match dayWidth in getColumnWidth()
+        return 40;
     }
 
     /**
-     * Get column width by index (uses actualDays for accurate calculation)
+     * Get column width by index 
      */
     getColumnWidthByIndex(columnIndex: number): number {
         const columns = this.timelineColumns();
@@ -627,7 +660,7 @@ export class TimelineComponent implements OnInit, AfterViewInit {
         const dayWidth = this.getDayWidth();
         const scale = this.timeScale();
 
-        // For WEEK view, use simple day-based positioning for exact alignment
+        // For WEEK view
         if (scale === TimeScale.WEEK) {
             // Calculate days from timeline start
             const startDays = Math.floor((barStart.getTime() - bounds.startDate.getTime()) / (1000 * 60 * 60 * 24));
@@ -635,16 +668,15 @@ export class TimelineComponent implements OnInit, AfterViewInit {
 
             // Position based on exact day offsets
             const left = startDays * dayWidth;
-            // Width includes the end day (+1 to extend through end date)
             const width = Math.max((endDays - startDays + 1) * dayWidth, dayWidth);
 
             return { left: Math.max(0, left), width };
         }
 
-        // For MONTH and QUARTER views, use proportional positioning within columns
-        const columnWidth = this.getColumnWidth(); // Uniform width for all columns (280px)
+        // For MONTH and QUARTER views
+        const columnWidth = this.getColumnWidth();
 
-        // Calculate position by finding which column(s) the bar spans
+        // Calculate position by finding which columns the bar spans
         let left = 0;
         let width = 0;
         let cumulativeLeft = 0;

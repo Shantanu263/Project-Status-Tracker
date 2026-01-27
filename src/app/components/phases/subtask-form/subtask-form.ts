@@ -52,7 +52,9 @@ export class SubtaskFormComponent implements OnInit {
 
     // Computed
     activeMembers = computed(() =>
-        this.projectMembers().filter(member => member.isActive)
+        this.projectMembers().filter(member =>
+            member.isActive && member.role !== 'PROJECT_VIEWER'
+        )
     );
 
     getSelectedMember = computed(() => {

@@ -17,6 +17,10 @@ export class DataSyncService {
     private subtasksUpdated = new Subject<{ projectId: number; phaseId: number; taskId: number }>();
     subtasksUpdated$ = this.subtasksUpdated.asObservable();
 
+    // Project members updates
+    private projectMembersUpdated = new Subject<number>();
+    projectMembersUpdated$ = this.projectMembersUpdated.asObservable();
+
     // Call this when phases are created, updated, or deleted
     notifyPhasesUpdated(projectId: number): void {
         this.phasesUpdated.next(projectId);
@@ -30,5 +34,10 @@ export class DataSyncService {
     // Call this when subtasks are created, updated, or deleted
     notifySubtasksUpdated(projectId: number, phaseId: number, taskId: number): void {
         this.subtasksUpdated.next({ projectId, phaseId, taskId });
+    }
+
+    // Call this when project members are added, updated, or removed
+    notifyProjectMembersUpdated(projectId: number): void {
+        this.projectMembersUpdated.next(projectId);
     }
 }

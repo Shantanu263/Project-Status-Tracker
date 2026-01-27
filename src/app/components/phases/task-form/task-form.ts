@@ -40,9 +40,11 @@ export class TaskFormComponent implements OnInit {
     private initialized = false;
     private lastInitializedTaskId: number | undefined = undefined;
 
-    // Computed property to filter only active members
+    // Computed property to filter only active members (exclude PROJECT_VIEWER)
     activeMembers = computed(() =>
-        this.projectMembers().filter(member => member.isActive)
+        this.projectMembers().filter(member =>
+            member.isActive && member.role !== 'PROJECT_VIEWER'
+        )
     );
 
     // Computed to ensure phases is always an array

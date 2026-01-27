@@ -45,6 +45,7 @@ export class PhaseDetailsModalComponent {
     showMemberDropdown = signal(false);
     showMoreMenu = signal(false);
     showDeleteConfirmation = signal(false);
+    hasUnsavedChanges = signal(false); // Track if changes were made
 
     // Task modal state
     showTaskDetailsModal = signal(false);
@@ -69,7 +70,13 @@ export class PhaseDetailsModalComponent {
         return members.find(m => m.memberId === phase.projectMemberId) || null;
     });
 
-    activeProjectMembers = computed(() => this.projectMembers().filter(member => member.isActive));
+    activeProjectMembers = computed(() =>
+        this.projectMembers().filter(member =>
+            member.isActive &&
+            member.role !== 'PROJECT_HANDLER' &&
+            member.role !== 'PROJECT_VIEWER'
+        )
+    );
 
     phaseTasks = computed(() => {
         const phase = this.phaseDetails();
@@ -90,9 +97,14 @@ export class PhaseDetailsModalComponent {
         effect(() => {
             const phaseId = this.phaseId();
             const projectId = this.projectId();
+            const isOpenState = this.isOpen();
             // Only load when phaseId or projectId changes, not when isOpen changes
             if (phaseId && projectId) {
                 this.loadPhaseDetails();
+            }
+            // Reset unsaved changes flag when modal opens
+            if (isOpenState) {
+                this.hasUnsavedChanges.set(false);
             }
         }, { allowSignalWrites: true });
     }
@@ -120,6 +132,11 @@ export class PhaseDetailsModalComponent {
     }
 
     onClose(): void {
+        // Only notify other components if changes were made
+        if (this.hasUnsavedChanges()) {
+            this.dataSyncService.notifyPhasesUpdated(this.projectId());
+            this.hasUnsavedChanges.set(false);
+        }
         this.close.emit();
     }
 
@@ -218,10 +235,10 @@ export class PhaseDetailsModalComponent {
                 if (current) {
                     this.phaseDetails.set({ ...current, ...updatedPhase });
                 }
-                // Notify other components that phases have been updated
-                this.dataSyncService.notifyPhasesUpdated(this.projectId());
-                // Don't emit updated event to prevent parent from reloading and closing modal
-                // this.updated.emit();
+                // Mark that changes were made (will notify on modal close)
+                this.hasUnsavedChanges.set(true);
+                // Don't notify immediately to avoid reloading while modal is open
+                // this.dataSyncService.notifyPhasesUpdated(this.projectId());
             },
             error: (err) => {
                 console.error('Error updating phase:', err);

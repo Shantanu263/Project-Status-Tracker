@@ -11,6 +11,8 @@ import { TaskDetailsModalComponent } from '../phases/task-details-modal/task-det
 import { Task } from '../../models/phase.model';
 import { ProjectMember } from '../../models/project.model';
 import { DataSyncService } from '../../services/data-sync.service';
+import { PermissionService } from '../../services/permission.service';
+import { AuthService } from '../../services/auth.service';
 
 type TaskStatus = 'TO_DO' | 'IN_PROGRESS' | 'REVIEW' | 'DONE';
 
@@ -74,6 +76,8 @@ export class BoardComponent {
   private readonly projectService = inject(ProjectService);
   private readonly projectStateService = inject(ProjectStateService);
   private readonly dataSyncService = inject(DataSyncService);
+  private readonly permissionService = inject(PermissionService);
+  private readonly authService = inject(AuthService);
 
   phases = signal<PhaseResponse[]>([]);
   selectedPhase = signal<PhaseResponse | null>(null);
@@ -141,6 +145,12 @@ export class BoardComponent {
     return BASE_HEIGHT + ((maxTasks - 3) * TASK_INCREMENT);
   });
 
+  // Permission: can user update tasks (drag to different columns)
+  canUpdateTask = computed(() => {
+    const currentUserId = this.authService.getCurrentUserId();
+    return this.permissionService.canUpdateTask(this.projectMembers(), currentUserId);
+  });
+
   // Track the last loaded project to avoid unnecessary reloads
   private lastLoadedProjectId = signal<number | null>(null);
 
@@ -177,6 +187,14 @@ export class BoardComponent {
       const currentPhase = this.selectedPhase();
       if (currentProject && projectId === currentProject.projectId && currentPhase && phaseId === currentPhase.phaseId) {
         this.loadTasksForPhase(currentPhase);
+      }
+    });
+
+    // Subscribe to project member updates from other components
+    this.dataSyncService.projectMembersUpdated$.subscribe(projectId => {
+      const currentProject = this.selectedProject();
+      if (currentProject && projectId === currentProject.projectId) {
+        this.loadProjectMembers();
       }
     });
   }

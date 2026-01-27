@@ -148,10 +148,37 @@ export class PhasesComponent {
       }
     });
 
+    // Subscribe to phase updates from other components (e.g., phase details modal)
+    this.dataSyncService.phasesUpdated$.subscribe(projectId => {
+      if (projectId === this.projectId()) {
+        this.loadPhases();
+      }
+    });
+
     // Subscribe to task updates from other components
     this.dataSyncService.tasksUpdated$.subscribe(({ projectId }) => {
       if (projectId === this.projectId()) {
         this.loadPhases();
+      }
+    });
+
+    // Subscribe to project member updates from other components
+    this.dataSyncService.projectMembersUpdated$.subscribe(projectId => {
+      if (projectId === this.projectId()) {
+        this.loadProjectMembers();
+      }
+    });
+  }
+
+  private loadProjectMembers(): void {
+    this.projectService.getProjectMembers(this.projectId()).subscribe({
+      next: (members) => {
+        this.projectMembers.set(members);
+        // Reload phases to update assignee names
+        this.loadPhases();
+      },
+      error: (err) => {
+        console.error('Error loading project members:', err);
       }
     });
   }
@@ -446,8 +473,8 @@ export class PhasesComponent {
   closePhaseDetailsModal(): void {
     this.showPhaseDetailsModal.set(false);
     this.selectedPhaseId.set(null);
-    // Reload phases when modal closes to reflect any updates
-    this.loadPhases();
+    // No need to reload phases here - the dataSyncService.phasesUpdated$ subscription
+    // will handle reloading when actual changes are made in the modal
   }
 
   onPhaseDetailsUpdated(): void {

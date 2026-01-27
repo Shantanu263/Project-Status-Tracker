@@ -322,4 +322,4 @@
 
 <!-- Add Members Modal -->
 <app-add-members-modal [isOpen]="showAddMembersModal()" [projectId]="selectedProject()?.projectId || 0"
-  (close)="closeAddMembersModal()" (membersAdded)="onMembersAdded()" />
+  [projectMembers]="members()" (close)="closeAddMembersModal()" (membersAdded)="onMembersAdded()" />

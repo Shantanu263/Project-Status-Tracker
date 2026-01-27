@@ -6,6 +6,7 @@ import { environment } from '../../environments/environment';
 import { SelectedProjectService } from '../../services/selected-project.service';
 import { AddMembersModalComponent } from '../add-members-modal/add-members-modal';
 import { AuthService } from '../../services/auth.service';
+import { DataSyncService } from '../../services/data-sync.service';
 import { OverlayModule } from '@angular/cdk/overlay';
 
 interface AssignedBy {
@@ -51,6 +52,7 @@ export class MembersComponent {
   private readonly http = inject(HttpClient);
   private readonly selectedProjectService = inject(SelectedProjectService);
   private readonly authService = inject(AuthService);
+  private readonly dataSyncService = inject(DataSyncService);
 
   members = signal<ProjectMember[]>([]);
   loading = signal(false);
@@ -497,6 +499,9 @@ export class MembersComponent {
           )
         );
         this.stopEditingRole();
+
+        // Notify other components about member updates
+        this.dataSyncService.notifyProjectMembersUpdated(project.projectId);
       },
       error: (err) => {
         console.error('Error changing project role:', err);

@@ -49,6 +49,7 @@ export class TaskDetailsModalComponent {
     showMemberDropdown = signal(false);
     showMoreMenu = signal(false);
     showDeleteConfirmation = signal(false);
+    hasUnsavedChanges = signal(false); // Track if changes were made
 
     // Comment state
     editingCommentId = signal<number | null>(null);
@@ -85,7 +86,11 @@ export class TaskDetailsModalComponent {
         return members.find(m => m.memberId === task.assignedToProjectMemberId) || null;
     });
 
-    activeProjectMembers = computed(() => this.projectMembers().filter(member => member.isActive));
+    activeProjectMembers = computed(() =>
+        this.projectMembers().filter(member =>
+            member.isActive && member.role !== 'PROJECT_VIEWER'
+        )
+    );
 
     recentLogs = computed(() => {
         const task = this.taskDetails();
@@ -98,8 +103,13 @@ export class TaskDetailsModalComponent {
 
     constructor() {
         effect(() => {
-            if (this.isOpen() && this.projectId() && this.phaseId() && this.taskId()) {
+            const isOpenState = this.isOpen();
+            if (isOpenState && this.projectId() && this.phaseId() && this.taskId()) {
                 this.loadTaskDetails();
+            }
+            // Reset unsaved changes flag when modal opens
+            if (isOpenState) {
+                this.hasUnsavedChanges.set(false);
             }
         }, { allowSignalWrites: true });
     }
@@ -123,6 +133,11 @@ export class TaskDetailsModalComponent {
     }
 
     onClose(): void {
+        // Only notify other components if changes were made
+        if (this.hasUnsavedChanges()) {
+            this.dataSyncService.notifyTasksUpdated(this.projectId(), this.phaseId());
+            this.hasUnsavedChanges.set(false);
+        }
         this.close.emit();
     }
 
@@ -203,7 +218,13 @@ export class TaskDetailsModalComponent {
     }
 
     private updateField(field: string, value: any): void {
-        const updates: any = { [field]: value };
+        // Map frontend field names to backend API field names
+        const fieldMapping: { [key: string]: string } = {
+            'assignedToProjectMemberId': 'assignedTo'
+        };
+
+        const apiFieldName = fieldMapping[field] || field;
+        const updates: any = { [apiFieldName]: value };
 
         // Immediately update the local state for instant feedback
         const currentTask = this.taskDetails();
@@ -218,13 +239,16 @@ export class TaskDetailsModalComponent {
             this.taskId(),
             updates
         ).subscribe({
-            next: () => {
-                // Reload full task details to ensure all fields are up-to-date
-                this.loadTaskDetails();
-                // Notify parent to refresh
-                this.updated.emit();
-                // Notify other components that tasks have been updated
-                this.dataSyncService.notifyTasksUpdated(this.projectId(), this.phaseId());
+            next: (updatedTask) => {
+                // Merge backend response with current state (no full reload to avoid flickering)
+                const current = this.taskDetails();
+                if (current) {
+                    this.taskDetails.set({ ...current, ...updatedTask });
+                }
+                // Mark that changes were made (will notify on modal close)
+                this.hasUnsavedChanges.set(true);
+                // Don't notify immediately to avoid reloading while modal is open
+                // this.dataSyncService.notifyTasksUpdated(this.projectId(), this.phaseId());
             },
             error: (err) => {
                 console.error('Error updating task:', err);

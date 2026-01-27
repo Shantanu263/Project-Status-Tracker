@@ -6,6 +6,7 @@ import { Task } from '../../models/phase.model';
 import { ProjectMember } from '../../models/project.model';
 import { forkJoin } from 'rxjs';
 import { AuthService } from '../../services/auth.service';
+import { PermissionService } from '../../services/permission.service';
 import { TaskDetailsModalComponent } from '../phases/task-details-modal/task-details-modal';
 import { TaskFormComponent } from '../phases/task-form/task-form';
 import { SubtaskDetailsModalComponent } from '../phases/subtask-details-modal/subtask-details-modal';
@@ -28,6 +29,7 @@ interface TaskWithPhase extends Task {
 export class TasksComponent implements OnInit {
     private projectService = inject(ProjectService);
     private authService = inject(AuthService);
+    private permissionService = inject(PermissionService);
     private http = inject(HttpClient);
     private dataSyncService = inject(DataSyncService);
 
@@ -212,6 +214,12 @@ export class TasksComponent implements OnInit {
         });
     });
 
+    // Permission computed signal
+    canCreateTask = computed(() => {
+        const currentUserId = this.authService.getCurrentUserId();
+        return this.permissionService.canCreateTask(this.projectMembers(), currentUserId);
+    });
+
     ngOnInit(): void {
         this.loadTasks();
 
@@ -226,6 +234,23 @@ export class TasksComponent implements OnInit {
         this.dataSyncService.tasksUpdated$.subscribe(({ projectId }) => {
             if (projectId === this.projectId()) {
                 this.loadTasks();
+            }
+        });
+
+        // Subscribe to project member updates from other components
+        this.dataSyncService.projectMembersUpdated$.subscribe(projectId => {
+            if (projectId === this.projectId()) {
+                // Reload project members
+                this.projectService.getProjectMembers(this.projectId()).subscribe({
+                    next: (members) => {
+                        this.projectMembers.set(members);
+                        // Reload tasks to update assignee names
+                        this.loadTasks();
+                    },
+                    error: (err) => {
+                        console.error('Error loading project members:', err);
+                    }
+                });
             }
         });
     }

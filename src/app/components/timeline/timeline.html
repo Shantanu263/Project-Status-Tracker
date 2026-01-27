@@ -65,7 +65,8 @@
               <!-- Bottom row: Day numbers -->
               <div class="flex flex-1">
                 @for (dayLabel of column.label.split('|'); track $index) {
-                <div class="text-center text-sm font-medium text-gray-700 flex-1 flex items-end justify-center pb-2"
+                <div
+                  class="text-center text-sm font-medium text-gray-700 flex-1 flex items-end justify-center mt-[6px] pb-[2px]"
                   [style.width.px]="getDayWidth()" [class.border-r]="$index < column.label.split('|').length - 1"
                   [class.border-gray-100]="$index < column.label.split('|').length - 1">
                   <div class="text-xs">{{ dayLabel }}</div>
@@ -213,21 +214,27 @@
                     calculateBarPosition(phase.startDate, phase.endDate);
                     <div class="absolute top-1/2 -translate-y-1/2 group cursor-pointer timeline-bar"
                       [style.left.px]="barPosition.left + 8" [style.width.px]="barPosition.width - 16"
-                      (mousedown)="onBarDragStart($event, createTimelineRow(phase, 'phase'))"
+                      (mousedown)="canUpdatePhaseTimeline() && onBarDragStart($event, createTimelineRow(phase, 'phase'))"
                       (mouseenter)="onPhaseMouseEnter($event, phase, phaseIndex)" (mouseleave)="onPhaseMouseLeave()"
                       [attr.data-bar-id]="barId">
 
                       <div class="rounded-lg shadow-md hover:shadow-lg transition-all relative overflow-hidden"
-                        [style.height.px]="36" [ngClass]="getPhaseColor(phaseIndex)" [class.cursor-move]="!dragState()">
+                        [style.height.px]="36" [ngClass]="getPhaseColor(phaseIndex)"
+                        [class.cursor-move]="!dragState() && canUpdatePhaseTimeline()"
+                        [class.cursor-not-allowed]="!canUpdatePhaseTimeline()">
 
                         <div
-                          class="absolute left-0 top-0 bottom-0 w-2 cursor-ew-resize hover:bg-white hover:bg-opacity-30 transition-colors z-20"
-                          (mousedown)="onBarResizeStart($event, createTimelineRow(phase, 'phase'), 'left')"
+                          class="absolute left-0 top-0 bottom-0 w-2 hover:bg-white hover:bg-opacity-30 transition-colors z-20"
+                          [class.cursor-ew-resize]="canUpdatePhaseTimeline()"
+                          [class.cursor-not-allowed]="!canUpdatePhaseTimeline()"
+                          (mousedown)="canUpdatePhaseTimeline() && onBarResizeStart($event, createTimelineRow(phase, 'phase'), 'left')"
                           (click)="$event.stopPropagation()">
                         </div>
                         <div
-                          class="absolute right-0 top-0 bottom-0 w-2 cursor-ew-resize hover:bg-white hover:bg-opacity-30 transition-colors z-20"
-                          (mousedown)="onBarResizeStart($event, createTimelineRow(phase, 'phase'), 'right')"
+                          class="absolute right-0 top-0 bottom-0 w-2 hover:bg-white hover:bg-opacity-30 transition-colors z-20"
+                          [class.cursor-ew-resize]="canUpdatePhaseTimeline()"
+                          [class.cursor-not-allowed]="!canUpdatePhaseTimeline()"
+                          (mousedown)="canUpdatePhaseTimeline() && onBarResizeStart($event, createTimelineRow(phase, 'phase'), 'right')"
                           (click)="$event.stopPropagation()">
                         </div>
                       </div>
@@ -272,23 +279,28 @@
                     calculateBarPosition(task.startDate, task.endDate);
                     <div class="absolute top-1/2 -translate-y-1/2 group cursor-pointer timeline-bar"
                       [style.left.px]="barPosition.left + 8" [style.width.px]="barPosition.width - 16"
-                      (mousedown)="onBarDragStart($event, createTimelineRow(task, 'task', phase.phaseId))"
+                      (mousedown)="canUpdateTaskTimeline() && onBarDragStart($event, createTimelineRow(task, 'task', phase.phaseId))"
                       (mouseenter)="onTaskMouseEnter($event, task)" (mouseleave)="onTaskMouseLeave()"
                       [attr.data-bar-id]="barId">
 
                       <!-- Task Bar Background -->
                       <div class="shadow-md hover:shadow-lg transition-all relative bg-blue-500" [style.height.px]="28"
-                        [style.border-radius.px]="8" [class.cursor-move]="!dragState()">
+                        [style.border-radius.px]="8" [class.cursor-move]="!dragState() && canUpdateTaskTimeline()"
+                        [class.cursor-not-allowed]="!canUpdateTaskTimeline()">
 
                         <!-- Resize Handles -->
                         <div
-                          class="absolute left-0 top-0 bottom-0 w-2 cursor-ew-resize hover:bg-white hover:bg-opacity-30 transition-colors z-20"
-                          (mousedown)="onBarResizeStart($event, createTimelineRow(task, 'task', phase.phaseId), 'left')"
+                          class="absolute left-0 top-0 bottom-0 w-2 hover:bg-white hover:bg-opacity-30 transition-colors z-20"
+                          [class.cursor-ew-resize]="canUpdateTaskTimeline()"
+                          [class.cursor-not-allowed]="!canUpdateTaskTimeline()"
+                          (mousedown)="canUpdateTaskTimeline() && onBarResizeStart($event, createTimelineRow(task, 'task', phase.phaseId), 'left')"
                           (click)="$event.stopPropagation()">
                         </div>
                         <div
-                          class="absolute right-0 top-0 bottom-0 w-2 cursor-ew-resize hover:bg-white hover:bg-opacity-30 transition-colors z-20"
-                          (mousedown)="onBarResizeStart($event, createTimelineRow(task, 'task', phase.phaseId), 'right')"
+                          class="absolute right-0 top-0 bottom-0 w-2 hover:bg-white hover:bg-opacity-30 transition-colors z-20"
+                          [class.cursor-ew-resize]="canUpdateTaskTimeline()"
+                          [class.cursor-not-allowed]="!canUpdateTaskTimeline()"
+                          (mousedown)="canUpdateTaskTimeline() && onBarResizeStart($event, createTimelineRow(task, 'task', phase.phaseId), 'right')"
                           (click)="$event.stopPropagation()">
                         </div>
                       </div>
