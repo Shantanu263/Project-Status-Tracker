@@ -1,6 +1,7 @@
 import { Component, ChangeDetectionStrategy, signal, computed, inject, OnInit, AfterViewInit, ViewChild, ElementRef, effect, HostListener } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
+import { ExportTimelineModalComponent } from './export-timeline-modal/export-timeline-modal';
 import { TimelineService } from '../../services/timeline.service';
 import { ProjectService } from '../../services/project.service';
 import { SelectedProjectService } from '../../services/selected-project.service';
@@ -31,7 +32,7 @@ interface TimelineGridCellExtended extends TimelineGridCell {
 
 @Component({
     selector: 'app-timeline',
-    imports: [CommonModule, FormsModule],
+    imports: [CommonModule, FormsModule, ExportTimelineModalComponent],
     templateUrl: './timeline.html',
     styleUrl: './timeline.scss',
     changeDetection: ChangeDetectionStrategy.OnPush
@@ -72,6 +73,10 @@ export class TimelineComponent implements OnInit, AfterViewInit {
     // Tooltip state
     hoveredPhase = signal<{ phase: PhaseWithTasks; index: number; x: number; y: number; showAbove: boolean } | null>(null);
     hoveredTask = signal<{ task: Task; x: number; y: number; showAbove: boolean } | null>(null);
+
+    // Export modal state
+    showExportModal = signal<boolean>(false);
+    showExportMenu = signal<boolean>(false);
 
     // Loading and error states
     isLoading = signal<boolean>(false);
@@ -379,11 +384,32 @@ export class TimelineComponent implements OnInit, AfterViewInit {
             return;
         }
 
+        // Compute the true earliest and latest dates across ALL phases and tasks,
+        // not just the project dates. This ensures every bar fits within the grid.
+        let earliest = new Date(projectStart);
+        let latest = new Date(projectEnd);
+
+        for (const phase of phases) {
+            const phaseStart = this.timelineService.parseDate(phase.startDate);
+            const phaseEnd = this.timelineService.parseDate(phase.endDate);
+            if (phaseStart && phaseStart < earliest) earliest = new Date(phaseStart);
+            if (phaseEnd && phaseEnd > latest) latest = new Date(phaseEnd);
+
+            if (phase.tasks) {
+                for (const task of phase.tasks) {
+                    const taskStart = this.timelineService.parseDate(task.startDate);
+                    const taskEnd = this.timelineService.parseDate(task.endDate);
+                    if (taskStart && taskStart < earliest) earliest = new Date(taskStart);
+                    if (taskEnd && taskEnd > latest) latest = new Date(taskEnd);
+                }
+            }
+        }
+
         // Add padding (2 weeks on each side)
         const paddingDays = 14;
-        const boundsStart = new Date(projectStart);
+        const boundsStart = new Date(earliest);
         boundsStart.setDate(boundsStart.getDate() - paddingDays);
-        const boundsEnd = new Date(projectEnd);
+        const boundsEnd = new Date(latest);
         boundsEnd.setDate(boundsEnd.getDate() + paddingDays);
 
         const totalDays = Math.ceil((boundsEnd.getTime() - boundsStart.getTime()) / (1000 * 60 * 60 * 24));
@@ -552,9 +578,10 @@ export class TimelineComponent implements OnInit, AfterViewInit {
         const scale = this.timeScale();
         const dayWidth = this.getDayWidth();
 
-        // For WEEK view, use simple day-based positioning and center in day column
+        // For WEEK view, use column-relative day-based positioning
         if (scale === TimeScale.WEEK) {
-            const daysSinceStart = Math.floor((today.getTime() - bounds.startDate.getTime()) / (1000 * 60 * 60 * 24));
+            const gridOrigin = columns[0].startDate;
+            const daysSinceStart = this.diffDays(gridOrigin, today);
             // Add 0.5 day width to center the marker in the day column
             const position = (daysSinceStart * dayWidth) + (dayWidth / 2);
             this.todayPosition.set(Math.max(0, position));
@@ -636,17 +663,28 @@ export class TimelineComponent implements OnInit, AfterViewInit {
     }
 
     /**
-     * Calculate bar position and width based on precise date alignment
-     * Uses uniform column widths with proportional date-based positioning
+     * Helper: calculate the number of calendar days between two local-midnight Date objects.
+     * Uses year/month/day arithmetic to avoid timezone and DST pitfalls.
+     */
+    private diffDays(a: Date, b: Date): number {
+        // Create UTC dates from local year/month/day to get an exact integer difference
+        const utcA = Date.UTC(a.getFullYear(), a.getMonth(), a.getDate());
+        const utcB = Date.UTC(b.getFullYear(), b.getMonth(), b.getDate());
+        return Math.round((utcB - utcA) / (1000 * 60 * 60 * 24));
+    }
+
+    /**
+     * Calculate bar position and width based on precise date alignment.
+     * Uses column-relative positioning for all views to ensure bars align
+     * exactly with the visible grid columns.
      */
     calculateBarPosition(startDate: string | undefined, endDate: string | undefined): { left: number; width: number } {
         if (!startDate || !endDate) {
             return { left: 0, width: 0 };
         }
 
-        const bounds = this.timelineBounds();
         const columns = this.timelineColumns();
-        if (!bounds || columns.length === 0) {
+        if (columns.length === 0) {
             return { left: 0, width: 0 };
         }
 
@@ -660,69 +698,68 @@ export class TimelineComponent implements OnInit, AfterViewInit {
         const dayWidth = this.getDayWidth();
         const scale = this.timeScale();
 
-        // For WEEK view
+        // For WEEK view: use the first column's startDate as reference to ensure
+        // bars align perfectly with the grid day cells.
         if (scale === TimeScale.WEEK) {
-            // Calculate days from timeline start
-            const startDays = Math.floor((barStart.getTime() - bounds.startDate.getTime()) / (1000 * 60 * 60 * 24));
-            const endDays = Math.floor((barEnd.getTime() - bounds.startDate.getTime()) / (1000 * 60 * 60 * 24));
+            const gridOrigin = columns[0].startDate;
 
-            // Position based on exact day offsets
+            // Use calendar day diff to avoid timezone/DST issues
+            const startDays = this.diffDays(gridOrigin, barStart);
+            const endDays = this.diffDays(gridOrigin, barEnd);
+
             const left = startDays * dayWidth;
             const width = Math.max((endDays - startDays + 1) * dayWidth, dayWidth);
 
             return { left: Math.max(0, left), width };
         }
 
-        // For MONTH and QUARTER views
+        // For MONTH and QUARTER views: proportional column-based positioning
         const columnWidth = this.getColumnWidth();
 
-        // Calculate position by finding which columns the bar spans
         let left = 0;
         let width = 0;
         let cumulativeLeft = 0;
+        let foundStart = false;
 
         for (let i = 0; i < columns.length; i++) {
             const column = columns[i];
             const colStart = column.startDate;
             const colEnd = column.endDate;
 
+            // Calculate proportional position using calendar days (immune to timezone issues)
+            const colDays = this.diffDays(colStart, colEnd) + 1; // inclusive
+
             // Check if bar starts in this column
-            if (barStart >= colStart && barStart <= colEnd) {
-                // Calculate proportional offset within this column
-                const colDuration = colEnd.getTime() - colStart.getTime();
-                const offsetFromColStart = barStart.getTime() - colStart.getTime();
-                const percentIntoColumn = colDuration > 0 ? offsetFromColStart / colDuration : 0;
+            if (!foundStart && barStart >= colStart && barStart <= colEnd) {
+                const daysIntoCol = this.diffDays(colStart, barStart);
+                const percentIntoColumn = colDays > 0 ? daysIntoCol / colDays : 0;
                 left = cumulativeLeft + (percentIntoColumn * columnWidth);
+                foundStart = true;
             }
 
-            // Calculate width by checking where bar ends
+            // Check if bar ends in this column
             if (barEnd >= colStart && barEnd <= colEnd) {
-                // Bar ends in this column
-                // Add 1 day to end date to represent end of that day
-                const barEndPlusOne = new Date(barEnd);
-                barEndPlusOne.setDate(barEndPlusOne.getDate() + 1);
-
-                const colDuration = colEnd.getTime() - colStart.getTime();
-                const offsetFromColStart = barEndPlusOne.getTime() - colStart.getTime();
-                const percentIntoColumn = colDuration > 0 ? offsetFromColStart / colDuration : 1;
+                // +1 day to represent end-of-day
+                const daysIntoCol = this.diffDays(colStart, barEnd) + 1;
+                const percentIntoColumn = colDays > 0 ? daysIntoCol / colDays : 1;
                 const endPosition = cumulativeLeft + (percentIntoColumn * columnWidth);
                 width = endPosition - left;
                 break;
-            } else if (barStart <= colEnd && barEnd > colEnd) {
-                // Bar spans through this column
-                if (barStart >= colStart) {
-                    // Bar started in this column, add remaining width
-                    const colDuration = colEnd.getTime() - colStart.getTime();
-                    const offsetFromColStart = barStart.getTime() - colStart.getTime();
-                    const percentIntoColumn = colDuration > 0 ? offsetFromColStart / colDuration : 0;
-                    width += columnWidth - (percentIntoColumn * columnWidth);
-                } else if (barStart < colStart) {
-                    // Bar started before this column, add full column width
-                    width += columnWidth;
-                }
+            } else if (foundStart && barEnd > colEnd) {
+                // Bar spans through this column entirely
+                // (width accumulation handled implicitly by endPosition - left)
+            } else if (!foundStart && barStart < colStart && barEnd >= colStart) {
+                // Bar started before the first visible column
+                left = cumulativeLeft;
+                foundStart = true;
             }
 
             cumulativeLeft += columnWidth;
+        }
+
+        // If bar ends after the last column
+        if (foundStart && width === 0) {
+            width = cumulativeLeft - left;
         }
 
         // Ensure minimum width of one day
@@ -1312,5 +1349,31 @@ export class TimelineComponent implements OnInit, AfterViewInit {
 
     onTaskMouseLeave() {
         this.hoveredTask.set(null);
+    }
+
+    // Export modal methods
+    toggleExportMenu() {
+        this.showExportMenu.update(show => !show);
+    }
+
+    openExportModal() {
+        this.showExportMenu.set(false);
+        this.showExportModal.set(true);
+    }
+
+    closeExportModal() {
+        this.showExportModal.set(false);
+    }
+
+    // Close export menu when clicking outside
+    @HostListener('document:click', ['$event'])
+    onDocumentClick(event: MouseEvent) {
+        const target = event.target as HTMLElement;
+        const exportMenu = document.querySelector('.export-menu-container');
+        const exportButton = document.querySelector('.export-menu-button');
+
+        if (exportMenu && !exportMenu.contains(target) && exportButton && !exportButton.contains(target)) {
+            this.showExportMenu.set(false);
+        }
     }
 }

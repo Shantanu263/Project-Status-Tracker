@@ -6,17 +6,20 @@ import { CreateProjectModalComponent } from '../create-project/create-project';
 import { SelectedProjectService } from '../../services/selected-project.service';
 import { ProjectService } from '../../services/project.service';
 import { SidebarStateService } from '../../services/sidebar-state.service';
+import { NotificationService } from '../../services/notification.service';
+import { WebSocketService } from '../../services/websocket.service';
 import { LucideAngularModule, User } from 'lucide-angular';
 import { Router, NavigationEnd } from '@angular/router';
 import { AuthService } from '../../services/auth.service';
 import { AccountPanelComponent } from './account-panel/account-panel.component';
+import { NotificationDropdownComponent } from '../notification-dropdown/notification-dropdown';
 import { filter } from 'rxjs/operators';
 
 
 
 @Component({
   selector: 'app-sidebar',
-  imports: [CommonModule, MatDialogModule, MatSnackBarModule, AccountPanelComponent],
+  imports: [CommonModule, MatDialogModule, MatSnackBarModule, AccountPanelComponent, NotificationDropdownComponent],
   templateUrl: './sidebar.html',
   styleUrl: './sidebar.scss',
   changeDetection: ChangeDetectionStrategy.OnPush
@@ -26,6 +29,8 @@ export class SidebarComponent {
   private readonly selectedProjectService = inject(SelectedProjectService);
   private readonly projectService = inject(ProjectService);
   private readonly sidebarStateService = inject(SidebarStateService);
+  private readonly notificationService = inject(NotificationService);
+  private readonly webSocketService = inject(WebSocketService);
   private readonly router = inject(Router);
   private readonly authService = inject(AuthService);
   private readonly snackBar = inject(MatSnackBar);
@@ -42,6 +47,8 @@ export class SidebarComponent {
 
   sidebarOpen = this.sidebarStateService.sidebarOpen;
   showAccountPanel = signal(false);
+  notificationDropdownOpen = signal(false);
+  unreadCount = signal<number>(0);
 
   isSuperAdmin = computed(() => this.authService.isSuperAdmin());
   canCreateProject = computed(() => {
@@ -73,6 +80,11 @@ export class SidebarComponent {
       filter(event => event instanceof NavigationEnd)
     ).subscribe(() => {
       this.loadProjects();
+    });
+
+    // Subscribe to notification unread count
+    this.notificationService.unreadCount$.subscribe((count) => {
+      this.unreadCount.set(count);
     });
   }
 
@@ -160,6 +172,14 @@ export class SidebarComponent {
     // The user computed signal will automatically update since it depends on authService.getCurrentUserName()
   }
 
+  toggleNotificationDropdown(): void {
+    this.notificationDropdownOpen.update((open) => !open);
+  }
+
+  closeNotificationDropdown(): void {
+    this.notificationDropdownOpen.set(false);
+  }
+
   logout() {
     // Show logout notification at bottom center
     this.snackBar.open('Logging out...', '', {
@@ -169,6 +189,9 @@ export class SidebarComponent {
 
     // Delay to allow snackbar to be visible before redirect
     setTimeout(() => {
+      // Disconnect WebSocket before logout
+      this.webSocketService.disconnect();
+
       // Call auth service logout to clear tokens and project state
       this.authService.logout();
 

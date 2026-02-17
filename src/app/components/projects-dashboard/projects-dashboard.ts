@@ -1,16 +1,18 @@
 import { ChangeDetectionStrategy, Component, signal, inject, computed, ViewChild, ElementRef, AfterViewInit, OnDestroy, effect } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
 import { ProjectService } from '../../services/project.service';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { Chart, ChartConfiguration, registerables } from 'chart.js';
+import type { ProjectCard } from '../../models/dashboard.model';
 
 // Register Chart.js components
 Chart.register(...registerables);
 
 @Component({
   selector: 'app-projects-dashboard',
-  imports: [CommonModule],
+  imports: [CommonModule, FormsModule],
   templateUrl: './projects-dashboard.html',
   styleUrl: './projects-dashboard.scss',
   changeDetection: ChangeDetectionStrategy.OnPush
@@ -37,6 +39,13 @@ export class ProjectsDashboard implements AfterViewInit, OnDestroy {
 
   viewMode = signal<'grid' | 'table'>('grid');
 
+  // Filter state
+  showFilterPanel = signal(false);
+  filterDateFrom = signal('');
+  filterDateTo = signal('');
+  filterStatus = signal('');
+  filterPriority = signal('');
+
   // Computed values from backend data
   kpis = computed(() => {
     const data = this.dashboardDataSignal();
@@ -62,7 +71,60 @@ export class ProjectsDashboard implements AfterViewInit, OnDestroy {
     return data?.projectCardDTOS || [];
   });
 
+  statusOptions = computed(() => {
+    const data = this.dashboardDataSignal();
+    const statusChart = data?.projectStatusChart;
+    if (!statusChart?.length) {
+      return ['Ongoing', 'Completed', 'Delayed', 'On Hold', 'Not Started'];
+    }
+    return statusChart.map((item: { status: string }) => item.status);
+  });
+
+  filteredProjects = computed(() => {
+    const list = this.projects();
+    const dateFrom = this.filterDateFrom();
+    const dateTo = this.filterDateTo();
+    const status = this.filterStatus();
+    const priority = this.filterPriority();
+
+    return list.filter(project => {
+      if (dateFrom && !this.projectInDateRange(project, dateFrom, null)) return false;
+      if (dateTo && !this.projectInDateRange(project, null, dateTo)) return false;
+      if (status && this.normalizeStatus(project.status) !== this.normalizeStatus(status)) return false;
+      if (priority && (project.priority ?? '').toLowerCase() !== priority.toLowerCase()) return false;
+      return true;
+    });
+  });
+
+  hasActiveFilters = computed(() => {
+    return !!(this.filterDateFrom() || this.filterDateTo() || this.filterStatus() || this.filterPriority());
+  });
+
+  activeFilterCount = computed(() => {
+    let n = 0;
+    if (this.filterDateFrom() || this.filterDateTo()) n += 1;
+    if (this.filterStatus()) n += 1;
+    if (this.filterPriority()) n += 1;
+    return n;
+  });
+
+  activeFilterSummary = computed(() => {
+    const parts: string[] = [];
+    const from = this.filterDateFrom();
+    const to = this.filterDateTo();
+    if (from || to) {
+      parts.push('Date: ' + (from || 'any') + ' – ' + (to || 'any'));
+    }
+    const status = this.filterStatus();
+    if (status) parts.push('Status: ' + status);
+    const priority = this.filterPriority();
+    if (priority) parts.push('Priority: ' + priority);
+    return parts.join(' · ');
+  });
+
   hasNoProjects = computed(() => this.projects().length === 0);
+
+  hasFilteredNoResults = computed(() => this.projects().length > 0 && this.filteredProjects().length === 0);
 
   isLoading = computed(() => this.dashboardDataSignal() === null);
 
@@ -91,10 +153,12 @@ export class ProjectsDashboard implements AfterViewInit, OnDestroy {
     if (data) {
       setTimeout(() => this.createCharts(data), 0);
     }
+
+    setTimeout(() => document.addEventListener('click', this.boundCloseFilterOnClickOutside), 0);
   }
 
   ngOnDestroy(): void {
-    // Clean up charts
+    document.removeEventListener('click', this.boundCloseFilterOnClickOutside);
     if (this.statusChart) {
       this.statusChart.destroy();
     }
@@ -108,6 +172,16 @@ export class ProjectsDashboard implements AfterViewInit, OnDestroy {
       this.radarChart.destroy();
     }
   }
+
+  private boundCloseFilterOnClickOutside = (event: MouseEvent): void => {
+    if (!this.showFilterPanel()) return;
+    const panel = document.querySelector('.projects-dashboard-filter-panel');
+    const trigger = document.querySelector('.projects-dashboard-filter-trigger');
+    const target = event.target as Node;
+    if (panel && trigger && !panel.contains(target) && !trigger.contains(target)) {
+      this.showFilterPanel.set(false);
+    }
+  };
 
   private createCharts(data: any): void {
     this.createStatusChart(data.projectStatusChart);
@@ -666,6 +740,64 @@ export class ProjectsDashboard implements AfterViewInit, OnDestroy {
 
   toggleView(mode: 'grid' | 'table'): void {
     this.viewMode.set(mode);
+  }
+
+  toggleFilterPanel(): void {
+    this.showFilterPanel.update(v => !v);
+  }
+
+  clearFilters(): void {
+    this.filterDateFrom.set('');
+    this.filterDateTo.set('');
+    this.filterStatus.set('');
+    this.filterPriority.set('');
+  }
+
+  private parseDate(str: string): Date | null {
+    if (!str) return null;
+    // Handle dd-mm-yyyy from backend
+    const parts = str.trim().split(/[-/]/);
+    if (parts.length === 3) {
+      const p0 = parseInt(parts[0], 10);
+      const p1 = parseInt(parts[1], 10);
+      const p2 = parseInt(parts[2], 10);
+      if (!isNaN(p0) && !isNaN(p1) && !isNaN(p2)) {
+        const d = p0 <= 31 && p1 <= 12
+          ? new Date(p2, p1 - 1, p0)
+          : new Date(p0, p1 - 1, p2);
+        if (!isNaN(d.getTime())) return d;
+      }
+    }
+    const d = new Date(str);
+    return isNaN(d.getTime()) ? null : d;
+  }
+
+  private projectInDateRange(project: ProjectCard, from: string | null, to: string | null): boolean {
+    const start = this.parseDate(project.startDate);
+    const end = this.parseDate(project.endDate);
+    if (from) {
+      const fromDate = this.parseDate(from);
+      if (!fromDate) return true;
+      if (end) {
+        const fd = new Date(fromDate.getFullYear(), fromDate.getMonth(), fromDate.getDate());
+        const ed = new Date(end.getFullYear(), end.getMonth(), end.getDate());
+        if (ed < fd) return false;
+      }
+    }
+    if (to) {
+      const toDate = this.parseDate(to);
+      if (!toDate) return true;
+      if (start) {
+        const td = new Date(toDate.getFullYear(), toDate.getMonth(), toDate.getDate());
+        const sd = new Date(start.getFullYear(), start.getMonth(), start.getDate());
+        if (sd > td) return false;
+      }
+    }
+    return true;
+  }
+
+  private normalizeStatus(s: string): string {
+    return s.toLowerCase().replace(/\s+/g, '');
   }
 
   // Map backend status to frontend status classes

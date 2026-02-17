@@ -1,0 +1,20 @@
+<div class="toast-container">
+    <div *ngFor="let toast of toasts()" class="toast-item" [class.toast-visible]="toast.visible"
+        [class.toast-hidden]="!toast.visible">
+        <!-- Icon -->
+        <div class="toast-icon">
+            <lucide-angular [img]="getNotificationIcon(toast.type)" [size]="20" class="icon"></lucide-angular>
+        </div>
+
+        <!-- Content -->
+        <div class="toast-content">
+            <div class="toast-title">{{ toast.title }}</div>
+            <div class="toast-message">{{ toast.message }}</div>
+        </div>
+
+        <!-- Close Button -->
+        <button class="toast-close" (click)="dismissToast(toast.id)" type="button">
+            <lucide-angular [img]="X" [size]="16" class="icon"></lucide-angular>
+        </button>
+    </div>
+</div>

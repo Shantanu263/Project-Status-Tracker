@@ -462,6 +462,123 @@ export class TasksComponent implements OnInit {
         return parsedDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
     }
 
+
+    /**
+     * Get completed on date for a task
+     * Returns formatted completion date or "—"
+     */
+    getCompletedOnInfo(task: TaskWithPhase): string {
+        if (task.status === 'DONE' && task.completedAt) {
+            return this.formatDate(task.completedAt);
+        }
+        return '—';
+    }
+
+    /**
+     * Get delay information for a task
+     * Returns delay label and color class
+     */
+    getDelayInfo(task: TaskWithPhase): { label: string; color: string } {
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+
+        if (task.status === 'DONE') {
+            // For DONE tasks: check if completed on time or late
+            if (task.completedAt && task.endDate) {
+                const completedDate = this.parseDateFromBackend(task.completedAt);
+                const endDate = this.parseDateFromBackend(task.endDate);
+
+                if (completedDate && endDate) {
+                    completedDate.setHours(0, 0, 0, 0);
+                    endDate.setHours(0, 0, 0, 0);
+
+                    if (completedDate <= endDate) {
+                        const earlyMs = endDate.getTime() - completedDate.getTime();
+                        const earlyDays = Math.floor(earlyMs / (1000 * 60 * 60 * 24));
+
+                        if (earlyDays > 0) {
+                            const earlyText = this.formatDurationText(earlyDays);
+                            return { label: `${earlyText} early`, color: 'text-green-600' };
+                        }
+                        return { label: 'On time', color: 'text-green-600' };
+                    } else {
+                        // Calculate delay
+                        const delayMs = completedDate.getTime() - endDate.getTime();
+                        const delayDays = Math.ceil(delayMs / (1000 * 60 * 60 * 24));
+                        const delayText = this.formatDurationText(delayDays);
+                        return { label: `+${delayText} late`, color: 'text-red-600' };
+                    }
+                }
+            }
+            // Fallback for DONE tasks without proper dates
+            return { label: '—', color: 'text-gray-600' };
+        } else {
+            // For non-DONE tasks: check if overdue
+            if (task.endDate) {
+                const endDate = this.parseDateFromBackend(task.endDate);
+
+                if (endDate) {
+                    endDate.setHours(0, 0, 0, 0);
+
+                    if (today > endDate) {
+                        // Overdue
+                        const overdueMs = today.getTime() - endDate.getTime();
+                        const overdueDays = Math.ceil(overdueMs / (1000 * 60 * 60 * 24));
+                        const overdueText = this.formatDurationText(overdueDays);
+                        return { label: `Overdue ${overdueText}`, color: 'text-orange-600' };
+                    }
+                }
+            }
+            // On track or no end date
+            return { label: '—', color: 'text-gray-600' };
+        }
+    }
+
+    /**
+     * Format duration text for display (reused from board component logic)
+     * Uses combinations like: 1w4d, 3m2w, 1y2m
+     */
+    private formatDurationText(days: number): string {
+        if (days === 0) return '0d';
+
+        const absDays = Math.abs(days);
+        let result = '';
+
+        // Calculate years, months, weeks, and remaining days
+        if (absDays >= 365) {
+            const years = Math.floor(absDays / 365);
+            const remainingDays = absDays % 365;
+            const months = Math.floor(remainingDays / 30);
+
+            result = `${years}y`;
+            if (months > 0) {
+                result += `${months}m`;
+            }
+        } else if (absDays >= 30) {
+            const months = Math.floor(absDays / 30);
+            const remainingDays = absDays % 30;
+            const weeks = Math.floor(remainingDays / 7);
+
+            result = `${months}m`;
+            if (weeks > 0) {
+                result += `${weeks}w`;
+            }
+        } else if (absDays >= 7) {
+            const weeks = Math.floor(absDays / 7);
+            const remainingDays = absDays % 7;
+
+            result = `${weeks}w`;
+            if (remainingDays > 0) {
+                result += `${remainingDays}d`;
+            }
+        } else {
+            // Less than a week, just show days
+            result = `${absDays}d`;
+        }
+
+        return result;
+    }
+
     getInitials(name?: string): string {
         if (!name) return 'NA';
         const parts = name.split(' ');

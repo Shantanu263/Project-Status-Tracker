@@ -183,185 +183,216 @@
         <!-- Table Container -->
         @if (!isLoading()) {
         <div class="flex-1 flex flex-col overflow-hidden">
-            <!-- Table Header (Sticky) -->
-            <div class="bg-gray-50 border-b border-gray-200 flex-shrink-0">
-                <div
-                    class="grid grid-cols-[minmax(200px,2fr)_minmax(120px,1fr)_minmax(120px,1fr)_minmax(140px,1.2fr)_minmax(110px,1fr)_minmax(110px,1fr)_minmax(90px,0.8fr)] gap-4 px-4 py-3 text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    <div class="cursor-pointer hover:text-gray-700" (click)="sortBy('taskName')">
-                        Task Name {{ getSortIcon('taskName') }}
-                    </div>
-                    <div class="cursor-pointer hover:text-gray-700" (click)="sortBy('phase')">
-                        Phase {{ getSortIcon('phase') }}
-                    </div>
-                    <div class="cursor-pointer hover:text-gray-700" (click)="sortBy('status')">
-                        Status {{ getSortIcon('status') }}
-                    </div>
-                    <div class="cursor-pointer hover:text-gray-700" (click)="sortBy('assignee')">
-                        Assignee {{ getSortIcon('assignee') }}
-                    </div>
-                    <div class="cursor-pointer hover:text-gray-700" (click)="sortBy('startDate')">
-                        Start Date {{ getSortIcon('startDate') }}
-                    </div>
-                    <div class="cursor-pointer hover:text-gray-700" (click)="sortBy('endDate')">
-                        End Date {{ getSortIcon('endDate') }}
-                    </div>
-                    <div class="cursor-pointer hover:text-gray-700" (click)="sortBy('priority')">
-                        Priority {{ getSortIcon('priority') }}
-                    </div>
-                </div>
-            </div>
-
-            <!-- Table Body (Scrollable) -->
-            <div class="flex-1 overflow-y-auto overflow-x-auto">
-                @if (sortedAndFilteredTasks().length === 0) {
-                <div class="px-4 py-12 text-center text-gray-500">
-                    No tasks found
-                </div>
-                } @else {
-                <div class="divide-y divide-gray-100">
-                    @for (task of sortedAndFilteredTasks(); track task.taskId) {
-                    <div>
-                        <!-- Task Row -->
-                        <div (click)="onTaskClick(task)"
-                            class="grid grid-cols-[minmax(200px,2fr)_minmax(120px,1fr)_minmax(120px,1fr)_minmax(140px,1.2fr)_minmax(110px,1fr)_minmax(110px,1fr)_minmax(90px,0.8fr)] gap-4 px-4 py-3 hover:bg-gray-50 cursor-pointer transition-colors group">
-                            <!-- Task Name with Expand Icon on Right -->
-                            <div class="flex items-center justify-between gap-2 text-sm font-medium text-gray-900">
-                                <span>{{ task.taskName }}</span>
-                                @if (hasSubtasks(task)) {
-                                <button (click)="toggleTaskExpansion(task.taskId!, $event)"
-                                    class="flex-shrink-0 p-1 rounded hover:bg-gray-200 transition-colors opacity-0 group-hover:opacity-100">
-                                    <svg [class]="'w-4 h-4 text-gray-600 transition-transform ' + (isTaskExpanded(task.taskId!) ? 'rotate-90' : '')"
-                                        fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                            d="M9 5l7 7-7 7"></path>
-                                    </svg>
-                                </button>
-                                }
+            <!-- Horizontal Scrolling Wrapper -->
+            <div class="overflow-x-auto overflow-y-hidden">
+                <div style="min-width: 1300px;">
+                    <!-- Table Header (Sticky) -->
+                    <div class="bg-gray-50 border-b border-gray-200">
+                        <div
+                            class="grid grid-cols-[minmax(200px,2fr)_minmax(120px,1fr)_minmax(120px,1fr)_minmax(140px,1.2fr)_minmax(110px,1fr)_minmax(110px,1fr)_minmax(110px,1fr)_minmax(100px,1fr)_minmax(90px,0.8fr)] gap-4 px-4 py-3 text-xs font-medium text-gray-500 uppercase tracking-wider">
+                            <div class="cursor-pointer hover:text-gray-700" (click)="sortBy('taskName')">
+                                Task Name {{ getSortIcon('taskName') }}
                             </div>
-                            <!-- Phase -->
-                            <div class="flex items-center text-sm text-gray-600">
-                                {{ task.phaseName }}
+                            <div class="cursor-pointer hover:text-gray-700" (click)="sortBy('phase')">
+                                Phase {{ getSortIcon('phase') }}
                             </div>
-                            <!-- Status -->
-                            <div class="flex items-center">
-                                <span
-                                    [class]="'inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ' + getStatusClass(task.status)">
-                                    {{ getStatusLabel(task.status) }}
-                                </span>
+                            <div class="cursor-pointer hover:text-gray-700" (click)="sortBy('status')">
+                                Status {{ getSortIcon('status') }}
                             </div>
-                            <!-- Assignee -->
-                            <div class="flex items-center gap-2">
-                                @if (task.assignedToName) {
-                                <div
-                                    [class]="'w-6 h-6 rounded-full flex items-center justify-center text-white text-xs font-medium ' + getAvatarColor(task.assignedToName)">
-                                    {{ getInitials(task.assignedToName) }}
-                                </div>
-                                <span class="text-sm text-gray-700">{{ task.assignedToName }}</span>
-                                @if (isMemberRemoved(task.assignedToProjectMemberId)) {
-                                <span class="flex items-center" role="img" aria-label="Member removed from project"
-                                    title="Member removed from project" (click)="$event.stopPropagation()"
-                                    (mousedown)="$event.stopPropagation()">
-                                    <svg class="w-4 h-4 text-orange-500" fill="none" stroke="currentColor"
-                                        viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                            d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z">
-                                        </path>
-                                    </svg>
-                                </span>
-                                }
-                                } @else {
-                                <span class="text-sm text-gray-400">Unassigned</span>
-                                }
+                            <div class="cursor-pointer hover:text-gray-700" (click)="sortBy('assignee')">
+                                Assignee {{ getSortIcon('assignee') }}
                             </div>
-                            <!-- Start Date -->
-                            <div class="flex items-center text-sm text-gray-600">
-                                {{ formatDate(task.startDate) }}
+                            <div class="cursor-pointer hover:text-gray-700" (click)="sortBy('startDate')">
+                                Start Date {{ getSortIcon('startDate') }}
                             </div>
-                            <!-- End Date -->
-                            <div class="flex items-center text-sm text-gray-600">
-                                {{ formatDate(task.endDate) }}
+                            <div class="cursor-pointer hover:text-gray-700" (click)="sortBy('endDate')">
+                                End Date {{ getSortIcon('endDate') }}
                             </div>
-                            <!-- Priority-->
-                            <div class="flex items-center gap-2 text-sm">
-                                <div [class]="'w-3 h-3 rounded ' + getPriorityCircleColor(task.priority)"></div>
-                                <span class="text-gray-700">{{ task.priority || 'Low' }}</span>
+                            <div>
+                                Completed
+                            </div>
+                            <div>
+                                Completion Status
+                            </div>
+                            <div class="cursor-pointer hover:text-gray-700" (click)="sortBy('priority')">
+                                Priority {{ getSortIcon('priority') }}
                             </div>
                         </div>
+                    </div>
 
-                        <!-- Subtasks Rows (Expanded) -->
-                        @if (isTaskExpanded(task.taskId!) && hasSubtasks(task)) {
-                        @for (subtask of task.subTasks; track subtask.subTaskId) {
-                        <div (click)="onSubtaskClick(task, subtask.subTaskId, $event)"
-                            class="grid grid-cols-[minmax(200px,2fr)_minmax(120px,1fr)_minmax(120px,1fr)_minmax(140px,1.2fr)_minmax(110px,1fr)_minmax(110px,1fr)_minmax(90px,0.8fr)] gap-4 px-4 py-2 bg-gray-50 hover:bg-gray-100 cursor-pointer transition-colors border-l-4 border-blue-300">
-                            <!-- Subtask Name -->
-                            <div class="flex items-center gap-2 text-sm text-gray-700 pl-8">
-                                <svg class="w-3 h-3 text-gray-400" fill="none" stroke="currentColor"
-                                    viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                        d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2">
-                                    </path>
-                                </svg>
-                                <span>{{ subtask.subTaskName }}</span>
-                            </div>
-                            <!-- Phase (empty for subtasks) -->
-                            <div class="flex items-center text-sm text-gray-400">
-                                -
-                            </div>
-                            <!-- Status -->
-                            <div class="flex items-center">
-                                <span
-                                    [class]="'inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ' + getStatusClass(subtask.status)">
-                                    {{ getStatusLabel(subtask.status) }}
-                                </span>
-                            </div>
-                            <!-- Assignee -->
-                            <div class="flex items-center gap-2">
-                                @if (subtask.assignedToProjectMemberId) {
-                                @for (member of projectMembers(); track member.memberId) {
-                                @if (member.memberId === subtask.assignedToProjectMemberId) {
-                                <div
-                                    [class]="'w-6 h-6 rounded-full flex items-center justify-center text-white text-xs font-medium ' + getAvatarColor(member.user)">
-                                    {{ getInitials(member.user) }}
+                    <!-- Table Body (Scrollable) -->
+                    <div class="flex-1 overflow-y-auto" style="max-height: calc(100vh - 340px);">
+                        @if (sortedAndFilteredTasks().length === 0) {
+                        <div class="px-4 py-12 text-center text-gray-500">
+                            No tasks found
+                        </div>
+                        } @else {
+                        <div class="divide-y divide-gray-100">
+                            @for (task of sortedAndFilteredTasks(); track task.taskId) {
+                            <div>
+                                <!-- Task Row -->
+                                <div (click)="onTaskClick(task)"
+                                    class="grid grid-cols-[minmax(200px,2fr)_minmax(120px,1fr)_minmax(120px,1fr)_minmax(140px,1.2fr)_minmax(110px,1fr)_minmax(110px,1fr)_minmax(110px,1fr)_minmax(100px,1fr)_minmax(90px,0.8fr)] gap-4 px-4 py-3 hover:bg-gray-50 cursor-pointer transition-colors group">
+                                    <!-- Task Name with Expand Icon on Right -->
+                                    <div
+                                        class="flex items-center justify-between gap-2 text-sm font-medium text-gray-900">
+                                        <span>{{ task.taskName }}</span>
+                                        @if (hasSubtasks(task)) {
+                                        <button (click)="toggleTaskExpansion(task.taskId!, $event)"
+                                            class="flex-shrink-0 p-1 rounded hover:bg-gray-200 transition-colors opacity-0 group-hover:opacity-100">
+                                            <svg [class]="'w-4 h-4 text-gray-600 transition-transform ' + (isTaskExpanded(task.taskId!) ? 'rotate-90' : '')"
+                                                fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                                    d="M9 5l7 7-7 7"></path>
+                                            </svg>
+                                        </button>
+                                        }
+                                    </div>
+                                    <!-- Phase -->
+                                    <div class="flex items-center text-sm text-gray-600">
+                                        {{ task.phaseName }}
+                                    </div>
+                                    <!-- Status -->
+                                    <div class="flex items-center">
+                                        <span
+                                            [class]="'inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ' + getStatusClass(task.status)">
+                                            {{ getStatusLabel(task.status) }}
+                                        </span>
+                                    </div>
+                                    <!-- Assignee -->
+                                    <div class="flex items-center gap-2">
+                                        @if (task.assignedToName) {
+                                        <div
+                                            [class]="'w-6 h-6 rounded-full flex items-center justify-center text-white text-xs font-medium ' + getAvatarColor(task.assignedToName)">
+                                            {{ getInitials(task.assignedToName) }}
+                                        </div>
+                                        <span class="text-sm text-gray-700">{{ task.assignedToName }}</span>
+                                        @if (isMemberRemoved(task.assignedToProjectMemberId)) {
+                                        <span class="flex items-center" role="img"
+                                            aria-label="Member removed from project" title="Member removed from project"
+                                            (click)="$event.stopPropagation()" (mousedown)="$event.stopPropagation()">
+                                            <svg class="w-4 h-4 text-orange-500" fill="none" stroke="currentColor"
+                                                viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                                    d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z">
+                                                </path>
+                                            </svg>
+                                        </span>
+                                        }
+                                        } @else {
+                                        <span class="text-sm text-gray-400">Unassigned</span>
+                                        }
+                                    </div>
+                                    <!-- Start Date -->
+                                    <div class="flex items-center text-sm text-gray-600">
+                                        {{ formatDate(task.startDate) }}
+                                    </div>
+                                    <!-- End Date -->
+                                    <div class="flex items-center text-sm text-gray-600">
+                                        {{ formatDate(task.endDate) }}
+                                    </div>
+                                    <!-- Completed On -->
+                                    <div class="flex items-center text-sm text-gray-600">
+                                        {{ getCompletedOnInfo(task) }}
+                                    </div>
+                                    <!-- Delay -->
+                                    <div class="flex items-center text-sm whitespace-nowrap overflow-hidden">
+                                        @if (getDelayInfo(task); as delay) {
+                                        <span [class]="delay.color">{{ delay.label }}</span>
+                                        }
+                                    </div>
+                                    <!-- Priority-->
+                                    <div class="flex items-center gap-2 text-sm">
+                                        <div [class]="'w-3 h-3 rounded ' + getPriorityCircleColor(task.priority)"></div>
+                                        <span class="text-gray-700">{{ task.priority || 'Low' }}</span>
+                                    </div>
                                 </div>
-                                <span class="text-sm text-gray-700">{{ member.user }}</span>
-                                @if (isMemberRemoved(subtask.assignedToProjectMemberId)) {
-                                <span class="flex items-center" role="img" aria-label="Member removed from project"
-                                    title="Member removed from project" (click)="$event.stopPropagation()"
-                                    (mousedown)="$event.stopPropagation()">
-                                    <svg class="w-4 h-4 text-orange-500" fill="none" stroke="currentColor"
-                                        viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                            d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z">
-                                        </path>
-                                    </svg>
-                                </span>
+
+                                <!-- Subtasks Rows (Expanded) -->
+                                @if (isTaskExpanded(task.taskId!) && hasSubtasks(task)) {
+                                @for (subtask of task.subTasks; track subtask.subTaskId) {
+                                <div (click)="onSubtaskClick(task, subtask.subTaskId, $event)"
+                                    class="grid grid-cols-[minmax(200px,2fr)_minmax(120px,1fr)_minmax(120px,1fr)_minmax(140px,1.2fr)_minmax(110px,1fr)_minmax(110px,1fr)_minmax(110px,1fr)_minmax(100px,1fr)_minmax(90px,0.8fr)] gap-4 px-4 py-2 bg-gray-50 hover:bg-gray-100 cursor-pointer transition-colors border-l-4 border-blue-300">
+                                    <!-- Subtask Name -->
+                                    <div class="flex items-center gap-2 text-sm text-gray-700 pl-8">
+                                        <svg class="w-3 h-3 text-gray-400" fill="none" stroke="currentColor"
+                                            viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                                d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2">
+                                            </path>
+                                        </svg>
+                                        <span>{{ subtask.subTaskName }}</span>
+                                    </div>
+                                    <!-- Phase (empty for subtasks) -->
+                                    <div class="flex items-center text-sm text-gray-400">
+                                        -
+                                    </div>
+                                    <!-- Status -->
+                                    <div class="flex items-center">
+                                        <span
+                                            [class]="'inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ' + getStatusClass(subtask.status)">
+                                            {{ getStatusLabel(subtask.status) }}
+                                        </span>
+                                    </div>
+                                    <!-- Assignee -->
+                                    <div class="flex items-center gap-2">
+                                        @if (subtask.assignedToProjectMemberId) {
+                                        @for (member of projectMembers(); track member.memberId) {
+                                        @if (member.memberId === subtask.assignedToProjectMemberId) {
+                                        <div
+                                            [class]="'w-6 h-6 rounded-full flex items-center justify-center text-white text-xs font-medium ' + getAvatarColor(member.user)">
+                                            {{ getInitials(member.user) }}
+                                        </div>
+                                        <span class="text-sm text-gray-700">{{ member.user }}</span>
+                                        @if (isMemberRemoved(subtask.assignedToProjectMemberId)) {
+                                        <span class="flex items-center" role="img"
+                                            aria-label="Member removed from project" title="Member removed from project"
+                                            (click)="$event.stopPropagation()" (mousedown)="$event.stopPropagation()">
+                                            <svg class="w-4 h-4 text-orange-500" fill="none" stroke="currentColor"
+                                                viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                                    d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z">
+                                                </path>
+                                            </svg>
+                                        </span>
+                                        }
+                                        }
+                                        }
+                                        } @else {
+                                        <span class="text-sm text-gray-400">Unassigned</span>
+                                        }
+                                    </div>
+                                    <!-- Start Date -->
+                                    <div class="flex items-center text-sm text-gray-600">
+                                        {{ formatDate(subtask.startDate) }}
+                                    </div>
+                                    <!-- End Date -->
+                                    <div class="flex items-center text-sm text-gray-600">
+                                        {{ formatDate(subtask.endDate) }}
+                                    </div>
+                                    <!-- Completed On (subtasks don't show this) -->
+                                    <div class="flex items-center text-sm text-gray-400">
+                                        —
+                                    </div>
+                                    <!-- Delay (subtasks don't show this) -->
+                                    <div class="flex items-center text-sm text-gray-400">
+                                        —
+                                    </div>
+                                    <!-- Priority -->
+                                    <div class="flex items-center gap-2 text-sm">
+                                        <div [class]="'w-3 h-3 rounded ' + getSubtaskPriorityColor(subtask.priority)">
+                                        </div>
+                                        <span class="text-gray-700">{{ subtask.priority }}</span>
+                                    </div>
+                                </div>
                                 }
                                 }
-                                }
-                                } @else {
-                                <span class="text-sm text-gray-400">Unassigned</span>
-                                }
                             </div>
-                            <!-- Start Date -->
-                            <div class="flex items-center text-sm text-gray-600">
-                                {{ formatDate(subtask.startDate) }}
-                            </div>
-                            <!-- End Date -->
-                            <div class="flex items-center text-sm text-gray-600">
-                                {{ formatDate(subtask.endDate) }}
-                            </div>
-                            <!-- Priority -->
-                            <div class="flex items-center gap-2 text-sm">
-                                <div [class]="'w-3 h-3 rounded ' + getSubtaskPriorityColor(subtask.priority)"></div>
-                                <span class="text-gray-700">{{ subtask.priority }}</span>
-                            </div>
+                            }
                         </div>
                         }
-                        }
                     </div>
-                    }
                 </div>
-                }
             </div>
         </div>
         }

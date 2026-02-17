@@ -5,6 +5,7 @@ import { HttpClient } from '@angular/common/http';
 import { environment } from '../../environments/environment';
 import { SelectedProjectService } from '../../services/selected-project.service';
 import { AddMembersModalComponent } from '../add-members-modal/add-members-modal';
+import { MemberDetailsModalComponent } from './member-details-modal/member-details-modal';
 import { AuthService } from '../../services/auth.service';
 import { DataSyncService } from '../../services/data-sync.service';
 import { OverlayModule } from '@angular/cdk/overlay';
@@ -43,7 +44,7 @@ interface MembersResponse {
 @Component({
   selector: 'app-members',
   standalone: true,
-  imports: [CommonModule, FormsModule, AddMembersModalComponent, OverlayModule],
+  imports: [CommonModule, FormsModule, AddMembersModalComponent, MemberDetailsModalComponent, OverlayModule],
   templateUrl: './members.html',
   styleUrl: './members.scss',
   changeDetection: ChangeDetectionStrategy.OnPush
@@ -58,6 +59,10 @@ export class MembersComponent {
   loading = signal(false);
   error = signal<string | null>(null);
   showAddMembersModal = signal(false);
+
+  // Member details modal state
+  showMemberDetailsModal = signal(false);
+  selectedMemberId = signal<string | null>(null);
 
   // Role editing
   editingRoleMemberId = signal<string | null>(null);
@@ -372,6 +377,17 @@ export class MembersComponent {
   onMembersAdded(): void {
     this.showAddMembersModal.set(false);
     this.loadMembers();
+  }
+
+  // Member details modal methods
+  onMemberRowClick(memberId: string): void {
+    this.selectedMemberId.set(memberId);
+    this.showMemberDetailsModal.set(true);
+  }
+
+  closeMemberDetailsModal(): void {
+    this.showMemberDetailsModal.set(false);
+    this.selectedMemberId.set(null);
   }
 
   // Role management methods

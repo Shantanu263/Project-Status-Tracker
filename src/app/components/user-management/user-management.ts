@@ -4,13 +4,14 @@ import { UserManagementService, User } from '../../services/user-management.serv
 import { Overlay, OverlayModule, OverlayRef } from '@angular/cdk/overlay';
 import { ComponentPortal } from '@angular/cdk/portal';
 import { InviteUserModalComponent } from '../invite-user-modal/invite-user-modal';
+import { UserDetailsModalComponent } from './user-details-modal/user-details-modal';
 
 type SortOrder = 'asc' | 'desc';
 type SortColumn = 'userId' | 'name' | 'email' | 'role' | 'createdAt';
 
 @Component({
     selector: 'app-user-management',
-    imports: [CommonModule, OverlayModule, InviteUserModalComponent],
+    imports: [CommonModule, OverlayModule, InviteUserModalComponent, UserDetailsModalComponent],
     templateUrl: './user-management.html',
     styleUrl: './user-management.scss',
     changeDetection: ChangeDetectionStrategy.OnPush
@@ -22,6 +23,10 @@ export class UserManagementComponent {
 
     // Modal state
     showInviteUserModal = signal(false);
+
+    // User details modal state
+    showUserDetailsModal = signal(false);
+    selectedUser = signal<User | null>(null);
 
     // Pagination & Filtering
     searchQuery = signal('');
@@ -336,5 +341,16 @@ export class UserManagementComponent {
 
     onUsersInvited(): void {
         this.loadUsers();
+    }
+
+    // User details modal methods
+    onUserRowClick(user: User): void {
+        this.selectedUser.set(user);
+        this.showUserDetailsModal.set(true);
+    }
+
+    closeUserDetailsModal(): void {
+        this.showUserDetailsModal.set(false);
+        this.selectedUser.set(null);
     }
 }

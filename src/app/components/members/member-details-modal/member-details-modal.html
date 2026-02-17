@@ -1,0 +1,278 @@
+@if (isOpen()) {
+<!-- Modal Backdrop -->
+<div class="fixed inset-0 z-50 flex items-center justify-center p-4 modal-backdrop" (click)="onClose()">
+    <!-- Modal Container -->
+    <div class="modal-content-wrapper" (click)="$event.stopPropagation()">
+        <!-- Modal Header -->
+        <div class="modal-header">
+            <div>
+                <h2 class="text-3xl font-bold text-white">Member Details</h2>
+                <p class="text-sm text-gray-200 mt-1">View member information and assignments</p>
+            </div>
+            <div class="flex items-center gap-2">
+                <!-- Close Button -->
+                <button (click)="onClose()"
+                    class="flex-shrink-0 rounded-lg p-2 text-white transition-colors duration-200 hover:bg-white/20">
+                    <svg class="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12">
+                        </path>
+                    </svg>
+                </button>
+            </div>
+        </div>
+
+        <!-- Modal Content -->
+        <div class="modal-content">
+            @if (loading()) {
+            <div class="flex items-center justify-center py-12">
+                <div class="text-gray-500">Loading...</div>
+            </div>
+            } @else if (error()) {
+            <div class="rounded-lg bg-red-50 p-4 text-red-700">
+                {{ error() }}
+            </div>
+            } @else if (memberDetails(); as member) {
+            <div class="space-y-6">
+                <!-- Member Info Section -->
+                <div class="space-y-4">
+                    <!-- Avatar and Name -->
+                    <div class="flex items-center gap-4">
+                        <div
+                            [class]="'w-20 h-20 rounded-full flex items-center justify-center text-white text-2xl font-bold shadow-lg ' + getAvatarColor(member.memberId)">
+                            {{ getInitials(member.user) }}
+                        </div>
+                        <div class="flex-1">
+                            <h1 class="text-3xl font-bold text-gray-900">{{ member.user }}</h1>
+                            <p class="text-sm text-gray-600 mt-1">{{ member.email }}</p>
+                        </div>
+                        <span
+                            [class]="'px-3 py-1 inline-flex text-xs leading-5 font-semibold rounded-full ' + getRoleBadgeClass(member.role)">
+                            {{ getRoleLabel(member.role) }}
+                        </span>
+                    </div>
+
+                    <!-- Member Stats -->
+                    <div class="grid grid-cols-3 gap-4 pt-4">
+                        <div class="text-center p-4 bg-gray-50 rounded-lg">
+                            <div class="text-2xl font-bold text-gray-900">{{ assignedPhases().length }}</div>
+                            <div class="text-sm text-gray-600 mt-1">Phases</div>
+                        </div>
+                        <div class="text-center p-4 bg-gray-50 rounded-lg">
+                            <div class="text-2xl font-bold text-gray-900">{{ assignedTasks().length }}</div>
+                            <div class="text-sm text-gray-600 mt-1">Tasks</div>
+                        </div>
+                        <div class="text-center p-4 bg-gray-50 rounded-lg">
+                            <div class="text-2xl font-bold text-gray-900">{{ assignedSubtasks().length }}</div>
+                            <div class="text-sm text-gray-600 mt-1">Subtasks</div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="border-t border-gray-200"></div>
+
+                @if (hasAnyAssignments()) {
+                <!-- Tabs Section -->
+                <div class="space-y-4">
+                    <h3 class="text-lg font-semibold text-gray-900">Assigned Work</h3>
+
+                    <!-- Tab Navigation -->
+                    <div class="flex gap-2 border-b border-gray-200">
+                        @if (hasAssignedPhases()) {
+                        <button (click)="switchTab('phases')"
+                            [class]="'px-4 py-2 font-medium transition-colors border-b-2 ' + (activeTab() === 'phases' ? 'border-[#8c2d1b] text-[#8c2d1b]' : 'border-transparent text-gray-600 hover:text-gray-900')">
+                            Phases ({{ assignedPhases().length }})
+                        </button>
+                        }
+                        @if (hasAssignedTasks()) {
+                        <button (click)="switchTab('tasks')"
+                            [class]="'px-4 py-2 font-medium transition-colors border-b-2 ' + (activeTab() === 'tasks' ? 'border-[#8c2d1b] text-[#8c2d1b]' : 'border-transparent text-gray-600 hover:text-gray-900')">
+                            Tasks ({{ assignedTasks().length }})
+                        </button>
+                        }
+                        @if (hasAssignedSubtasks()) {
+                        <button (click)="switchTab('subtasks')"
+                            [class]="'px-4 py-2 font-medium transition-colors border-b-2 ' + (activeTab() === 'subtasks' ? 'border-[#8c2d1b] text-[#8c2d1b]' : 'border-transparent text-gray-600 hover:text-gray-900')">
+                            Subtasks ({{ assignedSubtasks().length }})
+                        </button>
+                        }
+                    </div>
+
+                    <!-- Tab Content -->
+                    <div class="min-h-[300px]">
+                        <!-- Phases Tab -->
+                        @if (activeTab() === 'phases' && hasAssignedPhases()) {
+                        <div class="border border-gray-200 rounded-lg overflow-hidden">
+                            <table class="w-full">
+                                <thead class="bg-gray-50 border-b border-gray-200">
+                                    <tr>
+                                        <th
+                                            class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                            Phase Name</th>
+                                        <th
+                                            class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                            Status</th>
+                                        <th
+                                            class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                            Start Date</th>
+                                        <th
+                                            class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                            End Date</th>
+                                        <th
+                                            class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                            Tasks</th>
+                                    </tr>
+                                </thead>
+                                <tbody class="bg-white divide-y divide-gray-100">
+                                    @for (phase of assignedPhases(); track phase.phaseId) {
+                                    <tr class="hover:bg-gray-50 transition-colors">
+                                        <td class="px-4 py-3">
+                                            <span class="text-sm font-medium text-gray-900">{{ phase.phaseName }}</span>
+                                        </td>
+                                        <td class="px-4 py-3">
+                                            <span
+                                                [class]="'inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ' + getStatusClass(phase.status || '')">
+                                                {{ getStatusLabel(phase.status || '') }}
+                                            </span>
+                                        </td>
+                                        <td class="px-4 py-3">
+                                            <span class="text-sm text-gray-600">{{ formatDate(phase.startDate) }}</span>
+                                        </td>
+                                        <td class="px-4 py-3">
+                                            <span class="text-sm text-gray-600">{{ formatDate(phase.endDate) }}</span>
+                                        </td>
+                                        <td class="px-4 py-3">
+                                            <span class="text-sm text-gray-600">{{ phase.tasks?.length || 0 }}
+                                                tasks</span>
+                                        </td>
+                                    </tr>
+                                    }
+                                </tbody>
+                            </table>
+                        </div>
+                        }
+
+                        <!-- Tasks Tab -->
+                        @if (activeTab() === 'tasks' && hasAssignedTasks()) {
+                        <div class="border border-gray-200 rounded-lg overflow-hidden">
+                            <table class="w-full">
+                                <thead class="bg-gray-50 border-b border-gray-200">
+                                    <tr>
+                                        <th
+                                            class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                            Task Name</th>
+                                        <th
+                                            class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                            Phase</th>
+                                        <th
+                                            class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                            Status</th>
+                                        <th
+                                            class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                            Priority</th>
+                                        <th
+                                            class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                            Due Date</th>
+                                    </tr>
+                                </thead>
+                                <tbody class="bg-white divide-y divide-gray-100">
+                                    @for (task of assignedTasks(); track task.taskId) {
+                                    <tr class="hover:bg-gray-50 transition-colors">
+                                        <td class="px-4 py-3">
+                                            <span class="text-sm font-medium text-gray-900">{{ task.taskName }}</span>
+                                        </td>
+                                        <td class="px-4 py-3">
+                                            <span class="text-sm text-gray-600">{{ task.phaseName }}</span>
+                                        </td>
+                                        <td class="px-4 py-3">
+                                            <span
+                                                [class]="'inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ' + getStatusClass(task.status || '')">
+                                                {{ getStatusLabel(task.status || '') }}
+                                            </span>
+                                        </td>
+                                        <td class="px-4 py-3">
+                                            <span
+                                                [class]="'text-sm font-medium ' + getPriorityClass(task.priority || 'Low')">
+                                                {{ task.priority || 'Low' }}
+                                            </span>
+                                        </td>
+                                        <td class="px-4 py-3">
+                                            <span class="text-sm text-gray-600">{{ formatDate(task.endDate) }}</span>
+                                        </td>
+                                    </tr>
+                                    }
+                                </tbody>
+                            </table>
+                        </div>
+                        }
+
+                        <!-- Subtasks Tab -->
+                        @if (activeTab() === 'subtasks' && hasAssignedSubtasks()) {
+                        <div class="border border-gray-200 rounded-lg overflow-hidden">
+                            <table class="w-full">
+                                <thead class="bg-gray-50 border-b border-gray-200">
+                                    <tr>
+                                        <th
+                                            class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                            Subtask Name</th>
+                                        <th
+                                            class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                            Task</th>
+                                        <th
+                                            class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                            Phase</th>
+                                        <th
+                                            class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                            Status</th>
+                                        <th
+                                            class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                            Due Date</th>
+                                    </tr>
+                                </thead>
+                                <tbody class="bg-white divide-y divide-gray-100">
+                                    @for (subtask of assignedSubtasks(); track subtask.subTaskId) {
+                                    <tr class="hover:bg-gray-50 transition-colors">
+                                        <td class="px-4 py-3">
+                                            <span class="text-sm font-medium text-gray-900">{{ subtask.subTaskName
+                                                }}</span>
+                                        </td>
+                                        <td class="px-4 py-3">
+                                            <span class="text-sm text-gray-600">{{ subtask.taskName }}</span>
+                                        </td>
+                                        <td class="px-4 py-3">
+                                            <span class="text-sm text-gray-600">{{ subtask.phaseName }}</span>
+                                        </td>
+                                        <td class="px-4 py-3">
+                                            <span
+                                                [class]="'inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ' + getStatusClass(subtask.status || '')">
+                                                {{ getStatusLabel(subtask.status || '') }}
+                                            </span>
+                                        </td>
+                                        <td class="px-4 py-3">
+                                            <span class="text-sm text-gray-600">{{ formatDate(subtask.endDate) }}</span>
+                                        </td>
+                                    </tr>
+                                    }
+                                </tbody>
+                            </table>
+                        </div>
+                        }
+                    </div>
+                </div>
+                } @else {
+                <!-- No Assignments Message -->
+                <div class="text-center py-12">
+                    <svg class="mx-auto h-12 w-12 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2">
+                        </path>
+                    </svg>
+                    <h3 class="mt-2 text-sm font-medium text-gray-900">No Assignments</h3>
+                    <p class="mt-1 text-sm text-gray-500">This member has no assigned phases, tasks, or subtasks.</p>
+                </div>
+                }
+            </div>
+            }
+        </div>
+    </div>
+</div>
+}

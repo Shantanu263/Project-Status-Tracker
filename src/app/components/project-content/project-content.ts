@@ -15,12 +15,13 @@ import { ProjectMetaBarComponent } from '../project-meta-bar/project-meta-bar';
 import { ProjectDetailsModalComponent } from '../project-details-modal/project-details-modal';
 import { ConfirmationDialogComponent } from '../shared/confirmation-dialog/confirmation-dialog';
 import { AuthService } from '../../services/auth.service';
+import { ProjectSummaryModalComponent } from '../project-summary-modal/project-summary-modal';
 
 type TabType = 'summary' | 'board' | 'phases' | 'tasks' | 'members' | 'timeline' | 'calendar';
 
 @Component({
   selector: 'app-project-content',
-  imports: [CommonModule, BoardComponent, MembersComponent, DashboardComponent, PhasesComponent, TimelineComponent, TasksComponent, UserManagementComponent, ProjectMetaBarComponent, ProjectDetailsModalComponent, ConfirmationDialogComponent],
+  imports: [CommonModule, BoardComponent, MembersComponent, DashboardComponent, PhasesComponent, TimelineComponent, TasksComponent, UserManagementComponent, ProjectMetaBarComponent, ProjectDetailsModalComponent, ConfirmationDialogComponent, ProjectSummaryModalComponent],
   templateUrl: './project-content.html',
   styleUrl: './project-content.scss',
   changeDetection: ChangeDetectionStrategy.OnPush
@@ -46,6 +47,8 @@ export class ProjectContentComponent {
   showDeleteConfirmation = signal<boolean>(false);
   showSnackbar = signal<boolean>(false);
   snackbarMessage = signal<string>('');
+  showProjectSummaryModal = signal<boolean>(false);
+  summaryModalAction = signal<'download' | 'email'>('download');
 
   tabs: { label: string; value: TabType }[] = [
     { label: 'Summary', value: 'summary' },
@@ -118,6 +121,30 @@ export class ProjectContentComponent {
   openDeleteConfirmation() {
     this.showProjectMenu.set(false);
     this.showDeleteConfirmation.set(true);
+  }
+
+  openDownloadSummary() {
+    this.showProjectMenu.set(false);
+    this.summaryModalAction.set('download');
+    this.showProjectSummaryModal.set(true);
+  }
+
+  openEmailSummary() {
+    this.showProjectMenu.set(false);
+    this.summaryModalAction.set('email');
+    this.showProjectSummaryModal.set(true);
+  }
+
+  closeProjectSummaryModal() {
+    this.showProjectSummaryModal.set(false);
+  }
+
+  onSummaryGenerated() {
+    const action = this.summaryModalAction();
+    const message = action === 'download'
+      ? 'Project summary downloaded successfully'
+      : 'Project summary emailed successfully';
+    this.showSnackbarMessage(message);
   }
 
   cancelDelete() {

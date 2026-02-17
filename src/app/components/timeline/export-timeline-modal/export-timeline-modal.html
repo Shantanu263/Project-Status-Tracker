@@ -1,0 +1,259 @@
+<!-- Export Timeline Modal -->
+@if (isOpen()) {
+<div class="modal-backdrop" (click)="onClose()">
+    <!-- Modal Container -->
+    <div class="export-modal-container bg-white rounded-lg shadow-xl w-full max-h-[90vh] overflow-hidden"
+        (click)="$event.stopPropagation()">
+
+        <!-- Modal Header -->
+        <div class="px-6 py-4 border-b border-gray-200 flex items-center justify-between"
+            style="background: linear-gradient(to right, #8c2d1b, #6b2115);">
+            <h2 class="text-xl font-semibold text-white">Export Timeline as Image</h2>
+            <button (click)="onClose()" class="text-white hover:text-gray-200 transition-colors cursor-pointer">
+                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12">
+                    </path>
+                </svg>
+            </button>
+        </div>
+
+        <!-- Modal Body - Two Column Layout -->
+        <div class="export-modal-body flex overflow-hidden">
+            <!-- Left Panel - Form Controls -->
+            <div class="export-form-panel w-1.2/5 p-6 border-r border-gray-200 overflow-y-auto">
+                <form [formGroup]="exportForm">
+                    <!-- Timeline View Selector -->
+                    <div class="mb-6">
+                        <label class="block text-sm font-medium text-gray-700 mb-3">
+                            Timeline View
+                        </label>
+                        <div class="flex gap-2">
+                            <label class="flex-1">
+                                <input type="radio" [value]="TimeScale.WEEK" formControlName="timelineView"
+                                    class="sr-only peer">
+                                <div
+                                    class="px-3 py-2 text-center border border-gray-300 rounded-md cursor-pointer transition-colors peer-checked:bg-[#8c2d1b] peer-checked:text-white peer-checked:border-[#8c2d1b] hover:bg-gray-50 text-sm">
+                                    Weeks
+                                </div>
+                            </label>
+                            <label class="flex-1">
+                                <input type="radio" [value]="TimeScale.MONTH" formControlName="timelineView"
+                                    class="sr-only peer">
+                                <div
+                                    class="px-3 py-2 text-center border border-gray-300 rounded-md cursor-pointer transition-colors peer-checked:bg-[#8c2d1b] peer-checked:text-white peer-checked:border-[#8c2d1b] hover:bg-gray-50 text-sm">
+                                    Months
+                                </div>
+                            </label>
+                            <label class="flex-1">
+                                <input type="radio" [value]="TimeScale.QUARTER" formControlName="timelineView"
+                                    class="sr-only peer">
+                                <div
+                                    class="px-3 py-2 text-center border border-gray-300 rounded-md cursor-pointer transition-colors peer-checked:bg-[#8c2d1b] peer-checked:text-white peer-checked:border-[#8c2d1b] hover:bg-gray-50 text-sm">
+                                    Quarters
+                                </div>
+                            </label>
+                        </div>
+                    </div>
+
+                    <!-- Start Date -->
+                    <div class="mb-6">
+                        <label class="block text-sm font-medium text-gray-700 mb-2">
+                            Start Date <span class="text-red-500">*</span>
+                        </label>
+                        <input type="date" [value]="getFormDateString('startDate')"
+                            (input)="onDateInput('startDate', $event)"
+                            class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#8c2d1b] focus:border-transparent text-gray-600">
+                    </div>
+
+                    <!-- End Date -->
+                    <div class="mb-6">
+                        <label class="block text-sm font-medium text-gray-700 mb-2">
+                            End Date <span class="text-red-500">*</span>
+                        </label>
+                        <input type="date" [value]="getFormDateString('endDate')"
+                            (input)="onDateInput('endDate', $event)"
+                            class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#8c2d1b] focus:border-transparent text-gray-600">
+                    </div>
+
+                    <!-- Validation Error Message -->
+                    @if (getValidationError()) {
+                    <div class="mb-4 p-3 bg-red-50 border border-red-200 rounded-md">
+                        <p class="text-sm text-red-600">{{ getValidationError() }}</p>
+                    </div>
+                    }
+
+                    <!-- Export Error Message -->
+                    @if (errorMessage()) {
+                    <div class="mb-4 p-3 bg-red-50 border border-red-200 rounded-md">
+                        <p class="text-sm text-red-600">{{ errorMessage() }}</p>
+                    </div>
+                    }
+                </form>
+            </div>
+
+            <!-- Right Panel - Preview -->
+            <div class="export-preview-panel w-4/5 bg-gray-900" #previewContainer>
+                @if (previewData().hasData) {
+                <!-- Scaled Preview: uses transform to fit entire timeline into the visible area -->
+                <div class="preview-scaler" [style.transform]="getPreviewTransform()"
+                    [style.width.px]="getPreviewContentWidth()" [style.height.px]="getPreviewContentHeight()">
+                    <!-- Visible Preview Container -->
+                    <div id="timeline-export-preview"
+                        style="background-color: #ffffff; box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05); font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; border-radius: 0.5rem; overflow: hidden;"
+                        [style.width.px]="getPreviewContentWidth()">
+                        <ng-container *ngTemplateOutlet="timelineContent"></ng-container>
+                    </div>
+                </div>
+
+                <!-- Hidden Export Source: Always rendered at full scale, off-screen -->
+                <div id="timeline-export-source"
+                    style="position: fixed; top: 0; left: 0; z-index: -10000; opacity: 0; pointer-events: none; background-color: #ffffff; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;"
+                    [style.width.px]="getPreviewContentWidth()">
+                    <ng-container *ngTemplateOutlet="timelineContent"></ng-container>
+                </div>
+
+                <!-- Reusable Timeline Template -->
+                <ng-template #timelineContent>
+                    <!-- Timeline Header with Column Labels -->
+                    <div
+                        style="border-bottom: 1px solid #d1d5db; background: linear-gradient(to bottom, #f8f9fa, #e9ecef);">
+                        <div
+                            style="display: flex; font-size: 0.75rem; font-weight: 600; color: #374151; line-height: 1.2;">
+                            <!-- Phase/Task Name Column -->
+                            <div
+                                style="width: 300px; min-width: 300px; border-right: 1px solid #d1d5db; background-color: #f9fafb; padding: 8px 12px; display: flex; align-items: center;">
+                                <div style="font-weight: 600; margin: 0; line-height: 1.2;">Phase / Task</div>
+                            </div>
+                            <!-- Timeline Columns -->
+                            <div style="display: flex;" [style.width.px]="getTotalColumnsWidth()">
+                                @for (column of previewData().columns; track column.id) {
+                                @if (selectedTimelineView() === TimeScale.WEEK) {
+                                <!-- Week View: Show individual day numbers -->
+                                <div [style.width.px]="getColumnWidth()"
+                                    style="border-right: 1px solid #e5e7eb; display: flex; flex-direction: column;">
+                                    <!-- Month label row -->
+                                    <div
+                                        style="text-align: center; font-size: 0.65rem; color: #6b7280; padding: 2px 0; border-bottom: 1px solid #e5e7eb; line-height: 1.2; margin: 0;">
+                                        {{ getWeekMonthLabel(column) }}
+                                    </div>
+                                    <!-- Day numbers row -->
+                                    <div style="display: flex; flex: 1;">
+                                        @for (dayLabel of column.label.split('|'); track $index) {
+                                        <div [style.width.px]="baseDayWidth"
+                                            style="text-align: center; font-size: 0.65rem; display: flex; align-items: center; justify-content: center; padding: 2px 0; line-height: 1; margin: 0;"
+                                            [style.border-right]="$index < column.label.split('|').length - 1 ? '1px solid #f3f4f6' : 'none'">
+                                            {{ dayLabel }}
+                                        </div>
+                                        }
+                                    </div>
+                                </div>
+                                } @else {
+                                <!-- Month/Quarter View: Simple centered label -->
+                                <div [style.width.px]="getColumnWidth()"
+                                    style="border-right: 1px solid #e5e7eb; padding: 8px; text-align: center; display: flex; align-items: center; justify-content: center; line-height: 1.2; margin: 0;">
+                                    {{ column.label }}
+                                </div>
+                                }
+                                }
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Preview Body with Phases and Tasks -->
+                    <div class="preview-body">
+                        @for (phase of previewData().phases; track phase.phaseId; let phaseIndex = $index) {
+                        <!-- Phase Row -->
+                        <div style="display: flex; position: relative; height: 64px; border-bottom: 1px solid #e5e7eb;"
+                            [style.background-color]="phaseIndex % 2 === 0 ? '#f9fafb' : '#ffffff'">
+                            <!-- Phase Name Column -->
+                            <div
+                                style="width: 300px; min-width: 300px; border-right: 1px solid #d1d5db; padding: 0 12px; box-sizing: border-box; display: flex; flex-direction: column; justify-content: center;">
+                                <div [title]="phase.phaseName"
+                                    style="font-size: 0.875rem; font-weight: 600; color: #111827; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; line-height: 1.2; margin: 0;">
+                                    {{ phase.phaseName }}
+                                </div>
+                                <div
+                                    style="font-size: 0.75rem; color: #6b7280; margin-top: 4px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; line-height: 1.2; margin-bottom: 0;">
+                                    {{ formatDate(phase.startDate) }} - {{ formatDate(phase.endDate) }}
+                                </div>
+                            </div>
+                            <!-- Phase Timeline Bar -->
+                            <div style="position: relative; height: 64px;" [style.width.px]="getTotalColumnsWidth()">
+                                @let barPosition = calculateBarPosition(phase.startDate, phase.endDate);
+                                <div style="position: absolute; top: 14px; height: 36px; border-radius: 0.5rem; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06); min-width: 4px;"
+                                    [style.left.px]="barPosition.left + 8" [style.width.px]="barPosition.width - 16"
+                                    [style.background-color]="getPhaseColor(phaseIndex)">
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Task Rows for this Phase (only if expanded) -->
+                        @if (isPhaseExpanded(phase.phaseId)) {
+                        @for (task of phase.tasks; track task.taskId; let taskIndex = $index) {
+                        <div style="display: flex; position: relative; height: 48px; border-bottom: 1px solid #f3f4f6; opacity: 0.95;"
+                            [style.background-color]="phaseIndex % 2 === 0 ? '#f9fafb' : '#ffffff'">
+                            <!-- Task Name Column (indented) -->
+                            <div
+                                style="width: 300px; min-width: 300px; border-right: 1px solid #e5e7eb; padding: 0 12px 0 40px; box-sizing: border-box; display: flex; flex-direction: column; justify-content: center;">
+                                <div [title]="task.taskName"
+                                    style="font-size: 0.8rem; color: #374151; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; line-height: 1.2; margin: 0;">
+                                    {{ task.taskName }}
+                                </div>
+                                <div
+                                    style="font-size: 0.7rem; color: #9ca3af; margin-top: 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; line-height: 1.2; margin-bottom: 0;">
+                                    {{ formatDate(task.startDate) }} - {{ formatDate(task.endDate) }}
+                                </div>
+                            </div>
+                            <!-- Task Timeline Bar -->
+                            <div style="position: relative; height: 48px;" [style.width.px]="getTotalColumnsWidth()">
+                                @let barPosition = calculateBarPosition(task.startDate, task.endDate);
+                                <div style="position: absolute; top: 10px; height: 28px; border-radius: 0.5rem; background-color: #3b82f6; box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05); min-width: 3px;"
+                                    [style.left.px]="barPosition.left + 8" [style.width.px]="barPosition.width - 16">
+                                </div>
+                            </div>
+                        </div>
+                        }
+                        }
+                        }
+                    </div>
+                </ng-template>
+                } @else {
+                <!-- Empty State -->
+                <div class="text-center text-white">
+                    <svg class="w-16 h-16 mx-auto mb-4 opacity-50" fill="none" stroke="currentColor"
+                        viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4">
+                        </path>
+                    </svg>
+                    <p class="text-lg font-medium">No data in selected range</p>
+                    <p class="text-sm opacity-75 mt-2">Adjust the date range to see timeline data</p>
+                </div>
+                }
+            </div>
+        </div>
+
+        <!-- Modal Footer -->
+        <div class="px-6 py-4 border-t border-gray-200 flex items-center justify-end gap-3">
+            <button (click)="onClose()" [disabled]="isExporting()"
+                class="px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-100 rounded-md transition-colors cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed">
+                Cancel
+            </button>
+            <button (click)="exportTimeline()" [disabled]="!isFormValid() || isExporting()"
+                class="px-4 py-2 text-sm font-medium text-white bg-[#8c2d1b] hover:bg-[#6d2315] rounded-md transition-colors cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2">
+                @if (isExporting()) {
+                <svg class="animate-spin h-4 w-4" fill="none" viewBox="0 0 24 24">
+                    <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4">
+                    </circle>
+                    <path class="opacity-75" fill="currentColor"
+                        d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z">
+                    </path>
+                </svg>
+                }
+                <span>{{ isExporting() ? 'Exporting...' : 'Export' }}</span>
+            </button>
+        </div>
+
+    </div>
+</div>
+}

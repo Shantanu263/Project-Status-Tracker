@@ -66,31 +66,41 @@ export class TimelineService {
     }
 
     /**
-     * Parse date string from backend (dd-mm-yyyy) to Date object
+     * Parse date string from backend (dd-mm-yyyy) or API format (yyyy-mm-dd) to Date object.
+     * IMPORTANT: Always creates dates in LOCAL timezone at midnight to ensure
+     * consistent comparisons with column dates throughout the timeline.
      */
     parseDate(dateString: string | undefined): Date | null {
         if (!dateString) return null;
 
-        // First, try dd-mm-yyyy format (our expected format)
         const parts = dateString.split('-');
         if (parts.length === 3) {
-            const day = parseInt(parts[0], 10);
-            const month = parseInt(parts[1], 10) - 1; // Month is 0-indexed
-            const year = parseInt(parts[2], 10);
+            const p0 = parseInt(parts[0], 10);
+            const p1 = parseInt(parts[1], 10);
+            const p2 = parseInt(parts[2], 10);
 
-            // Validate that we have reasonable values
-            if (day >= 1 && day <= 31 && month >= 0 && month <= 11 && year >= 1900) {
-                const parsed = new Date(year, month, day);
+            // Try yyyy-mm-dd format (ISO / API format) — check first part > 31 to distinguish from dd-mm-yyyy
+            if (p0 > 31 && p1 >= 1 && p1 <= 12 && p2 >= 1 && p2 <= 31) {
+                const parsed = new Date(p0, p1 - 1, p2); // Local midnight
+                if (!isNaN(parsed.getTime())) {
+                    return parsed;
+                }
+            }
+
+            // Try dd-mm-yyyy format (backend format)
+            if (p0 >= 1 && p0 <= 31 && p1 >= 1 && p1 <= 12 && p2 >= 1900) {
+                const parsed = new Date(p2, p1 - 1, p0); // Local midnight
                 if (!isNaN(parsed.getTime())) {
                     return parsed;
                 }
             }
         }
 
-        // Fallback: Try ISO format (yyyy-mm-dd)
-        const isoDate = new Date(dateString);
-        if (!isNaN(isoDate.getTime())) {
-            return isoDate;
+        // Last resort fallback: normalize to local midnight to avoid UTC vs local issues
+        const fallbackDate = new Date(dateString);
+        if (!isNaN(fallbackDate.getTime())) {
+            // Normalize to local midnight to prevent timezone-related positioning bugs
+            return new Date(fallbackDate.getFullYear(), fallbackDate.getMonth(), fallbackDate.getDate());
         }
 
         console.error('Failed to parse date:', dateString);

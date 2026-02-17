@@ -1,0 +1,135 @@
+<!-- Modal Backdrop -->
+@if (isOpen()) {
+<div class="modal-backdrop" (click)="onClose()">
+    <!-- Modal Container -->
+    <div class="bg-white rounded-lg shadow-xl max-w-3xl w-full max-h-[90vh] overflow-hidden"
+        (click)="$event.stopPropagation()">
+
+        <!-- Modal Header -->
+        <div class="px-6 py-4 border-b border-gray-200 flex items-center justify-between"
+            style="background: linear-gradient(to right, #8c2d1b, #6b2115);">
+            <h2 class="text-xl font-semibold text-white">{{ modalTitle() }}</h2>
+            <button (click)="onClose()" class="text-gray-400 hover:text-gray-600 transition-colors cursor-pointer">
+                <svg class="w-6 h-6" fill="none" stroke="white" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12">
+                    </path>
+                </svg>
+            </button>
+        </div>
+
+        <!-- Modal Body -->
+        <div class="px-6 py-4 overflow-y-auto max-h-[calc(90vh-140px)]">
+            <p class="text-sm text-gray-600 mb-6">
+                Provide the current status and next steps to be included in the project summary.
+            </p>
+
+            <form [formGroup]="summaryForm">
+                <!-- Current Status Field -->
+                <div class="mb-6">
+                    <label class="block text-sm font-medium text-gray-700 mb-2">
+                        Current Status <span class="text-red-500">*</span>
+                    </label>
+                    <div class="NgxEditor__Wrapper border border-gray-300 rounded-md overflow-hidden">
+                        <ngx-editor-menu [editor]="currentStatusEditor" [toolbar]="toolbar">
+                        </ngx-editor-menu>
+                        <ngx-editor [editor]="currentStatusEditor" formControlName="currentStatus"
+                            [placeholder]="'Describe the current state of the project...'" class="min-h-[150px]">
+                        </ngx-editor>
+                    </div>
+                    @if (summaryForm.get('currentStatus')?.invalid && summaryForm.get('currentStatus')?.touched) {
+                    <p class="text-red-500 text-xs mt-1">Current status is required</p>
+                    }
+                </div>
+
+                <!-- Next Steps Field -->
+                <div class="mb-6">
+                    <label class="block text-sm font-medium text-gray-700 mb-2">
+                        Next Steps <span class="text-red-500">*</span>
+                    </label>
+                    <div class="NgxEditor__Wrapper border border-gray-300 rounded-md overflow-hidden">
+                        <ngx-editor-menu [editor]="nextStepsEditor" [toolbar]="toolbar">
+                        </ngx-editor-menu>
+                        <ngx-editor [editor]="nextStepsEditor" formControlName="nextSteps"
+                            [placeholder]="'List the upcoming actions or milestones...'" class="min-h-[150px]">
+                        </ngx-editor>
+                    </div>
+                    @if (summaryForm.get('nextSteps')?.invalid && summaryForm.get('nextSteps')?.touched) {
+                    <p class="text-red-500 text-xs mt-1">Next steps are required</p>
+                    }
+                </div>
+
+                <!-- Additional Options -->
+                <div class="mb-6">
+                    <label class="block text-sm font-medium text-gray-700 mb-3">
+                        Include in Summary
+                    </label>
+                    <div class="space-y-2">
+                        <label class="flex items-center cursor-pointer group">
+                            <input type="checkbox" formControlName="includeRecentlyCompletedTasks"
+                                class="w-4 h-4 text-[#8c2d1b] border-gray-300 rounded cursor-pointer">
+                            <span class="ml-2 text-sm text-gray-700 group-hover:text-gray-900">
+                                Recently Completed Tasks
+                            </span>
+                        </label>
+                        <label class="flex items-center cursor-pointer group">
+                            <input type="checkbox" formControlName="includeUpcomingTasks"
+                                class="w-4 h-4 text-[#8c2d1b] border-gray-300 rounded cursor-pointer">
+                            <span class="ml-2 text-sm text-gray-700 group-hover:text-gray-900">
+                                Upcoming Tasks
+                            </span>
+                        </label>
+                    </div>
+                </div>
+
+                <!-- Email Field (Only for Email Action) -->
+                @if (showEmailField()) {
+                <div class="mb-6">
+                    <label class="block text-sm font-medium text-gray-700 mb-2">
+                        Recipient Email <span class="text-red-500">*</span>
+                    </label>
+                    <input type="email" formControlName="email" placeholder="user@example.com"
+                        class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#8c2d1b] focus:border-transparent text-gray-600">
+                    @if (summaryForm.get('email')?.invalid && summaryForm.get('email')?.touched) {
+                    <p class="text-red-500 text-xs mt-1">
+                        @if (summaryForm.get('email')?.errors?.['required']) {
+                        Email is required
+                        } @else if (summaryForm.get('email')?.errors?.['email']) {
+                        Please enter a valid email address
+                        }
+                    </p>
+                    }
+                </div>
+                }
+
+                <!-- Error Message -->
+                @if (errorMessage()) {
+                <div class="mb-4 p-3 bg-red-50 border border-red-200 rounded-md">
+                    <p class="text-sm text-red-600">{{ errorMessage() }}</p>
+                </div>
+                }
+            </form>
+        </div>
+
+        <!-- Modal Footer -->
+        <div class="px-6 py-4 border-t border-gray-200 flex items-center justify-end gap-3">
+            <button (click)="onClose()" [disabled]="isLoading()"
+                class="px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-100 rounded-md transition-colors cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed">
+                Cancel
+            </button>
+            <button (click)="onSubmit()" [disabled]="summaryForm.invalid || isLoading()"
+                class="px-4 py-2 text-sm font-medium text-white bg-[#8c2d1b] hover:bg-[#6d2315] rounded-md transition-colors cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2">
+                @if (isLoading()) {
+                <svg class="animate-spin h-4 w-4" fill="none" viewBox="0 0 24 24">
+                    <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                    <path class="opacity-75" fill="currentColor"
+                        d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z">
+                    </path>
+                </svg>
+                }
+                <span>{{ submitButtonText() }}</span>
+            </button>
+        </div>
+
+    </div>
+</div>
+}

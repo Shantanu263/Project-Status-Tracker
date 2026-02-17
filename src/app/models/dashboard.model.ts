@@ -13,6 +13,7 @@ export interface DashboardData {
     priorityDistribution: PriorityDistribution[];
     upcomingDeadlines: UpcomingDeadline[];
     recentActivity: RecentActivity[];
+    projectRadarChart: ProjectRadarMetric[];
 }
 
 export interface PhaseProgress {
@@ -49,6 +50,11 @@ export interface RecentActivity {
     timeAgo: string;
 }
 
+export interface ProjectRadarMetric {
+    metric: string;
+    score: number;
+}
+
 // Projects Dashboard Interfaces
 export interface ProjectsDashboardData {
     totalProjects: number;
@@ -71,6 +77,7 @@ export interface ProjectCard {
     phaseCount: number;
     totalTasks: number;
     overdueTasks: number;
+    priority?: string;
 }
 
 export interface ProjectProgress {

@@ -9,6 +9,11 @@
   <link rel="icon" type="image/x-icon" href="favicon-32x32.png">
   <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500&display=swap" rel="stylesheet">
   <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+
+  <!-- Polyfill for sockjs-client: Define global before any modules load -->
+  <script>
+    window.global = window;
+  </script>
 </head>
 
 <body>

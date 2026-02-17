@@ -1,0 +1,50 @@
+<div class="notification-dropdown-panel" *ngIf="isOpen()">
+    <!-- Header -->
+    <div class="notification-header">
+        <h3 class="notification-title">Notifications</h3>
+        <button *ngIf="notifications().length > 0" (click)="markAllAsRead()" class="mark-all-read-btn" type="button">
+            <lucide-angular [img]="CheckCheck" [size]="16" class="icon"></lucide-angular>
+            Mark all as read
+        </button>
+    </div>
+
+    <!-- Loading State -->
+    <div *ngIf="isLoading()" class="loading-state">
+        <div class="skeleton-item" *ngFor="let i of [1, 2, 3]"></div>
+    </div>
+
+    <!-- Empty State -->
+    <div *ngIf="!isLoading() && notifications().length === 0" class="empty-state">
+        <lucide-angular [img]="Bell" [size]="48" class="empty-icon"></lucide-angular>
+        <p class="empty-title">No notifications yet</p>
+        <p class="empty-subtitle">You're all caught up!</p>
+    </div>
+
+    <!-- Notifications List -->
+    <div *ngIf="!isLoading() && notifications().length > 0" class="notifications-list">
+        <div *ngFor="let group of groupedNotifications()" class="notification-group">
+            <div class="group-header">{{ group.label }}</div>
+
+            <div *ngFor="let notification of group.notifications" class="notification-item"
+                [class.unread]="!notification.isRead" (click)="onNotificationClick(notification)">
+                <!-- Icon -->
+                <div class="notification-icon" [class.unread-icon]="!notification.isRead">
+                    <lucide-angular [img]="getNotificationIcon(notification.type)" [size]="20"
+                        class="icon"></lucide-angular>
+                </div>
+
+                <!-- Content -->
+                <div class="notification-content">
+                    <div class="notification-title-row">
+                        <span class="notification-item-title" [class.font-bold]="!notification.isRead">
+                            {{ notification.title }}
+                        </span>
+                        <span *ngIf="!notification.isRead" class="unread-dot"></span>
+                    </div>
+                    <p class="notification-message">{{ notification.message }}</p>
+                    <span class="notification-time">{{ getRelativeTime(notification.createdAt) }}</span>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

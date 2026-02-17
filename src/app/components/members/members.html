@@ -134,8 +134,8 @@
       <tbody class="bg-white divide-y divide-gray-200">
 
         @for (member of filteredMembers(); track member.memberId; let i = $index) {
-        <tr class="hover:bg-gray-50 transition-colors" (mouseenter)="setHoveredMember(member.memberId)"
-          (mouseleave)="setHoveredMember(null)">
+        <tr class="hover:bg-gray-50 transition-colors cursor-pointer" (mouseenter)="setHoveredMember(member.memberId)"
+          (mouseleave)="setHoveredMember(null)" (click)="onMemberRowClick(member.memberId)">
           <!-- ID -->
           <td class="px-6 py-4 whitespace-nowrap">
             <div class="text-sm font-medium text-gray-900">#{{ member.memberId }}</div>
@@ -323,3 +323,10 @@
 <!-- Add Members Modal -->
 <app-add-members-modal [isOpen]="showAddMembersModal()" [projectId]="selectedProject()?.projectId || 0"
   [projectMembers]="members()" (close)="closeAddMembersModal()" (membersAdded)="onMembersAdded()" />
+
+<!-- Member Details Modal -->
+@if (showMemberDetailsModal() && selectedMemberId()) {
+<app-member-details-modal [isOpen]="showMemberDetailsModal()" [projectId]="selectedProject()!.projectId"
+  [memberId]="selectedMemberId()!" [projectMembers]="members()" (close)="closeMemberDetailsModal()">
+</app-member-details-modal>
+}

@@ -159,71 +159,107 @@ export class DashboardComponent implements AfterViewInit {
       });
     }
 
-    // Phase Completion Chart
-    const phaseCompletionCanvas = document.getElementById('phaseCompletionChart') as HTMLCanvasElement & { chart?: any };
-    if (phaseCompletionCanvas) {
-      if (phaseCompletionCanvas.chart) {
-        phaseCompletionCanvas.chart.destroy();
+    // Project Performance Radar Chart
+    const projectRadarCanvas = document.getElementById('projectRadarChart') as HTMLCanvasElement & { chart?: any };
+    if (projectRadarCanvas && data.projectRadarChart && data.projectRadarChart.length > 0) {
+      if (projectRadarCanvas.chart) {
+        projectRadarCanvas.chart.destroy();
       }
 
-      const phaseCompletionCtx = phaseCompletionCanvas.getContext('2d');
-      const phaseLabels = data.phaseProgress.map(phase => phase.phaseName);
-      const phaseData = data.phaseProgress.map(phase => phase.percentComplete);
+      const projectRadarCtx = projectRadarCanvas.getContext('2d');
 
-      phaseCompletionCanvas.chart = new Chart(phaseCompletionCtx, {
-        type: 'bar',
+      projectRadarCanvas.chart = new Chart(projectRadarCtx, {
+        type: 'radar',
         data: {
-          labels: phaseLabels,
-          datasets: [{
-            label: 'Completion %',
-            data: phaseData,
-            backgroundColor: phaseData.map(value =>
-              value === 100 ? 'rgba(34, 197, 94, 0.7)' :
-                value > 0 ? 'rgba(59, 130, 246, 0.7)' :
-                  'rgba(156, 163, 175, 0.5)'
-            ),
-            borderColor: phaseData.map(value =>
-              value === 100 ? 'rgb(34, 197, 94)' :
-                value > 0 ? 'rgb(59, 130, 246)' :
-                  'rgb(156, 163, 175)'
-            ),
-            borderWidth: 2,
-            borderRadius: 6
-          }]
+          labels: data.projectRadarChart.map(item => item.metric),
+          datasets: [
+            {
+              label: 'Current Performance',
+              data: data.projectRadarChart.map(item => item.score),
+              backgroundColor: 'rgba(99, 102, 241, 0.2)',
+              borderColor: 'rgb(99, 102, 241)',
+              borderWidth: 2,
+              pointBackgroundColor: 'rgb(99, 102, 241)',
+              pointBorderColor: '#fff',
+              pointHoverBackgroundColor: '#fff',
+              pointHoverBorderColor: 'rgb(99, 102, 241)',
+              pointRadius: 4,
+              pointHoverRadius: 6
+            },
+            {
+              label: 'Target',
+              data: data.projectRadarChart.map(() => 90), // 90% as target baseline
+              backgroundColor: 'rgba(209, 213, 219, 0.1)',
+              borderColor: 'rgb(209, 213, 219)',
+              borderWidth: 2,
+              borderDash: [5, 5],
+              pointBackgroundColor: 'rgb(209, 213, 219)',
+              pointBorderColor: '#fff',
+              pointRadius: 3,
+              pointHoverRadius: 5
+            }
+          ]
         },
         options: {
           responsive: true,
           maintainAspectRatio: false,
           scales: {
-            y: {
+            r: {
               beginAtZero: true,
               max: 100,
+              min: 0,
               ticks: {
-                callback: function (value: any) {
-                  return value + '%';
-                }
+                stepSize: 20,
+                font: {
+                  size: 10
+                },
+                color: '#9CA3AF',
+                backdropColor: 'transparent'
               },
               grid: {
-                color: 'rgba(156, 163, 175, 0.1)'
-              }
-            },
-            x: {
-              grid: {
-                display: false
+                color: 'rgba(0, 0, 0, 0.05)',
+                circular: true
+              },
+              angleLines: {
+                color: 'rgba(0, 0, 0, 0.05)'
+              },
+              pointLabels: {
+                font: {
+                  size: 11,
+                  weight: 500
+                },
+                color: '#374151',
+                padding: 8
               }
             }
           },
           plugins: {
             legend: {
-              display: false
+              display: false // Using custom legend in HTML
             },
             tooltip: {
+              backgroundColor: 'rgba(0, 0, 0, 0.8)',
+              padding: 12,
+              cornerRadius: 8,
+              titleFont: {
+                size: 14,
+                weight: 600
+              },
+              bodyFont: {
+                size: 13
+              },
               callbacks: {
-                label: function (context: any) {
-                  return 'Completion: ' + context.parsed.y.toFixed(1) + '%';
+                label: (context: any) => {
+                  const datasetLabel = context.dataset.label || '';
+                  const value = context.parsed.r || 0;
+                  return `${datasetLabel}: ${value.toFixed(1)}%`;
                 }
               }
             }
+          },
+          animation: {
+            duration: 1200,
+            easing: 'easeInOutQuart'
           }
         }
       });
@@ -362,20 +398,20 @@ export class DashboardComponent implements AfterViewInit {
   // Helper method to get task distribution colors
   private getTaskDistributionColors(count: number): string[] {
     const colors = [
-      'rgba(59, 130, 246, 0.8)',   // Blue - TODO
+      'rgba(34, 197, 94, 0.8)',    // Green - TODO
       'rgba(251, 191, 36, 0.8)',   // Yellow - IN_PROGRESS
       'rgba(251, 146, 60, 0.8)',   // Orange - REVIEW
-      'rgba(34, 197, 94, 0.8)'     // Green - DONE
+      'rgba(59, 130, 246, 0.8)'    // Blue - DONE
     ];
     return colors.slice(0, count);
   }
 
   private getTaskDistributionBorderColors(count: number): string[] {
     const colors = [
-      'rgb(59, 130, 246)',
-      'rgb(251, 191, 36)',
-      'rgb(251, 146, 60)',
-      'rgb(34, 197, 94)'
+      'rgb(34, 197, 94)',    // Green - TODO
+      'rgb(251, 191, 36)',   // Yellow - IN_PROGRESS
+      'rgb(251, 146, 60)',   // Orange - REVIEW
+      'rgb(59, 130, 246)'    // Blue - DONE
     ];
     return colors.slice(0, count);
   }

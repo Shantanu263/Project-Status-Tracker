@@ -1,0 +1,98 @@
+// Export Timeline Modal Styles
+
+.modal-backdrop {
+    position: fixed;
+    inset: 0;
+    background-color: rgba(0, 0, 0, 0.5);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 1000;
+    padding: 1rem;
+}
+
+.export-modal-container {
+    max-width: 1200px;
+    display: flex;
+    flex-direction: column;
+    max-height: 90vh;
+}
+
+.export-modal-body {
+    height: 600px;
+    max-height: calc(90vh - 140px);
+}
+
+.export-form-panel {
+    overflow-y: auto;
+    background-color: white;
+}
+
+.export-preview-panel {
+    overflow: hidden;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+}
+
+.preview-scaler {
+    // Container that holds the actual-size preview and scales it down
+    transform-origin: top left;
+    position: absolute;
+    top: 0;
+    left: 0;
+}
+
+
+
+.preview-body {
+    // Scrollbar styling
+    scrollbar-width: thin;
+    scrollbar-color: #cbd5e0 #f7fafc;
+
+    &::-webkit-scrollbar {
+        width: 6px;
+    }
+
+    &::-webkit-scrollbar-track {
+        background: #f7fafc;
+    }
+
+    &::-webkit-scrollbar-thumb {
+        background: #cbd5e0;
+        border-radius: 3px;
+    }
+}
+
+
+// Radio button custom styles (hidden radio with styled label)
+.sr-only {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+    border-width: 0;
+}
+
+// Peer selector support for radio buttons
+input[type="radio"]:checked+div {
+    background-color: #8c2d1b;
+    color: white;
+    border-color: #8c2d1b;
+}
+
+// Animation for spinner
+@keyframes spin {
+    to {
+        transform: rotate(360deg);
+    }
+}
+
+.animate-spin {
+    animation: spin 1s linear infinite;
+}

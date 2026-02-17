@@ -62,4 +62,8 @@ export class UserManagementService {
     deleteUser(userId: number): Observable<any> {
         return this.http.delete(`${environment.apiUrl}/auth/user/${userId}`);
     }
+
+    getUserProjectMemberships(userId: number): Observable<any[]> {
+        return this.http.get<any[]>(`${this.apiUrl}/users/${userId}/memberlist`);
+    }
 }

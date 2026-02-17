@@ -165,8 +165,9 @@
                     <tbody class="bg-white divide-y divide-gray-200">
 
                         @for (user of users(); track user.userId; let i = $index) {
-                        <tr class="hover:bg-gray-50 transition-colors" (mouseenter)="setHoveredUser(user.userId)"
-                            (mouseleave)="setHoveredUser(null)">
+                        <tr class="hover:bg-gray-50 transition-colors cursor-pointer"
+                            (mouseenter)="setHoveredUser(user.userId)" (mouseleave)="setHoveredUser(null)"
+                            (click)="onUserRowClick(user)">
                             <td class="px-6 py-4 whitespace-nowrap">
                                 <div class="text-sm font-medium text-gray-900">#{{ user.userId }}</div>
                             </td>
@@ -345,3 +346,10 @@
 <!-- Invite User Modal -->
 <app-invite-user-modal [isOpen]="showInviteUserModal()" (close)="closeInviteUserModal()"
     (usersInvited)="onUsersInvited()" />
+
+<!-- User Details Modal -->
+@if (showUserDetailsModal() && selectedUser()) {
+<app-user-details-modal [isOpen]="showUserDetailsModal()" [userId]="selectedUser()!.userId" [user]="selectedUser()!"
+    (close)="closeUserDetailsModal()">
+</app-user-details-modal>
+}
