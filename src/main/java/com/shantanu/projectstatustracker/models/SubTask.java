@@ -37,9 +37,10 @@ public class SubTask {
     //@JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "dd-MM-yyyy")
     private Date endDate;
 
+    //private Date completedOn;
 
     @Enumerated(EnumType.STRING)
-    private Status status;
+    private TaskStatus status;
 
     private String priority;
 

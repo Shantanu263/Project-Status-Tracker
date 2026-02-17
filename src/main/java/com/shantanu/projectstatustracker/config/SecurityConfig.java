@@ -22,6 +22,7 @@ import java.util.List;
 @EnableWebSecurity
 @EnableMethodSecurity()
 public class SecurityConfig {
+
     private final JwtFilter jwtFilter;
 
     @Bean
@@ -30,7 +31,7 @@ public class SecurityConfig {
                 .cors(cors -> cors.configurationSource(corsConfigurationSource()))
                 .csrf(AbstractHttpConfigurer::disable)
                 .authorizeHttpRequests(auth -> auth
-                        .requestMatchers("/api/auth/signup", "/api/auth/login", "/api/auth/refresh-token", "/api/forgot-password/verifyMail/**", "/api/forgot-password/verifyOtp/**", "/api/notifications/**").permitAll()
+                        .requestMatchers("/api/auth/signup", "/api/auth/login", "/api/auth/refresh-token", "/api/forgot-password/verifyMail/**", "/api/forgot-password/verifyOtp/**", "/api/notifications/**", "/ws/**").permitAll()
                         .requestMatchers("/api/admin/**" , "/api/project/**").hasAnyRole("SUPER ADMIN", "PROJECT HEAD", "PROJECT_HEAD", "PROJECT HANDLER", "MEMBER", "ADMIN")
                         .requestMatchers("/api/auth/change-password", "/api/auth/logout", "/api/forgot-password/change-password").authenticated()
                         .anyRequest().authenticated()

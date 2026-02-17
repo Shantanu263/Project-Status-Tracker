@@ -46,7 +46,7 @@ public class Task {
     private Date completedAt;
 
     @Enumerated(EnumType.STRING)
-    private Status status;
+    private TaskStatus status;
 
     private String priority;
 

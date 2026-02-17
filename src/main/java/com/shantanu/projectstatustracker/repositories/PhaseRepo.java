@@ -2,6 +2,7 @@ package com.shantanu.projectstatustracker.repositories;
 
 import com.shantanu.projectstatustracker.models.Phase;
 import com.shantanu.projectstatustracker.models.Project;
+import com.shantanu.projectstatustracker.models.Task;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
@@ -9,6 +10,8 @@ import org.springframework.data.repository.query.Param;
 import org.springframework.security.core.parameters.P;
 import org.springframework.stereotype.Repository;
 
+import java.time.LocalDate;
+import java.util.Date;
 import java.util.List;
 import java.util.Optional;
 
@@ -32,5 +35,26 @@ public interface PhaseRepo extends JpaRepository<Phase,Long> {
     """)
     void deassignPhases(@Param("projectId") Long projectId,
                        @Param("memberId") Long memberId);
+
+    //find all nearing deadline phases for email and in-app notification
+    @Query("""
+SELECT p
+FROM Phase p
+WHERE p.endDate BETWEEN CURRENT_DATE AND :targetDate
+AND p.status <> 'COMPLETED'
+AND p.assignedTo IS NOT NULL
+""")
+    List<Phase> findPhasesNearingDeadline(Date targetDate);
+
+
+    //find all overdue phases for email and in-app notification
+    @Query("""
+SELECT p
+FROM Phase p
+WHERE p.endDate < CURRENT_DATE
+AND p.status <> 'COMPLETED'
+AND p.assignedTo IS NOT NULL
+""")
+    List<Phase> findOverduePhases();
 
 }

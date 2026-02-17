@@ -7,6 +7,8 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
+import java.time.LocalDate;
+import java.util.Date;
 import java.util.List;
 import java.util.Optional;
 
@@ -27,4 +29,25 @@ public interface SubTaskRepo extends JpaRepository<SubTask, Long> {
     """)
     void deassignSubtasks(@Param("projectId") Long projectId,
                           @Param("memberId") Long memberId);
+
+    //find all nearing deadline subtasks for email and in-app notification
+    @Query("""
+SELECT t
+FROM SubTask t
+WHERE t.endDate BETWEEN CURRENT_DATE AND :targetDate
+AND t.status <> 'DONE'
+AND t.assignedTo IS NOT NULL
+""")
+    List<SubTask> findSubTasksNearingDeadline(Date targetDate);
+
+    //find all overdue subtasks for email and in-app notification
+    @Query("""
+SELECT t
+FROM SubTask t
+WHERE t.endDate < CURRENT_DATE
+AND t.status <> 'DONE'
+AND t.assignedTo IS NOT NULL
+""")
+    List<SubTask> findOverdueSubTasks();
+
 }

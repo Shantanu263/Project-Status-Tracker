@@ -1,0 +1,670 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Project Summary Report</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    @page {
+      size: A4;
+      margin: 15mm;
+    }
+
+    body {
+      max-width: 180mm;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+      line-height: 1.5;
+      color: #2d3748;
+      background-color: #ffffff;
+      padding: 0;
+      margin: 0 auto;
+      font-size: 10pt;
+    }
+
+    /* Typography */
+    h1 {
+      font-size: 22px;
+      font-weight: 700;
+      color: #1a202c;
+      margin-bottom: 6px;
+    }
+
+    h2 {
+      font-size: 15px;
+      font-weight: 600;
+      color: #2d3748;
+      margin-bottom: 10px;
+      padding-bottom: 6px;
+      border-bottom: 2px solid #e2e8f0;
+    }
+
+    h3 {
+      font-size: 12px;
+      font-weight: 600;
+      color: #4a5568;
+      margin-bottom: 6px;
+    }
+
+    p {
+      font-size: 10pt;
+      color: #4a5568;
+      margin-bottom: 8px;
+    }
+
+    /* Header Section */
+    .header {
+      display: table;
+      width: 100%;
+      margin-bottom: 20px;
+      padding-bottom: 15px;
+      border-bottom: 3px solid #8c2d1b;
+    }
+
+    .header-left {
+      display: table-cell;
+      width: 65%;
+      vertical-align: top;
+    }
+
+    .header-right {
+      display: table-cell;
+      width: 35%;
+      text-align: right;
+      vertical-align: top;
+    }
+
+    .logo-placeholder {
+      width: 100px;
+      height: 32px;
+      background-color: #e2e8f0;
+      border-radius: 4px;
+      display: inline-block;
+      text-align: center;
+      line-height: 32px;
+      font-size: 10px;
+      color: #718096;
+      margin-bottom: 10px;
+    }
+
+    .generated-date {
+      font-size: 10pt;
+      color: #718096;
+      margin-top: 6px;
+    }
+
+    /* Status Badge */
+    .taskStatus-badge, .priority-badge {
+      display: inline-block;
+      padding: 4px 12px;
+      border-radius: 16px;
+      font-size: 7pt;
+      font-weight: 600;
+      margin-top: 6px;
+    }
+
+    .taskStatus-not-started, .taskStatus-to_do, .priority-Low {
+      background-color: #e3f2fd;
+      color: #1976d2;
+      border: 1px solid #90caf9;
+    }
+
+    .taskStatus-ongoing, .taskStatus-in_progress, .priority-Medium {
+      background-color: #fef5e7;
+      color: #975a16;
+      border: 1px solid #fbd38d;
+    }
+
+    .taskStatus-completed, .taskStatus-done {
+      background-color: #c6f6d5;
+      color: #22543d;
+      border: 1px solid #9ae6b4;
+    }
+
+    .taskStatus-on-hold, .taskStatus-on_hold, .taskStatus-review, .priority-High {
+      background-color: #fed7d7;
+      color: #742a2a;
+      border: 1px solid #fc8181;
+    }
+
+    /* Cards */
+    .card {
+      background-color: #ffffff;
+      border: 1px solid #e2e8f0;
+      border-radius: 6px;
+      padding: 15px;
+      margin-bottom: 16px;
+      box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04);
+    }
+
+    .card-grid {
+      display: table;
+      width: 100%;
+      margin-top: 0;
+      margin-bottom: 12px;
+    }
+
+    .card-item {
+      display: table-cell;
+      width: 33%;
+      padding: 6px 10px 6px 0;
+      vertical-align: top;
+    }
+
+    .card-label {
+      font-size: 9pt;
+      font-weight: 500;
+      color: #718096;
+      text-transform: uppercase;
+      letter-spacing: 0.3px;
+      margin-bottom: 3px;
+      display: block;
+    }
+
+    .card-value {
+      font-size: 11pt;
+      font-weight: 600;
+      color: #2d3748;
+      display: block;
+      word-wrap: break-word;
+    }
+
+    /* Progress Bar */
+    .progress-container {
+      margin-top: 12px;
+    }
+
+    .progress-label {
+      font-size: 9pt;
+      font-weight: 500;
+      color: #718096;
+      margin-bottom: 6px;
+      display: table;
+      width: 100%;
+    }
+
+    .progress-label span:first-child {
+      display: table-cell;
+    }
+
+    .progress-label span:last-child {
+      display: table-cell;
+      text-align: right;
+      font-weight: 700;
+      color: #2d3748;
+    }
+
+    .progress-bar {
+      width: 100%;
+      height: 18px;
+      background-color: #e2e8f0;
+      border-radius: 9px;
+      overflow: hidden;
+      position: relative;
+    }
+
+    .progress-fill {
+      height: 100%;
+      display: block;              /* ← CRITICAL */
+      background-color: #8c2d1b;   /* gradient optional, see note below */
+      border-radius: 9px;
+      text-align: right;
+      padding-right: 8px;
+      line-height: 18px;
+      white-space: nowrap;
+    }
+
+
+    .progress-text {
+      font-size: 9pt;
+      font-weight: 700;
+      color: #ffffff;
+    }
+
+    /* Section */
+    .section {
+      margin-bottom: 20px;
+      page-break-inside: avoid;
+    }
+
+    /* Table Styles */
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-bottom: 16px;
+      background-color: #ffffff;
+      border: 1px solid #e2e8f0;
+      border-radius: 6px;
+      overflow: hidden;
+      table-layout: fixed;
+    }
+
+    thead {
+      background-color: #f7fafc;
+    }
+
+    th {
+      text-align: left;
+      padding: 8px 6px;
+      font-size: 8pt;
+      font-weight: 600;
+      color: #4a5568;
+      text-transform: uppercase;
+      letter-spacing: 0.3px;
+      border-bottom: 2px solid #e2e8f0;
+      word-wrap: break-word;
+    }
+
+    td {
+      padding: 8px 6px;
+      font-size: 9pt;
+      color: #4a5568;
+      border-bottom: 1px solid #f0f4f8;
+      vertical-align: middle;
+      word-wrap: break-word;
+      overflow-wrap: break-word;
+    }
+
+    tr:last-child td {
+      border-bottom: none;
+    }
+
+    tbody tr:hover {
+      background-color: #f7fafc;
+    }
+
+    /* Phase Group Row */
+    .phase-group-row {
+      background-color: #edf2f7;
+    }
+
+    .phase-group-row td {
+      padding: 8px 6px;
+      font-weight: 600;
+      color: #1a202c;
+      border-bottom: 2px solid #cbd5e0;
+    }
+
+    /* Task Row */
+    .task-row td {
+      padding: 8px 6px;
+      vertical-align: middle;
+    }
+
+    /* Type Badge */
+    .type-badge {
+      display: inline-block;
+      padding: 3px 6px;
+      border-radius: 3px;
+      font-size: 8pt;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.2px;
+
+      /* PDF SAFETY */
+      white-space: nowrap;
+      word-break: keep-all;
+    }
+
+
+    .type-phase {
+      background-color: #bee3f8;
+      color: #2c5282;
+    }
+
+    .type-task {
+      background-color: #c6f6d5;
+      color: #22543d;
+    }
+
+    /* Team List */
+    .team-list {
+      width: 100%;
+    }
+
+    .team-member {
+      display: inline-block;
+      width: 48%;
+      margin-right: 2%;
+      margin-bottom: 8px;
+      padding: 10px;
+      background-color: #f7fafc;
+      border: 1px solid #e2e8f0;
+      border-radius: 4px;
+      vertical-align: top;
+      box-sizing: border-box;
+    }
+
+    .team-member:nth-child(2n) {
+      margin-right: 0;
+    }
+
+    .team-member-name {
+      font-size: 10pt;
+      font-weight: 600;
+      color: #2d3748;
+      margin-bottom: 2px;
+      word-wrap: break-word;
+    }
+
+    .team-member-role {
+      font-size: 9pt;
+      color: #718096;
+      margin-bottom: 2px;
+      word-wrap: break-word;
+    }
+
+    .team-member-email {
+      font-size: 8pt;
+      color: #a0aec0;
+      word-wrap: break-word;
+    }
+
+    /* Status Text Block */
+    .taskStatus-text {
+      background-color: #f7fafc;
+      padding: 15px;
+      border-radius: 4px;
+      line-height: 1.6;
+      color: #2d3748;
+      border: 1px solid #e2e8f0;
+      font-size: 10pt;
+    }
+
+    .taskStatus-text ul {
+      margin-left: 18px;
+      margin-top: 6px;
+    }
+
+    .taskStatus-text li {
+      margin-bottom: 4px;
+      color: #2d3748;
+    }
+
+    .taskStatus-text p {
+      margin-bottom: 8px;
+    }
+
+    /* Next Steps List */
+    .next-steps-list {
+      background-color: #f7fafc;
+      padding: 15px;
+      border-radius: 4px;
+      border: 1px solid #e2e8f0;
+    }
+
+    .next-steps-list ul {
+      margin-left: 18px;
+      line-height: 1.6;
+    }
+
+    .next-steps-list li {
+      margin-bottom: 6px;
+      color: #2d3748;
+      font-size: 10pt;
+    }
+
+    /* Footer */
+    .footer {
+      margin-top: 30px;
+      padding-top: 15px;
+      border-top: 2px solid #e2e8f0;
+      text-align: center;
+    }
+
+    .footer-text {
+      font-size: 9pt;
+      color: #718096;
+      margin-bottom: 6px;
+    }
+
+    .footer-confidential {
+      font-size: 8pt;
+      color: #a0aec0;
+      font-style: italic;
+    }
+
+    .company-logo{
+      height: 32px;
+      width: 100px;   /* or auto */
+      object-fit: contain;
+    }
+
+    /* Print Styles */
+    @media print {
+      body {
+        padding: 0;
+        background-color: #ffffff;
+        max-width: 100%;
+      }
+
+      .section {
+        page-break-inside: avoid;
+      }
+
+      table {
+        page-break-inside: auto;
+      }
+
+      tr {
+        page-break-inside: avoid;
+        page-break-after: auto;
+      }
+
+      .header {
+        page-break-after: avoid;
+      }
+
+      tbody tr:hover {
+        background-color: transparent;
+      }
+
+      .card {
+        page-break-inside: avoid;
+      }
+    }
+  </style>
+</head>
+
+<body>
+
+<!-- Header Section -->
+<header class="header">
+  <div class="header-left">
+    <h1>
+      Project Status - <span th:text="${PROJECT_NAME}">Project Name</span>
+    </h1>
+  </div>
+</header>
+
+<!-- Project Overview Card -->
+<section class="section">
+  <h2>Project Overview</h2>
+  <div class="card" style="padding-top: 5px">
+    <p style="margin-bottom: 12px;" th:text="${PROJECT_DESCRIPTION}">{{PROJECT_DESCRIPTION}}</p>
+
+    <div class="card-grid">
+      <div class="card-item" style="padding-top: 0">
+        <span class="card-label">Start Date</span>
+        <span class="card-value" th:text="${PROJECT_START_DATE}">{{PROJECT_START_DATE}}</span>
+      </div>
+      <div class="card-item" style="padding-top: 0">
+        <span class="card-label">End Date</span>
+        <span class="card-value" th:text="${PROJECT_END_DATE}">{{PROJECT_END_DATE}}</span>
+      </div>
+      <div class="card-item" style="padding-top: 0">
+        <span class="card-label">Project Status</span>
+        <!--        <span class="card-value" th:text="${PROJECT_STATUS}">{{PROJECT_STATUS}}</span>-->
+        <span class="taskStatus-badge"
+              th:classappend="' taskStatus-' + ${PROJECT_STATUS_CLASS}"
+              th:text="${PROJECT_STATUS}">Status</span>
+      </div>
+    </div>
+
+<!--    <div class="card-grid">-->
+<!--      <div class="card-item">-->
+<!--        <span class="card-label">Project Status</span>-->
+<!--&lt;!&ndash;        <span class="card-value" th:text="${PROJECT_STATUS}">{{PROJECT_STATUS}}</span>&ndash;&gt;-->
+<!--        <span class="status-badge"-->
+<!--              th:classappend="' status-' + ${PROJECT_STATUS_CLASS}"-->
+<!--              th:text="${PROJECT_STATUS}">Status</span>-->
+<!--      </div>-->
+<!--      <div class="card-item">-->
+<!--        <span class="card-label">Priority</span>-->
+<!--        <span class="priority-badge"-->
+<!--              th:classappend="' priority-' + ${PROJECT_PRIORITY_CLASS}"-->
+<!--              th:text="${CURRENT_PHASE}">Priority</span>-->
+<!--      </div>-->
+<!--    </div>-->
+
+    <div class="progress-container">
+      <div class="progress-label">
+        <span>Overall Completion</span>
+        <span th:text="${OVERALL_PROGRESS + '%'}">{{OVERALL_PROGRESS}}%</span>
+      </div>
+      <div class="progress-bar">
+        <div class="progress-fill" th:style="'width:' + ${OVERALL_PROGRESS_ROUNDED} + '%'">
+<!--          <span class="progress-text" th:text="${OVERALL_PROGRESS + '%'}">{{OVERALL_PROGRESS}}%</span>-->
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- Current Status Section -->
+<section class="section">
+  <h2>Current Status</h2>
+  <div class="taskStatus-text" th:utext="${CURRENT_STATUS}">
+    {{CURRENT_STATUS}}
+    <!-- Example content:
+    <p>The project is currently in the development phase and progressing well. All major deliverables from the design phase have been completed and approved by stakeholders.</p>
+    <ul>
+        <li>Frontend development is 75% complete</li>
+        <li>Backend API integration on track</li>
+        <li>QA team preparing test scenarios</li>
+    </ul>
+    -->
+  </div>
+</section>
+
+<!--Tasks Section -->
+<section class="section" th:if="${INCLUDE_COMPLETED_TASKS}">
+  <h2>Recent Tasks</h2>
+  <table>
+    <thead>
+    <tr>
+      <th style="width: 23%;">Task</th>
+      <th style="width: 22%">Phase</th>
+      <th style="width: 12%;">Start</th>
+      <th style="width: 12%;">End</th>
+      <th style="width: 14%;">Status</th>
+      <th style="width: 17%;">Owner</th>
+    </tr>
+    </thead>
+    <tbody th:utext="${COMPLETED_TASK_ROWS}">
+    {{COMPLETED_TASK_ROWS}}
+    <!-- Example structure:
+    <tr class="phase-group-row">
+        <td><span class="type-badge type-phase">Phase</span></td>
+        <td><strong>Planning Phase</strong></td>
+        <td>Sarah Johnson</td>
+        <td><span class="status-badge status-completed">Completed</span></td>
+        <td>Jan 01, 2026</td>
+        <td>Jan 20, 2026</td>
+    </tr>
+    <tr class="task-row">
+        <td><span class="type-badge type-task">Task</span></td>
+        <td>Requirements Gathering</td>
+        <td>Sarah Johnson</td>
+        <td><span class="status-badge status-completed">Completed</span></td>
+        <td>Jan 01, 2026</td>
+        <td>Jan 10, 2026</td>
+    </tr>
+    -->
+    </tbody>
+  </table>
+</section>
+
+<section class="section" th:if="${INCLUDE_UPCOMING_TASKS}">
+  <h2>Upcoming Tasks</h2>
+  <table>
+    <thead>
+    <tr>
+      <th style="width: 23%;">Task</th>
+      <th style="width: 22%">Phase</th>
+      <th style="width: 12%;">Start</th>
+      <th style="width: 12%;">End</th>
+      <th style="width: 14%;">Status</th>
+      <th style="width: 17%;">Owner</th>
+    </tr>
+    </thead>
+    <tbody th:utext="${UPCOMING_TASK_ROWS}">
+    {{UPCOMING_TASK_ROWS}}
+    <!-- Example structure:
+    <tr class="phase-group-row">
+        <td><span class="type-badge type-phase">Phase</span></td>
+        <td><strong>Planning Phase</strong></td>
+        <td>Sarah Johnson</td>
+        <td><span class="status-badge status-completed">Completed</span></td>
+        <td>Jan 01, 2026</td>
+        <td>Jan 20, 2026</td>
+    </tr>
+    <tr class="task-row">
+        <td><span class="type-badge type-task">Task</span></td>
+        <td>Requirements Gathering</td>
+        <td>Sarah Johnson</td>
+        <td><span class="status-badge status-completed">Completed</span></td>
+        <td>Jan 01, 2026</td>
+        <td>Jan 10, 2026</td>
+    </tr>
+    -->
+    </tbody>
+  </table>
+</section>
+
+<!-- Team Section -->
+<!--<section class="section">-->
+<!--  <h2>Project Team</h2>-->
+<!--  <div class="team-list" th:utext="${TEAM_MEMBERS}">-->
+<!--    {{TEAM_MEMBERS}}-->
+<!--    &lt;!&ndash; Example member structure:-->
+<!--    <div class="team-member">-->
+<!--        <div class="team-member-name">John Doe</div>-->
+<!--        <div class="team-member-role">Project Manager</div>-->
+<!--        <div class="team-member-email">john.doe@company.com</div>-->
+<!--    </div>-->
+<!--    &ndash;&gt;-->
+<!--  </div>-->
+<!--</section>-->
+
+<!-- Next Steps Section -->
+<section class="section">
+  <h2>Next Steps</h2>
+  <div class="next-steps-list" th:utext="${NEXT_STEPS}">
+    {{NEXT_STEPS}}
+    <!-- Example content:
+    <ul>
+        <li>Complete remaining frontend components by February 15, 2026</li>
+        <li>Initiate UAT with selected stakeholders in early March</li>
+        <li>Finalize payment gateway integration and security audit</li>
+        <li>Prepare deployment plan and conduct team training</li>
+    </ul>
+    -->
+  </div>
+</section>
+
+<!-- Footer -->
+<footer class="footer">
+  <p class="footer-text"><strong>Generated by Project Status Tracker</strong> | <span th:text="${COMPANY_NAME}">Company</span></p>
+  <p class="footer-confidential">⚠ CONFIDENTIAL - This document contains proprietary information. Do not distribute without authorization.</p>
+</footer>
+
+</body>
+
+</html>

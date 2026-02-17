@@ -1,19 +1,28 @@
 package com.shantanu.projectstatustracker.controllers;
 
-import com.shantanu.projectstatustracker.dtos.AddMemberRequestDTO;
-import com.shantanu.projectstatustracker.dtos.ProjectRequestDTO;
-import com.shantanu.projectstatustracker.dtos.ProjectUpdateRequestDTO;
+import com.shantanu.projectstatustracker.dtos.*;
+import com.shantanu.projectstatustracker.services.EmailService;
 import com.shantanu.projectstatustracker.services.ProjectService;
+import com.shantanu.projectstatustracker.services.impl.ProjectSummaryServiceImpl;
 import lombok.RequiredArgsConstructor;
+import org.springframework.format.annotation.DateTimeFormat;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
+
+import java.util.Date;
+import java.util.Map;
 
 @RequiredArgsConstructor
 @RestController
 @RequestMapping("/api/project")
 public class ProjectController {
     private final ProjectService projectService;
+    private final ProjectSummaryServiceImpl projectSummaryService;
+    private final EmailService emailService;
 
 
     @GetMapping()
@@ -35,7 +44,6 @@ public class ProjectController {
     @PreAuthorize("@auth.canManageProject(#projectId) or @auth.isSuperAdmin()")
     @PutMapping("/{projectId}")
     public ResponseEntity<Object> updateProject(@PathVariable(name = "projectId") Long projectId, @RequestBody ProjectUpdateRequestDTO projectUpdateRequestDTO){
-        System.out.println(projectId);
         return projectService.updateProject(projectId,projectUpdateRequestDTO);
     }
 
@@ -103,6 +111,38 @@ public class ProjectController {
     @GetMapping("projects-dashboard")
     public ResponseEntity<Object> getProjectsDashboard(){
         return projectService.getProjectsDashboard();
+    }
+
+    @PostMapping("/{projectId}/summary/pdf")
+    public ResponseEntity<byte[]> downloadPdf(@PathVariable Long projectId, @RequestBody ProjectSummaryRequestDTO dto) {
+        String html = projectSummaryService.generateHtmlTemplate(projectId,dto);
+        byte[] pdf = projectSummaryService.generatePdf(html);
+
+        return ResponseEntity.ok()
+                .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=project-summary.pdf")
+                .contentType(MediaType.APPLICATION_PDF)
+                .body(pdf);
+    }
+
+    @PostMapping("/{projectId}/summary/pdf/email")
+    public ResponseEntity<Object> emailSummaryPdf(@PathVariable Long projectId, @RequestBody ProjectSummaryRequestDTO dto) {
+        String html = projectSummaryService.generateHtmlTemplate(projectId,dto);
+        byte[] pdf = projectSummaryService.generatePdf(html);
+
+        if(dto.getEmail() != null) return projectSummaryService.generateMail(dto.getEmail(), projectId,pdf);
+        else return new ResponseEntity<>(Map.of("message","email not found"), HttpStatus.NOT_FOUND);
+    }
+
+    @GetMapping("/{projectId}/timeline/export/csv")
+    public ResponseEntity<Object> exportTimelineAsCsv(
+            @PathVariable Long projectId,
+            @RequestParam(required = false, name = "startDate") @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) Date startDate,
+            @RequestParam(required = false, name = "endDate") @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) Date endDate
+    ) {
+
+        return projectService.generateTimelineCsv(projectId, startDate, endDate);
+
+        //byte[] csvData = projectService.generateTimelineCsv(projectId, startDate, endDate);
     }
 
 }

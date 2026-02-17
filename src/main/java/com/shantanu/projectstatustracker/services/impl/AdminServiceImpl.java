@@ -3,14 +3,11 @@ package com.shantanu.projectstatustracker.services.impl;
 import com.shantanu.projectstatustracker.dtos.InviteUserDTO;
 import com.shantanu.projectstatustracker.dtos.MailBody;
 import com.shantanu.projectstatustracker.dtos.RoleRequestDTO;
+import com.shantanu.projectstatustracker.dtos.mappers.ProjectMemberMapper;
 import com.shantanu.projectstatustracker.dtos.mappers.UserMapper;
 import com.shantanu.projectstatustracker.globalExceptionHandlers.ResourceNotFoundException;
-import com.shantanu.projectstatustracker.models.InvitedUsers;
-import com.shantanu.projectstatustracker.models.Role;
-import com.shantanu.projectstatustracker.models.User;
-import com.shantanu.projectstatustracker.repositories.InvitedUsersRepo;
-import com.shantanu.projectstatustracker.repositories.RoleRepo;
-import com.shantanu.projectstatustracker.repositories.UserRepo;
+import com.shantanu.projectstatustracker.models.*;
+import com.shantanu.projectstatustracker.repositories.*;
 import com.shantanu.projectstatustracker.services.AdminService;
 import com.shantanu.projectstatustracker.services.EmailService;
 import jakarta.mail.MessagingException;
@@ -27,6 +24,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 
@@ -40,6 +38,8 @@ public class AdminServiceImpl implements AdminService {
     private final EmailService emailService;
     private final HttpServletRequest servletRequest;
     private static final Logger log = LoggerFactory.getLogger(AdminServiceImpl.class);
+    private final ProjectMemberRepo projectMemberRepo;
+    private final ProjectMemberMapper projectMemberMapper;
 
     @Override
     public ResponseEntity<Object> getUsers(int pageNumber, int pageSize, String sortBy, String order, String search) {
@@ -56,6 +56,16 @@ public class AdminServiceImpl implements AdminService {
 
         return ResponseEntity.ok(toPaginatedResponse(result));
 
+    }
+
+    @Override
+    public ResponseEntity<Object> getProjectsOfUser(Long userId) {
+        userRepo.findById(userId)
+                .orElseThrow(() -> new ResourceNotFoundException("User not found with id: " + userId));
+
+        List<ProjectMember> memberList = projectMemberRepo.findAllByUser_UserId(userId);
+
+        return ResponseEntity.ok(projectMemberMapper.mapProjectMembers(memberList));
     }
 
 //    @Override
@@ -79,6 +89,12 @@ public class AdminServiceImpl implements AdminService {
 
     @Override
     public ResponseEntity<Object> inviteUser(InviteUserDTO inviteUserDTO) {
+
+        if (invitedUsersRepo.existsByEmail(inviteUserDTO.getEmail())) {
+            return new ResponseEntity<>(Map.of("message", "User already invited"),
+                    HttpStatus.BAD_REQUEST);
+        }
+
         if (userRepo.existsByEmail(inviteUserDTO.getEmail())) {
             return new ResponseEntity<>(Map.of("message", "User account with this email already exists!"),
                     HttpStatus.BAD_REQUEST);

@@ -2,7 +2,7 @@ package com.shantanu.projectstatustracker.controllers;
 
 import com.shantanu.projectstatustracker.dtos.SubTaskRequestDTO;
 import com.shantanu.projectstatustracker.dtos.TaskRequestDTO;
-import com.shantanu.projectstatustracker.models.Status;
+import com.shantanu.projectstatustracker.models.TaskStatus;
 import com.shantanu.projectstatustracker.services.TaskService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
@@ -52,7 +52,7 @@ public class TaskController {
             @PathVariable Long projectId,
             @PathVariable Long phaseId,
             @PathVariable Long taskId,
-            @RequestParam Status status) {
+            @RequestParam TaskStatus status) {
         return taskService.updateTaskStatus(projectId, phaseId, taskId, status);
     }
 

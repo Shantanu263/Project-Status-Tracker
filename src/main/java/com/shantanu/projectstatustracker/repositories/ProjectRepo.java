@@ -38,15 +38,22 @@ AND (:userId IS NULL OR pm.user.userId = :userId)
 
 
     @Query("""
-SELECT COUNT(DISTINCT p.projectId)
+SELECT COUNT(p)
 FROM Project p
-LEFT JOIN p.projectMembers pm
 WHERE p.endDate < CURRENT_DATE
-AND p.status <> 'COMPLETED'
-AND (:userId IS NULL OR pm.user.userId = :userId)
+  AND p.status <> 'completed'
+  AND p.status <> 'on hold'
+  AND (
+        :userId IS NULL
+        OR EXISTS (
+            SELECT 1
+            FROM ProjectMember pm
+            WHERE pm.project = p
+              AND pm.user.userId = :userId
+        )
+      )
 """)
     long countDelayedProjects(@Param("userId") Long userId);
-
 
     @Query("""
 SELECT COALESCE(AVG(ph.progress), 0)
@@ -110,6 +117,7 @@ GROUP BY p.projectId, p.projectName
 """)
     List<ProjectProgressChartDTO> getProjectProgressChart(@Param("userId") Long userId);
 
+    //Radar chart score calculation for All Projects Dashboard
     @Query("""
 SELECT
 CASE
@@ -149,7 +157,7 @@ CASE
     WHEN COUNT(p) = 0 THEN 100
     ELSE 100.0 -
         ((SUM(CASE
-            WHEN p.endDate < CURRENT_DATE AND p.status <> 'COMPLETED' THEN 1
+            WHEN p.endDate < CURRENT_DATE AND p.status <> 'completed' THEN 1
             ELSE 0
         END) * 100.0) / COUNT(p))
 END
@@ -167,6 +175,64 @@ LEFT JOIN p.phases ph
 WHERE (:userId IS NULL OR pm.user.userId = :userId)
 """)
     double getProgressConsistencyScore(Long userId);
+
+    //Radar chart score calculation for Single Project Dashboard
+
+    @Query("""
+SELECT
+CASE
+    WHEN COUNT(t) = 0 THEN 0
+    ELSE (SUM(CASE WHEN t.status = 'DONE' THEN 1 ELSE 0 END) * 100.0) / COUNT(t)
+END
+FROM Project p
+LEFT JOIN p.phases ph
+LEFT JOIN ph.tasks t
+WHERE p.projectId = :projectId
+""")
+    double getProjectTaskCompletionScore(Long projectId);
+
+    @Query("""
+SELECT
+CASE
+    WHEN COUNT(t) = 0 THEN 100
+    ELSE 100.0 -
+        ((SUM(CASE
+            WHEN t.endDate < CURRENT_DATE AND t.status <> 'DONE' THEN 1
+            ELSE 0
+        END) * 100.0) / COUNT(t))
+END
+FROM Project p
+LEFT JOIN p.phases ph
+LEFT JOIN ph.tasks t
+WHERE p.projectId = :projectId
+""")
+    double getProjectScheduleAdherenceScore(Long projectId);
+
+    @Query("""
+SELECT
+CASE
+    WHEN COUNT(t) = 0 THEN 100
+    ELSE 100.0 -
+        ((SUM(CASE
+            WHEN t.endDate >= CURRENT_DATE OR t.status = 'DONE' THEN 1
+            ELSE 0
+        END) * 100.0) / COUNT(t))
+END
+FROM Project p
+LEFT JOIN p.phases ph
+LEFT JOIN ph.tasks t
+WHERE p.projectId = :projectId
+""")
+    double getProjectRiskScore(Long projectId);
+
+    @Query("""
+SELECT COALESCE(AVG(ph.progress), 0)
+FROM Project p
+LEFT JOIN p.phases ph
+WHERE p.projectId = :projectId
+""")
+    double getProjectProgressConsistencyScore(Long projectId);
+
 
     @Query("""
 SELECT new com.shantanu.projectstatustracker.dtos.superDashboard.ProjectPriorityChartDTO(
@@ -205,5 +271,16 @@ GROUP BY bucket
 ORDER BY bucket
 """, nativeQuery = true)
     List<Object[]> getProjectProgressDistributionNative(Long userId);
+
+    @Query("""
+SELECT p
+FROM Project p
+WHERE p.endDate < CURRENT_DATE
+  AND p.status <> "completed"
+  AND p.status <> "delayed"
+  AND p.status <> "on hold"
+""")
+    List<Project> findProjectsToMarkDelayed();
+
 
 }

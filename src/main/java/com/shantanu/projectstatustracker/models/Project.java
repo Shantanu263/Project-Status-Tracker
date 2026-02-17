@@ -24,6 +24,8 @@ public class Project {
     private Long projectId;
     private String projectName;
 
+    //private String client;
+
     @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "dd-MM-yyyy")
     private Date startDate;
 

@@ -7,6 +7,8 @@ import org.springframework.http.ResponseEntity;
 public interface AdminService {
     ResponseEntity<Object> getUsers(int pageNumber, int pageSize, String sortBy, String order, String search);
 
+    ResponseEntity<Object> getProjectsOfUser(Long userId);
+
     //ResponseEntity<Object> getPendingUsers();
 
     ResponseEntity<Object> approveUser(Long id, RoleRequestDTO req);

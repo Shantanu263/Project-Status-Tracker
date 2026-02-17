@@ -40,4 +40,9 @@ public class AdminController {
         return adminService.inviteUser(inviteUserDTO);
     }
 
+    @GetMapping("/users/{userId}/memberlist")
+    public ResponseEntity<Object> getProjectsOfUser(@PathVariable(name = "userId") Long userId){
+        return adminService.getProjectsOfUser(userId);
+    }
+
 }

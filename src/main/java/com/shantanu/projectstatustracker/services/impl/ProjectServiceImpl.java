@@ -20,11 +20,15 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
-import org.springframework.http.HttpStatus;
-import org.springframework.http.ResponseEntity;
+import org.springframework.http.*;
+import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.nio.charset.StandardCharsets;
+import java.text.SimpleDateFormat;
+import java.time.LocalDate;
+import java.time.ZoneId;
 import java.util.*;
 
 @RequiredArgsConstructor
@@ -43,6 +47,8 @@ public class ProjectServiceImpl implements ProjectService {
     private final ActivityLogService activityLogService;
     private final ActivityLogRepo activityLogRepo;
     private final SubTaskRepo subTaskRepo;
+
+    SimpleDateFormat shortFormat = new SimpleDateFormat("dd/MM/yyyy", Locale.ENGLISH);
 
     @Override
     public ResponseEntity<Object> getProjects() {
@@ -97,8 +103,8 @@ public class ProjectServiceImpl implements ProjectService {
                 Phase phase = new Phase();
                 phase.setPhaseName(templatePhase.getPhaseName());
                 phase.setStatus(PhaseStatus.TO_DO); // Default status
-                phase.setStartDate(project.getStartDate()); // start same as project
-                phase.setEndDate(project.getEndDate());     // end same as project
+                phase.setStartDate(project.getStartDate()); // start same as a project
+                phase.setEndDate(project.getEndDate());     // end same as a project
                 phase.setProject(project);
                 return phase;
             }).toList();
@@ -142,14 +148,15 @@ public class ProjectServiceImpl implements ProjectService {
     public ResponseEntity<Object> updateProject(Long id, ProjectUpdateRequestDTO projectUpdateRequestDTO) {
         Project existingProject = projectRepo.findById(id).orElseThrow(() -> new ResourceNotFoundException("Project not found"));
 
-//        existingProject.setProjectName(projectUpdateRequestDTO.getProjectName());
-//        existingProject.setDescription(projectUpdateRequestDTO.getDescription());
-//        existingProject.setStartDate(projectUpdateRequestDTO.getStartDate());
-//        existingProject.setEndDate(projectUpdateRequestDTO.getEndDate());
-//        existingProject.setPriority(projectUpdateRequestDTO.getPriority());
-//        existingProject.setStatus(projectUpdateRequestDTO.getStatus());
-
         projectMapper.updateProjectFromDTO(projectUpdateRequestDTO,existingProject);
+
+        if (projectUpdateRequestDTO.getEndDate()!=null && !existingProject.getStatus().equals("completed")){
+            LocalDate endDate = projectUpdateRequestDTO.getEndDate().toInstant().atZone(ZoneId.systemDefault()).toLocalDate();
+            if (endDate.isAfter(LocalDate.now()) || endDate.isEqual(LocalDate.now())){
+                existingProject.setStatus("ongoing");
+            }
+            else existingProject.setStatus("delayed");
+        }
 
         projectRepo.save(existingProject);
 
@@ -212,6 +219,12 @@ public class ProjectServiceImpl implements ProjectService {
 
     @Override
     public ResponseEntity<Object> addMemberToProjectUsingEmail(Long projectId, AddMemberRequestDTO addMemberRequestDTO, String assignedByEmail) {
+
+        if (invitedMembersRepo.existsByEmail(addMemberRequestDTO.getEmail())) {
+            return new ResponseEntity<>(Map.of("message", "Member already invited"),
+                    HttpStatus.BAD_REQUEST);
+        }
+
         Project project = projectRepo.findById(projectId).orElseThrow(() -> new ResourceNotFoundException("Project not found"));
         User assignedBy = userRepo.findByEmail(assignedByEmail).orElseThrow(() -> new ResourceNotFoundException("User not found"));
 
@@ -221,6 +234,7 @@ public class ProjectServiceImpl implements ProjectService {
 
             if (projectMemberRepo.existsByProject_ProjectIdAndUser_Email(projectId,addMemberRequestDTO.getEmail())){
                 ProjectMember projectMember = projectMemberRepo.findByProject_ProjectIdAndUser_Email(projectId,addMemberRequestDTO.getEmail());
+                projectMember.setRole(addMemberRequestDTO.getRoleInProject());
                 projectMember.setIsActive(true);
             }
             else {
@@ -282,8 +296,8 @@ public class ProjectServiceImpl implements ProjectService {
 
         // ----- BASIC COUNTS -----
         dto.setTotalTasks(taskRepo.countByProjectPhase_Project(project));
-        dto.setCompletedTasks(taskRepo.countByProjectPhase_ProjectAndStatus(project,Status.DONE));
-        dto.setPendingTasks(taskRepo.countByProjectPhase_ProjectAndStatus(project,Status.IN_PROGRESS));
+        dto.setCompletedTasks(taskRepo.countByProjectPhase_ProjectAndStatus(project, TaskStatus.DONE));
+        dto.setPendingTasks(taskRepo.countByProjectPhase_ProjectAndStatus(project, TaskStatus.IN_PROGRESS));
         dto.setOverdueTasks(taskRepo.countOverdueTasks(projectId));
 
         dto.setTotalPhases(phaseRepo.countByProject_ProjectId(projectId));
@@ -343,8 +357,10 @@ public class ProjectServiceImpl implements ProjectService {
                         .toList()
         );
 
-        return ResponseEntity.ok(dto);
+        // ---- RADAR CHART ----
+        dto.setProjectRadarChart(buildProjectRadarChart(projectId));
 
+        return ResponseEntity.ok(dto);
     }
 
     @Override
@@ -393,6 +409,7 @@ public class ProjectServiceImpl implements ProjectService {
     }
 
     @Override
+    @Transactional
     public ResponseEntity<Object> updateRoleOfProjectMember(Long projectId, Long projectMemberId, ProjectRole projectRole) {
         if (!projectRepo.existsById(projectId)) return ResponseEntity.ok(Map.of("message","Project does not exist"));
 
@@ -401,6 +418,16 @@ public class ProjectServiceImpl implements ProjectService {
 
         if (projectMember.getUser().getRole().getName().equals("SUPER ADMIN") && request.getAttribute("role")!="SUPER ADMIN") {
             return new ResponseEntity<>(Map.of("message","Cannot change role of SUPER ADMIN user"),HttpStatus.UNAUTHORIZED);
+        }
+
+        if (projectRole.equals(ProjectRole.PROJECT_VIEWER)) {
+            taskRepo.deassignTasks(projectId, projectMemberId);
+
+            //De-assign active subtasks
+            subTaskRepo.deassignSubtasks(projectId, projectMemberId);
+
+            //Remove phase ownership
+            phaseRepo.deassignPhases(projectId, projectMemberId);
         }
 
         projectMember.setRole(projectRole);
@@ -455,10 +482,104 @@ public class ProjectServiceImpl implements ProjectService {
         return ResponseEntity.ok(Map.of("message","Project Member Removed successfully"));
     }
 
-//    private boolean isLastProjectHead(Long projectId) {
-//        // Implement count check
-//        return false;
+    @Override
+    public ResponseEntity<Object> generateTimelineCsv(Long projectId, Date startDate, Date endDate) {
+
+        projectRepo.findById(projectId)
+                .orElseThrow(() -> new RuntimeException("Project not found"));
+
+        List<Phase> phases = phaseRepo.findAllByProject_ProjectId(projectId);
+
+        StringBuilder sb = new StringBuilder();
+
+        // Header
+        sb.append("Type,Phase,Task,Start Date,End Date,Status,Progress (%),Assigned To\n");
+
+        for (Phase phase : phases) {
+
+            if (!isInRange(phase.getStartDate(), phase.getEndDate(), startDate, endDate))
+                continue;
+
+            sb.append("PHASE,")
+                    .append(escape(phase.getPhaseName())).append(",,")
+                    .append(shortFormat.format(phase.getStartDate())).append(",")
+                    .append(shortFormat.format(phase.getEndDate())).append(",")
+                    .append(phase.getStatus()).append(",")
+                    .append(phase.getProgress()).append(",")
+                    //.append(calculateDelay(phase)).append(",")
+                    .append(phase.getAssignedTo() != null ? escape(phase.getAssignedTo().getUser().getName()) : "")
+                    .append("\n");
+
+            for (Task task : phase.getTasks()) {
+
+                if (!isInRange(task.getStartDate(), task.getEndDate(), startDate, endDate))
+                    continue;
+
+                sb.append("TASK,")
+                        .append(escape(phase.getPhaseName())).append(",")
+                        .append(escape(task.getTaskName())).append(",")
+                        .append(shortFormat.format(task.getStartDate())).append(",")
+                        .append(shortFormat.format(task.getEndDate())).append(",")
+                        .append(task.getStatus()).append(",")
+                        .append(task.getProgress()).append(",")
+                        //.append(calculateDelay(task)).append(",")
+                        .append(task.getAssignedTo() != null ? escape(task.getAssignedTo().getUser().getName()) : "")
+                        .append("\n");
+
+//                for (SubTask subtask : task.getSubTasks()) {
+//
+//                    if (!isInRange(subtask.getStartDate(), subtask.getEndDate(), startDate, endDate))
+//                        continue;
+//
+//                    sb.append("SUBTASK,")
+//                            .append(escape(phase.getPhaseName())).append(",")
+//                            .append(escape(task.getTaskName())).append(",")
+//                            .append(escape(subtask.getSubTaskName())).append(",")
+//                            .append(subtask.getStartDate()).append(",")
+//                            .append(subtask.getEndDate()).append(",")
+//                            .append(subtask.getStatus()).append(",")
+//                            //.append(subtask.getProgress()).append(",")
+//                            //.append(calculateDelay(subtask)).append(",")
+//                            .append(subtask.getAssignedTo() != null ? escape(subtask.getAssignedTo().getUser().getName()) : "")
+//                            .append("\n");
+//                }
+            }
+        }
+
+        byte[] csvData = sb.toString().getBytes(StandardCharsets.UTF_8);
+
+        HttpHeaders headers = new HttpHeaders();
+        headers.setContentType(MediaType.parseMediaType("text/csv"));
+        headers.setContentDisposition(ContentDisposition.builder("attachment")
+                .filename("project-timeline.csv")
+                .build());
+
+        return new ResponseEntity<>(csvData, headers, HttpStatus.OK);
+    }
+
+    private boolean isInRange(Date start, Date end,
+                              Date filterStart, Date filterEnd) {
+
+        if (filterStart == null || filterEnd == null)
+            return true;
+
+        return !(end.before(filterStart) || start.after(filterEnd));
+    }
+
+//    private long calculateDelay(BaseTimelineEntity entity) {
+//        if (entity.getEndDate().isBefore(LocalDate.now())
+//                && entity.getStatus() != Status.COMPLETED) {
+//            return ChronoUnit.DAYS.between(entity.getEndDate(), LocalDate.now());
+//        }
+//        return 0;
 //    }
+
+    private String escape(String value) {
+        if (value == null) return "";
+        return "\"" + value.replace("\"", "\"\"") + "\"";
+    }
+
+
 
 
     private List<ProjectRadarChartDTO> buildRadarChart(Long userId) {
@@ -476,7 +597,7 @@ public class ProjectServiceImpl implements ProjectService {
         ));
 
         radar.add(new ProjectRadarChartDTO(
-                "Risk Level",
+                "Risk Control",
                 projectRepo.getRiskScore(userId)
         ));
 
@@ -486,6 +607,45 @@ public class ProjectServiceImpl implements ProjectService {
         ));
 
         return radar;
+    }
+
+    private List<ProjectRadarChartDTO> buildProjectRadarChart(Long projectId) {
+
+        List<ProjectRadarChartDTO> radar = new ArrayList<>();
+
+        radar.add(new ProjectRadarChartDTO(
+                "Task Completion",
+                projectRepo.getProjectTaskCompletionScore(projectId)
+        ));
+
+        radar.add(new ProjectRadarChartDTO(
+                "Schedule Adherence",
+                projectRepo.getProjectScheduleAdherenceScore(projectId)
+        ));
+
+        radar.add(new ProjectRadarChartDTO(
+                "Risk Control",
+                100-projectRepo.getProjectRiskScore(projectId)
+        ));
+
+        radar.add(new ProjectRadarChartDTO(
+                "Progress Consistency",
+                projectRepo.getProjectProgressConsistencyScore(projectId)
+        ));
+
+        return radar;
+    }
+
+    @Scheduled(cron = "0 0 1 * * ?") // Every day
+    public void updateDelayedProjects() {
+        System.out.println("running");
+        List<Project> overdueProjects = projectRepo.findProjectsToMarkDelayed();
+
+        for (Project project : overdueProjects) {
+            System.out.println(project.getProjectName() + " is delayed");
+            project.setStatus("delayed");
+            projectRepo.save(project);
+        }
     }
 
 }

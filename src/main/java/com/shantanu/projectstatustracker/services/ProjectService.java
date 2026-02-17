@@ -3,10 +3,10 @@ package com.shantanu.projectstatustracker.services;
 import com.shantanu.projectstatustracker.dtos.AddMemberRequestDTO;
 import com.shantanu.projectstatustracker.dtos.ProjectRequestDTO;
 import com.shantanu.projectstatustracker.dtos.ProjectUpdateRequestDTO;
-import com.shantanu.projectstatustracker.dtos.RoleRequestDTO;
 import com.shantanu.projectstatustracker.models.ProjectRole;
-import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.http.ResponseEntity;
+
+import java.util.Date;
 
 public interface ProjectService {
     ResponseEntity<Object> getProjects();
@@ -38,4 +38,6 @@ public interface ProjectService {
     ResponseEntity<Object> updateRoleOfProjectMember(Long projectId, Long projectMemberId, ProjectRole projectRole);
 
     ResponseEntity<Object> removeProjectMember(Long projectId, Long memberId);
+
+    ResponseEntity<Object> generateTimelineCsv(Long projectId, Date startDate, Date endDate);
 }

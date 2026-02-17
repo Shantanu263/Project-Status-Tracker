@@ -51,4 +51,5 @@ public interface ProjectMemberRepo extends JpaRepository<ProjectMember,Long> {
 
     List<ProjectMember> findAllByProject_ProjectIdAndIsActive(Long projectProjectId, Boolean isActive);
 
+    List<ProjectMember> findAllByUser_UserId(Long userUserId);
 }

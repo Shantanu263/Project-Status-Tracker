@@ -1,5 +1,6 @@
 package com.shantanu.projectstatustracker.dtos.dashboard;
 
+import com.shantanu.projectstatustracker.dtos.superDashboard.ProjectRadarChartDTO;
 import lombok.Data;
 
 import java.util.List;
@@ -18,6 +19,7 @@ public class DashboardResponseDTO {
     private double overallProgress;
 
     private List<PhaseProgressDTO> phaseProgress;
+    private List<ProjectRadarChartDTO> projectRadarChart;
     private List<LabelCountDTO> taskDistribution;
     private List<TasksOverTimeDTO> tasksOverTime;
     private List<PriorityCountDTO> priorityDistribution;

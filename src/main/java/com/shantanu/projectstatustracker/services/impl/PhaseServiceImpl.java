@@ -190,7 +190,7 @@ public class PhaseServiceImpl implements PhaseService {
         }
         
         long completedTasks = tasks.stream()
-                .filter(task -> Status.DONE.equals(task.getStatus()))
+                .filter(task -> TaskStatus.DONE.equals(task.getStatus()))
                 .count();
         
         Double progress = (double) completedTasks / tasks.size() * 100;

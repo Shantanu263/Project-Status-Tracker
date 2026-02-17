@@ -1,7 +1,7 @@
 package com.shantanu.projectstatustracker.dtos;
 
 import com.fasterxml.jackson.annotation.JsonFormat;
-import com.shantanu.projectstatustracker.models.Status;
+import com.shantanu.projectstatustracker.models.TaskStatus;
 import lombok.Data;
 
 import java.util.Date;
@@ -22,7 +22,7 @@ public class SubTaskResponseDTO {
     @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "dd-MM-yyyy")
     private Date endDate;
 
-    private Status status;
+    private TaskStatus status;
 
     private String priority;
 

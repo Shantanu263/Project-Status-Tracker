@@ -4,7 +4,9 @@ import com.shantanu.projectstatustracker.dtos.UpdatePasswordRequestDTO;
 import com.shantanu.projectstatustracker.dtos.UserLoginRequestDTO;
 import com.shantanu.projectstatustracker.dtos.UserRequestDTO;
 import com.shantanu.projectstatustracker.services.AuthService;
+import com.shantanu.projectstatustracker.services.NotificationService;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -17,6 +19,7 @@ import java.util.Map;
 
 public class AuthController {
     private final AuthService authService;
+    private final NotificationService notificationService;
 
     @PostMapping("/signup")
     public ResponseEntity<Object> signUp(@RequestBody UserRequestDTO userRequestDTO){
@@ -58,6 +61,23 @@ public class AuthController {
     @DeleteMapping("/user/delete/{userId}")
     public ResponseEntity<Object> removeMyAccount(@PathVariable(name = "userId") Long userId){
         return authService.removeMyAccount(userId);
+    }
+
+    @GetMapping("/user/{userId}/notifications")
+    public ResponseEntity<Object> getUserNotifications(@PathVariable(name = "userId") Long userId,
+                                                       @RequestParam(name = "page", defaultValue = "0") int page,
+                                                       @RequestParam(name = "size", defaultValue = "5") int size){
+        return notificationService.getUserNotifications(userId, PageRequest.of(page, size));
+    }
+
+    @GetMapping("/user/{userId}/notifications/unread-count")
+    public ResponseEntity<Object> getNotificationUnreadCount(@PathVariable(name = "userId") Long userId){
+        return notificationService.getUnreadCount(userId);
+    }
+
+    @PutMapping("/user/notifications/{notificationId}/read")
+    public void notificationsMarkAsRead(@PathVariable(name = "notificationId") Long notificationId) {
+        notificationService.markAsRead(notificationId);
     }
 
 }

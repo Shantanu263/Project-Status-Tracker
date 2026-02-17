@@ -1,14 +1,16 @@
 package com.shantanu.projectstatustracker.repositories;
 
 import com.shantanu.projectstatustracker.models.Project;
-import com.shantanu.projectstatustracker.models.Status;
+import com.shantanu.projectstatustracker.models.TaskStatus;
 import com.shantanu.projectstatustracker.models.Task;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
+import java.util.Date;
 import java.util.List;
 import java.util.Optional;
 
@@ -87,7 +89,7 @@ public interface TaskRepo extends JpaRepository<Task,Long> {
 
     int countByProjectPhase_Project(Project projectPhaseProject);
 
-    int countByProjectPhase_ProjectAndStatus(Project projectPhaseProject, Status status);
+    int countByProjectPhase_ProjectAndStatus(Project projectPhaseProject, TaskStatus status);
 
     @Query(value = """
     SELECT COUNT(*)
@@ -111,4 +113,56 @@ public interface TaskRepo extends JpaRepository<Task,Long> {
     void deassignTasks(@Param("projectId") Long projectId,
                        @Param("memberId") Long memberId);
 
+    @Modifying
+    @Query("""
+        UPDATE Task t
+        SET t.assignedTo = NULL
+        WHERE t.projectPhase.project.projectId = :projectId
+          AND t.assignedTo.memberId = :memberId
+    """)
+    void deassignTasksForViewer(@Param("projectId") Long projectId,
+                       @Param("memberId") Long memberId);
+
+
+    @Query("""
+   SELECT t FROM Task t
+   WHERE t.projectPhase.project.projectId = :projectId
+   AND t.status <> 'DONE'
+   ORDER BY ABS(t.endDate - CURRENT_DATE)
+""")
+    List<Task> findNearestEndDateOngoingTasks(
+            @Param("projectId") Long projectId,
+            Pageable pageable
+    );
+
+    @Query("""
+   SELECT t FROM Task t
+   WHERE t.projectPhase.project.projectId = :projectId
+   AND t.status = 'DONE'
+   ORDER BY t.completedAt DESC\s
+""")
+    List<Task> findRecentlyCompletedTasks(
+            @Param("projectId") Long projectId,
+            Pageable pageable
+    );
+
+    //find all nearing deadline tasks for email and in-app notification
+    @Query("""
+SELECT t
+FROM Task t
+WHERE t.endDate BETWEEN CURRENT_DATE AND :targetDate
+AND t.status <> 'DONE'
+AND t.assignedTo IS NOT NULL
+""")
+    List<Task> findTasksNearingDeadline(Date targetDate);
+
+    //find all overdue tasks for email and in-app notification
+    @Query("""
+SELECT t
+FROM Task t
+WHERE t.endDate < CURRENT_DATE
+AND t.status <> 'DONE'
+AND t.assignedTo IS NOT NULL
+""")
+    List<Task> findOverdueTasks();
 }

@@ -13,34 +13,28 @@ import java.time.LocalDateTime;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-@Table(name = "notifications")
-public class Notification {
+@Table(name = "notification_log")
+public class NotificationEmail {
+
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
+
+    private EntityType entityType;        // PHASE | TASK | SUBTASK
+
+    private Long entityId;
 
     @ManyToOne
     @JoinColumn(name = "user_id")
     private User user;
 
-    private String title;
+    private NotificationType notificationType;  // NEARING_DEADLINE | OVERDUE
 
-    @Column(length = 500)
-    private String message;
-
-    private LocalDateTime createdAt;
-
-    private Boolean isRead;
-
-    private NotificationType type;
-
-    private Long entityId;
-    private EntityType entityType;
+    private LocalDateTime sentAt;
 
     @PrePersist
-    public void onCreate(){
-        this.createdAt = LocalDateTime.now();
-        this.isRead = false;
+    protected void onCreate() {
+        this.sentAt = LocalDateTime.now();
     }
 
 }

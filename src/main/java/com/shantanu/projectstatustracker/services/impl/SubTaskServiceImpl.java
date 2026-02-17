@@ -182,7 +182,7 @@ public class SubTaskServiceImpl implements SubTaskService {
     }
 
     @Override
-    public ResponseEntity<Object> updateSubTaskStatus(Long projectId, Long phaseId, Long taskId, Long subTaskId, Status status) {
+    public ResponseEntity<Object> updateSubTaskStatus(Long projectId, Long phaseId, Long taskId, Long subTaskId, TaskStatus status) {
         // Verify phase exists in the project
         phaseRepo.findByPhaseIdAndProject_ProjectId(phaseId, projectId)
                 .orElseThrow(() -> new ResourceNotFoundException("Phase not found"));
