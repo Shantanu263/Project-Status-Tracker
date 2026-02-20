@@ -58,7 +58,7 @@ export class TaskFormComponent implements OnInit {
             projectPhaseId: [''],
             startDate: [''],
             endDate: [''],
-            status: ['TO_DO'],
+            status: ['OPEN'],
             priority: ['Medium'],
             assignedTo: ['']
         });
@@ -77,7 +77,7 @@ export class TaskFormComponent implements OnInit {
                 projectPhaseId: task.projectPhaseId || '',
                 startDate: task.startDate || '',
                 endDate: task.endDate || '',
-                status: task.status || 'TO_DO',
+                status: task.status || 'OPEN',
                 priority: task.priority || 'Medium',
                 assignedTo: task.assignedTo || ''
             }, { emitEvent: false });
@@ -110,7 +110,7 @@ export class TaskFormComponent implements OnInit {
                 projectPhaseId: formValue.projectPhaseId ? Number(formValue.projectPhaseId) : undefined,
                 startDate: formValue.startDate || '',
                 endDate: formValue.endDate || '',
-                status: formValue.status || 'TO_DO',
+                status: formValue.status || 'OPEN',
                 priority: formValue.priority || 'Medium',
                 assignedTo: formValue.assignedTo ? Number(formValue.assignedTo) : undefined
             };
@@ -252,10 +252,10 @@ export class TaskFormComponent implements OnInit {
 
     getStatusColor(status: string): string {
         const colors: Record<string, string> = {
-            'TO_DO': 'bg-gray-100 text-gray-700 border-gray-300',
-            'IN_PROGRESS': 'bg-blue-100 text-blue-700 border-blue-300',
-            'DONE': 'bg-green-100 text-green-700 border-green-300',
-            'REVIEW': 'bg-purple-100 text-purple-700 border-purple-300'
+            'OPEN': 'bg-gray-100 text-gray-700 border-gray-300',
+            'ONGOING': 'bg-blue-100 text-blue-700 border-blue-300',
+            'COMPLETED': 'bg-green-100 text-green-700 border-green-300',
+            'ON_HOLD': 'bg-purple-100 text-purple-700 border-purple-300'
         };
         return colors[status] || 'bg-gray-100 text-gray-700 border-gray-300';
     }
@@ -271,10 +271,10 @@ export class TaskFormComponent implements OnInit {
 
     getStatusColorBox(status: string): string {
         const colors: Record<string, string> = {
-            'TO_DO': 'bg-gray-500',
-            'IN_PROGRESS': 'bg-blue-500',
-            'DONE': 'bg-green-500',
-            'REVIEW': 'bg-purple-500'
+            'OPEN': 'bg-gray-500',
+            'ONGOING': 'bg-blue-500',
+            'COMPLETED': 'bg-green-500',
+            'ON_HOLD': 'bg-purple-500'
         };
         return colors[status] || 'bg-gray-500';
     }
@@ -285,10 +285,10 @@ export class TaskFormComponent implements OnInit {
 
     getStatusLabel(status: string): string {
         const labels: Record<string, string> = {
-            'TO_DO': 'To Do',
-            'IN_PROGRESS': 'In Progress',
-            'DONE': 'Done',
-            'REVIEW': 'Review'
+            'OPEN': 'Open',
+            'ONGOING': 'Ongoing',
+            'COMPLETED': 'Completed',
+            'ON_HOLD': 'On Hold'
         };
         return labels[status] || status;
     }

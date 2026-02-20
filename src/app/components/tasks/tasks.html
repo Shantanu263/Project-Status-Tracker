@@ -137,10 +137,10 @@
                                 <select [value]="selectedStatus()" (change)="onStatusChange($event)"
                                     class="w-full px-3 py-1.5 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white">
                                     <option value="all">All Status</option>
-                                    <option value="TO_DO">To Do</option>
-                                    <option value="IN_PROGRESS">In Progress</option>
-                                    <option value="REVIEW">Review</option>
-                                    <option value="DONE">Done</option>
+                                    <option value="OPEN">Open</option>
+                                    <option value="ONGOING">Ongoing</option>
+                                    <option value="ON_HOLD"> On Hold</option>
+                                    <option value="COMPLETED">Completed</option>
                                 </select>
                             </div>
 
@@ -370,13 +370,15 @@
                                     <div class="flex items-center text-sm text-gray-600">
                                         {{ formatDate(subtask.endDate) }}
                                     </div>
-                                    <!-- Completed On (subtasks don't show this) -->
-                                    <div class="flex items-center text-sm text-gray-400">
-                                        —
+                                    <!-- Completed On -->
+                                    <div class="flex items-center text-sm text-gray-600">
+                                        {{ getSubtaskCompletedOnInfo(subtask) }}
                                     </div>
-                                    <!-- Delay (subtasks don't show this) -->
-                                    <div class="flex items-center text-sm text-gray-400">
-                                        —
+                                    <!-- Completion Status -->
+                                    <div class="flex items-center text-sm whitespace-nowrap overflow-hidden">
+                                        @if (getSubtaskDelayInfo(subtask); as delay) {
+                                        <span [class]="delay.color">{{ delay.label }}</span>
+                                        }
                                     </div>
                                     <!-- Priority -->
                                     <div class="flex items-center gap-2 text-sm">

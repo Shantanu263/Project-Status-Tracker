@@ -75,7 +75,7 @@ export class ProjectsDashboard implements AfterViewInit, OnDestroy {
     const data = this.dashboardDataSignal();
     const statusChart = data?.projectStatusChart;
     if (!statusChart?.length) {
-      return ['Ongoing', 'Completed', 'Delayed', 'On Hold', 'Not Started'];
+      return ['OPEN', 'ONGOING', 'ON_HOLD', 'COMPLETED', 'CANCELLED'];
     }
     return statusChart.map((item: { status: string }) => item.status);
   });
@@ -196,9 +196,9 @@ export class ProjectsDashboard implements AfterViewInit, OnDestroy {
       this.statusChart.data.datasets[0].data = data.projectStatusChart.map((item: any) => item.count);
       this.statusChart.update();
 
-      // Update legend counts
+      // Update legend counts - status comes from backend as uppercase with underscores
       data.projectStatusChart.forEach((item: any) => {
-        const normalizedStatus = item.status.toLowerCase().replace(/\s+/g, '');
+        const normalizedStatus = item.status.toUpperCase().replace(/\s+/g, '_').toLowerCase();
         const countElement = document.getElementById(`count-${normalizedStatus}`);
         if (countElement) {
           countElement.textContent = item.count.toString();
@@ -233,17 +233,13 @@ export class ProjectsDashboard implements AfterViewInit, OnDestroy {
 
     // Professional color palette for status types
     const getStatusColor = (status: string): string => {
-      const normalizedStatus = status.toLowerCase();
+      const normalizedStatus = status.toUpperCase();
       const colors: Record<string, string> = {
-        'ongoing': '#3B82F6',      // Blue 500
-        'in progress': '#3B82F6',
-        'completed': '#10B981',    // Green 500
-        'done': '#10B981',
-        'delayed': '#EF4444',      // Red 500
-        'on hold': '#F59E0B',      // Amber 500
-        'at risk': '#F59E0B',
-        'not started': '#9CA3AF',  // Gray 400
-        'pending': '#9CA3AF'
+        'OPEN': '#9CA3AF',        // Gray 400
+        'ONGOING': '#3B82F6',      // Blue 500
+        'ON_HOLD': '#F59E0B',      // Amber 500
+        'COMPLETED': '#10B981',    // Green 500
+        'CANCELLED': '#EF4444'     // Red 500
       };
       return colors[normalizedStatus] || '#9CA3AF';
     };
@@ -253,7 +249,7 @@ export class ProjectsDashboard implements AfterViewInit, OnDestroy {
       // Use requestAnimationFrame to ensure DOM is ready
       requestAnimationFrame(() => {
         statusData.forEach(item => {
-          const normalizedStatus = item.status.toLowerCase().replace(/\s+/g, '');
+          const normalizedStatus = item.status.toUpperCase().replace(/\s+/g, '_').toLowerCase();
           const countElement = document.getElementById(`count-${normalizedStatus}`);
           if (countElement) {
             countElement.textContent = item.count.toString();
@@ -797,48 +793,111 @@ export class ProjectsDashboard implements AfterViewInit, OnDestroy {
   }
 
   private normalizeStatus(s: string): string {
-    return s.toLowerCase().replace(/\s+/g, '');
+    return s?.toUpperCase().replace(/\s+/g, '_') || '';
   }
 
   // Map backend status to frontend status classes
   getStatusClass(status: string): string {
-    const normalizedStatus = status.toLowerCase();
+    const normalizedStatus = status?.toUpperCase() || '';
     const statusClasses: Record<string, string> = {
-      'ongoing': 'bg-blue-100 text-blue-700',
-      'in progress': 'bg-blue-100 text-blue-700',
-      'completed': 'bg-green-100 text-green-700',
-      'done': 'bg-green-100 text-green-700',
-      'delayed': 'bg-red-100 text-red-700',
-      'on hold': 'bg-yellow-100 text-yellow-700',
-      'at risk': 'bg-yellow-100 text-yellow-700',
-      'not started': 'bg-gray-100 text-gray-700',
-      'pending': 'bg-gray-100 text-gray-700'
+      'OPEN': 'bg-gray-100 text-gray-700',
+      'ONGOING': 'bg-blue-100 text-blue-700',
+      'ON_HOLD': 'bg-yellow-100 text-yellow-700',
+      'COMPLETED': 'bg-green-100 text-green-700',
+      'CANCELLED': 'bg-red-100 text-red-700'
     };
     return statusClasses[normalizedStatus] || 'bg-gray-100 text-gray-700';
   }
 
   getStatusLabel(status: string): string {
-    // Return status as-is from backend, just capitalize properly
-    return status.split(' ').map(word =>
-      word.charAt(0).toUpperCase() + word.slice(1).toLowerCase()
-    ).join(' ');
+    if (!status) return '';
+    // Replace underscores with spaces and capitalize each word
+    return status
+      .split('_')
+      .map(word => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
+      .join(' ');
   }
 
   // Map backend status to progress bar colors
   getProgressColor(status: string): string {
-    const normalizedStatus = status.toLowerCase();
+    const normalizedStatus = status?.toUpperCase() || '';
     const colors: Record<string, string> = {
-      'ongoing': 'bg-blue-600',
-      'in progress': 'bg-blue-600',
-      'completed': 'bg-green-600',
-      'done': 'bg-green-600',
-      'delayed': 'bg-red-600',
-      'on hold': 'bg-yellow-500',
-      'at risk': 'bg-yellow-500',
-      'not started': 'bg-gray-400',
-      'pending': 'bg-gray-400'
+      'OPEN': 'bg-gray-400',
+      'ONGOING': 'bg-blue-600',
+      'ON_HOLD': 'bg-yellow-500',
+      'COMPLETED': 'bg-green-600',
+      'CANCELLED': 'bg-red-600'
     };
     return colors[normalizedStatus] || 'bg-gray-400';
+  }
+
+  /**
+   * Get completion status for a project card.
+   * For COMPLETED projects: early / on time / late (vs endDate).
+   * For non-COMPLETED projects: overdue (if past endDate) or null.
+   */
+  getProjectCompletionStatus(project: ProjectCard): { label: string; bgClass: string; textClass: string } | null {
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+
+    const parseDate = (str: string | undefined): Date | null => {
+      if (!str) return null;
+      const parts = str.trim().split(/[-/]/);
+      if (parts.length === 3) {
+        const p0 = parseInt(parts[0], 10);
+        const p1 = parseInt(parts[1], 10);
+        const p2 = parseInt(parts[2], 10);
+        if (!isNaN(p0) && !isNaN(p1) && !isNaN(p2)) {
+          // dd-mm-yyyy
+          const d = p0 <= 31 && p1 <= 12
+            ? new Date(p2, p1 - 1, p0)
+            : new Date(p0, p1 - 1, p2);
+          if (!isNaN(d.getTime())) return d;
+        }
+      }
+      const d = new Date(str);
+      return isNaN(d.getTime()) ? null : d;
+    };
+
+    const formatDays = (days: number): string => {
+      if (days < 7) return `${days}d`;
+      const weeks = Math.floor(days / 7);
+      const rem = days % 7;
+      return rem > 0 ? `${weeks}w ${rem}d` : `${weeks}w`;
+    };
+
+    if (project.status?.toUpperCase() === 'COMPLETED') {
+      const endDate = parseDate(project.endDate);
+      const completedDate = parseDate(project.completedOn);
+
+      if (completedDate && endDate) {
+        completedDate.setHours(0, 0, 0, 0);
+        endDate.setHours(0, 0, 0, 0);
+
+        if (completedDate <= endDate) {
+          const earlyDays = Math.floor((endDate.getTime() - completedDate.getTime()) / 86400000);
+          if (earlyDays > 0) {
+            return { label: `${formatDays(earlyDays)} early`, bgClass: 'bg-green-50', textClass: 'text-green-700' };
+          }
+          return { label: 'On time', bgClass: 'bg-green-50', textClass: 'text-green-700' };
+        } else {
+          const lateDays = Math.ceil((completedDate.getTime() - endDate.getTime()) / 86400000);
+          return { label: `+${formatDays(lateDays)} late`, bgClass: 'bg-red-50', textClass: 'text-red-700' };
+        }
+      }
+      return null;
+    } else {
+      const endDate = parseDate(project.endDate);
+      if (endDate) {
+        endDate.setHours(0, 0, 0, 0);
+        if (today > endDate) {
+          const overdueDays = Math.ceil((today.getTime() - endDate.getTime()) / 86400000);
+          return { label: `Overdue ${formatDays(overdueDays)}`, bgClass: 'bg-orange-50', textClass: 'text-orange-700' };
+        }
+        return { label: 'On Time', bgClass: 'bg-green-50', textClass: 'text-green-700' };
+      }
+      return null;
+    }
   }
 
   // Navigation methods

@@ -1,6 +1,7 @@
 import { ChangeDetectionStrategy, Component, OnInit, computed, inject, input, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
+import { ActivatedRoute } from '@angular/router';
 import { ProjectService } from '../../services/project.service';
 import { Task } from '../../models/phase.model';
 import { ProjectMember } from '../../models/project.model';
@@ -32,6 +33,7 @@ export class TasksComponent implements OnInit {
     private permissionService = inject(PermissionService);
     private http = inject(HttpClient);
     private dataSyncService = inject(DataSyncService);
+    private route = inject(ActivatedRoute);
 
     // Inputs
     projectId = input.required<number>();
@@ -132,7 +134,7 @@ export class TasksComponent implements OnInit {
 
         // Show only done items if filter is active
         if (this.showDoneItems()) {
-            tasks = tasks.filter(task => task.status === 'DONE');
+            tasks = tasks.filter(task => task.status === 'COMPLETED');
         }
 
         // Filter by start date
@@ -183,7 +185,7 @@ export class TasksComponent implements OnInit {
                     bValue = b.phaseName?.toLowerCase() || '';
                     break;
                 case 'status':
-                    const statusOrder = { 'TO_DO': 0, 'IN_PROGRESS': 1, 'REVIEW': 2, 'DONE': 3 };
+                    const statusOrder = { 'OPEN': 0, 'ONGOING': 1, 'ON_HOLD': 2, 'COMPLETED': 3 };
                     aValue = statusOrder[a.status as keyof typeof statusOrder] ?? 999;
                     bValue = statusOrder[b.status as keyof typeof statusOrder] ?? 999;
                     break;
@@ -251,6 +253,28 @@ export class TasksComponent implements OnInit {
                         console.error('Error loading project members:', err);
                     }
                 });
+            }
+        });
+
+        // Listen for query params to open task modal from notifications
+        this.route.queryParams.subscribe(params => {
+            const openTaskId = params['openTaskId'];
+            if (openTaskId) {
+                console.log('[TasksComponent] Opening task from notification:', openTaskId);
+                // Wait a bit for tasks to load
+                setTimeout(() => {
+                    // Find the task with this ID
+                    const task = this.allTasks().find(t => t.taskId === Number(openTaskId));
+                    if (task && task.phaseId) {
+                        this.selectedTaskForDetails.set({
+                            taskId: Number(openTaskId),
+                            phaseId: task.phaseId
+                        });
+                        this.showTaskDetailsModal.set(true);
+                    } else {
+                        console.warn('[TasksComponent] Task not found with ID:', openTaskId);
+                    }
+                }, 500);
             }
         });
     }
@@ -371,13 +395,13 @@ export class TasksComponent implements OnInit {
 
     getStatusClass(status?: string): string {
         switch (status) {
-            case 'IN_PROGRESS':
+            case 'ONGOING':
                 return 'bg-blue-100 text-blue-800';
-            case 'DONE':
+            case 'COMPLETED':
                 return 'bg-green-100 text-green-800';
-            case 'REVIEW':
+            case 'ON_HOLD':
                 return 'bg-purple-100 text-purple-800';
-            case 'TO_DO':
+            case 'OPEN':
             default:
                 return 'bg-gray-100 text-gray-800';
         }
@@ -385,15 +409,15 @@ export class TasksComponent implements OnInit {
 
     getStatusLabel(status?: string): string {
         switch (status) {
-            case 'IN_PROGRESS':
-                return 'In Progress';
-            case 'DONE':
-                return 'Done';
-            case 'REVIEW':
-                return 'Review';
-            case 'TO_DO':
+            case 'ONGOING':
+                return 'Ongoing';
+            case 'COMPLETED':
+                return 'Completed';
+            case 'ON_HOLD':
+                return 'On Hold';
+            case 'OPEN':
             default:
-                return 'To Do';
+                return 'Open';
         }
     }
 
@@ -434,7 +458,7 @@ export class TasksComponent implements OnInit {
     }
 
     getTaskTypeIcon(status?: string): string {
-        return status === 'DONE' ? 'text-green-500' : 'text-blue-500';
+        return status === 'COMPLETED' ? 'text-green-500' : 'text-blue-500';
     }
 
     parseDateFromBackend(date: string): Date | null {
@@ -468,8 +492,8 @@ export class TasksComponent implements OnInit {
      * Returns formatted completion date or "—"
      */
     getCompletedOnInfo(task: TaskWithPhase): string {
-        if (task.status === 'DONE' && task.completedAt) {
-            return this.formatDate(task.completedAt);
+        if (task.status === 'COMPLETED' && task.completedOn) {
+            return this.formatDate(task.completedOn);
         }
         return '—';
     }
@@ -482,10 +506,10 @@ export class TasksComponent implements OnInit {
         const today = new Date();
         today.setHours(0, 0, 0, 0);
 
-        if (task.status === 'DONE') {
-            // For DONE tasks: check if completed on time or late
-            if (task.completedAt && task.endDate) {
-                const completedDate = this.parseDateFromBackend(task.completedAt);
+        if (task.status === 'COMPLETED') {
+            // For COMPLETED tasks: check if completed on time or late
+            if (task.completedOn && task.endDate) {
+                const completedDate = this.parseDateFromBackend(task.completedOn);
                 const endDate = this.parseDateFromBackend(task.endDate);
 
                 if (completedDate && endDate) {
@@ -510,10 +534,10 @@ export class TasksComponent implements OnInit {
                     }
                 }
             }
-            // Fallback for DONE tasks without proper dates
+            // Fallback for COMPLETED tasks without proper dates
             return { label: '—', color: 'text-gray-600' };
         } else {
-            // For non-DONE tasks: check if overdue
+            // For non-COMPLETED tasks: check if overdue
             if (task.endDate) {
                 const endDate = this.parseDateFromBackend(task.endDate);
 
@@ -530,6 +554,63 @@ export class TasksComponent implements OnInit {
                 }
             }
             // On track or no end date
+            return { label: '—', color: 'text-gray-600' };
+        }
+    }
+
+    /**
+     * Get completed on date for a subtask
+     */
+    getSubtaskCompletedOnInfo(subtask: import('../../models/phase.model').SubTask): string {
+        if (subtask.status === 'COMPLETED' && subtask.completedOn) {
+            return this.formatDate(subtask.completedOn);
+        }
+        return '—';
+    }
+
+    /**
+     * Get delay information for a subtask
+     */
+    getSubtaskDelayInfo(subtask: import('../../models/phase.model').SubTask): { label: string; color: string } {
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+
+        if (subtask.status === 'COMPLETED') {
+            if (subtask.completedOn && subtask.endDate) {
+                const completedDate = this.parseDateFromBackend(subtask.completedOn);
+                const endDate = this.parseDateFromBackend(subtask.endDate);
+
+                if (completedDate && endDate) {
+                    completedDate.setHours(0, 0, 0, 0);
+                    endDate.setHours(0, 0, 0, 0);
+
+                    if (completedDate <= endDate) {
+                        const earlyMs = endDate.getTime() - completedDate.getTime();
+                        const earlyDays = Math.floor(earlyMs / (1000 * 60 * 60 * 24));
+                        if (earlyDays > 0) {
+                            return { label: `${this.formatDurationText(earlyDays)} early`, color: 'text-green-600' };
+                        }
+                        return { label: 'On time', color: 'text-green-600' };
+                    } else {
+                        const delayMs = completedDate.getTime() - endDate.getTime();
+                        const delayDays = Math.ceil(delayMs / (1000 * 60 * 60 * 24));
+                        return { label: `+${this.formatDurationText(delayDays)} late`, color: 'text-red-600' };
+                    }
+                }
+            }
+            return { label: '—', color: 'text-gray-600' };
+        } else {
+            if (subtask.endDate) {
+                const endDate = this.parseDateFromBackend(subtask.endDate);
+                if (endDate) {
+                    endDate.setHours(0, 0, 0, 0);
+                    if (today > endDate) {
+                        const overdueMs = today.getTime() - endDate.getTime();
+                        const overdueDays = Math.ceil(overdueMs / (1000 * 60 * 60 * 24));
+                        return { label: `Overdue ${this.formatDurationText(overdueDays)}`, color: 'text-orange-600' };
+                    }
+                }
+            }
             return { label: '—', color: 'text-gray-600' };
         }
     }
@@ -639,7 +720,7 @@ export class TasksComponent implements OnInit {
             description: '',
             startDate: '',
             endDate: '',
-            status: 'TO_DO',
+            status: 'OPEN',
             priority: 'Medium'
         };
     }

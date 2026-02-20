@@ -1,17 +1,22 @@
 import { Injectable, inject, OnDestroy } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
-import { BehaviorSubject, Observable, Subject } from 'rxjs';
-import { tap } from 'rxjs/operators';
+import { BehaviorSubject, Observable, Subject, forkJoin, of } from 'rxjs';
+import { tap, switchMap, map, catchError } from 'rxjs/operators';
 import { environment } from '../environments/environment';
-import { AuthService } from './auth.service';
-import { WebSocketService } from './websocket.service';
 import { Notification } from '../models/notification.model';
+import { WebSocketService } from './websocket.service';
+import { AuthService } from './auth.service';
+import { ProjectService } from './project.service';
 
-@Injectable({ providedIn: 'root' })
+@Injectable({
+    providedIn: 'root'
+})
 export class NotificationService implements OnDestroy {
     private http = inject(HttpClient);
-    private authService = inject(AuthService);
     private webSocketService = inject(WebSocketService);
+    private authService = inject(AuthService);
+    private projectService = inject(ProjectService);
+    private apiUrl = `${environment.apiUrl}/auth/user`;
 
     private notificationsSubject = new BehaviorSubject<Notification[]>([]);
     private unreadCountSubject = new BehaviorSubject<number>(0);
@@ -20,8 +25,6 @@ export class NotificationService implements OnDestroy {
     notifications$ = this.notificationsSubject.asObservable();
     unreadCount$ = this.unreadCountSubject.asObservable();
     newNotification$ = this.newNotificationSubject.asObservable();
-
-    private apiUrl = environment.apiUrl + '/auth/user';
 
     constructor() {
         console.log('[NotificationService] Initializing...');
@@ -56,36 +59,107 @@ export class NotificationService implements OnDestroy {
     }
 
     private handleNewNotification(notification: Notification): void {
-        // Add to the beginning of the notifications list
-        const currentNotifications = this.notificationsSubject.value;
-        this.notificationsSubject.next([notification, ...currentNotifications]);
+        console.log('[NotificationService] Handling new notification:', notification);
 
-        // Increment unread count
-        const currentCount = this.unreadCountSubject.value;
-        this.unreadCountSubject.next(currentCount + 1);
+        // Fetch project name if projectId exists
+        if (notification.projectId) {
+            this.projectService.getProjectById(notification.projectId).pipe(
+                catchError(err => {
+                    console.error('[NotificationService] Error fetching project for new notification:', err);
+                    return of(null);
+                })
+            ).subscribe(project => {
+                // Enrich notification with project name
+                const enrichedNotification = {
+                    ...notification,
+                    projectName: project?.projectName || 'Unknown Project'
+                };
 
-        // Emit for toast notification
-        this.newNotificationSubject.next(notification);
+                // Add to the beginning of the notifications list
+                const currentNotifications = this.notificationsSubject.value;
+                this.notificationsSubject.next([enrichedNotification, ...currentNotifications]);
+
+                // Increment unread count
+                const currentCount = this.unreadCountSubject.value;
+                this.unreadCountSubject.next(currentCount + 1);
+
+                // Emit for toast notification
+                this.newNotificationSubject.next(enrichedNotification);
+            });
+        } else {
+            // No project ID, add notification as-is
+            const currentNotifications = this.notificationsSubject.value;
+            this.notificationsSubject.next([notification, ...currentNotifications]);
+
+            // Increment unread count
+            const currentCount = this.unreadCountSubject.value;
+            this.unreadCountSubject.next(currentCount + 1);
+
+            // Emit for toast notification
+            this.newNotificationSubject.next(notification);
+        }
     }
 
     fetchNotifications(page: number = 0, size: number = 10): Observable<Notification[]> {
         const userId = this.authService.getCurrentUserId();
         if (!userId) {
             console.error('[NotificationService] No user ID available');
-            return new Observable();
+            return of([]);
         }
 
         const url = `${this.apiUrl}/${userId}/notifications?page=${page}&size=${size}`;
         console.log('[NotificationService] Fetching notifications from:', url);
 
-        return this.http
-            .get<Notification[]>(url)
-            .pipe(
-                tap((notifications) => {
-                    console.log('[NotificationService] Received notifications:', notifications);
+        return this.http.get<Notification[]>(url).pipe(
+            switchMap((notifications) => {
+                console.log('[NotificationService] Received notifications:', notifications);
+
+                // Extract unique project IDs
+                const projectIds = [...new Set(notifications.map(n => n.projectId).filter(id => id != null))];
+
+                if (projectIds.length === 0) {
+                    // No projects to fetch
                     this.notificationsSubject.next(notifications);
-                })
-            );
+                    return of(notifications);
+                }
+
+                console.log('[NotificationService] Fetching project names for IDs:', projectIds);
+
+                // Fetch all projects
+                const projectRequests = projectIds.map(id =>
+                    this.projectService.getProjectById(id).pipe(
+                        catchError(err => {
+                            console.error(`[NotificationService] Error fetching project ${id}:`, err);
+                            return of(null);
+                        })
+                    )
+                );
+
+                return forkJoin(projectRequests).pipe(
+                    map(projects => {
+                        // Create a map of projectId to projectName
+                        const projectMap = new Map<number, string>();
+                        projects.forEach(project => {
+                            if (project && project.projectId) {
+                                projectMap.set(project.projectId, project.projectName || 'Unknown Project');
+                            }
+                        });
+
+                        console.log('[NotificationService] Project map:', projectMap);
+
+                        // Enrich notifications with project names
+                        const enrichedNotifications = notifications.map(notification => ({
+                            ...notification,
+                            projectName: projectMap.get(notification.projectId) || 'Unknown Project'
+                        }));
+
+                        console.log('[NotificationService] Enriched notifications:', enrichedNotifications);
+                        this.notificationsSubject.next(enrichedNotifications);
+                        return enrichedNotifications;
+                    })
+                );
+            })
+        );
     }
 
     fetchUnreadCount(): Observable<number> {

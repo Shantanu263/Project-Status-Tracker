@@ -47,7 +47,7 @@ export class ExportTimelineModalComponent implements OnInit, AfterViewInit {
     TimeScale = TimeScale;
 
     // Local state derived from the form (kept in signals so computed() reacts)
-    selectedTimelineView = signal<TimeScale>(TimeScale.WEEK);
+    selectedTimelineView = signal<TimeScale>(TimeScale.MONTH);
     selectedStartDate = signal<Date | null>(null);
     selectedEndDate = signal<Date | null>(null);
 
@@ -86,27 +86,52 @@ export class ExportTimelineModalComponent implements OnInit, AfterViewInit {
     });
 
     ngOnInit() {
-        // Initialize form with current timeline view as default
-        const projectStart = this.timelineService.parseDate(this.projectStartDate());
-        const projectEnd = this.timelineService.parseDate(this.projectEndDate());
-        const currentScale = this.currentTimeScale();
+        // Get current date for default month view
+        const today = new Date();
+        const currentMonthStart = new Date(today.getFullYear(), today.getMonth(), 1);
+        const currentMonthEnd = new Date(today.getFullYear(), today.getMonth() + 1, 0);
 
+        // Initialize form with MONTH as default view and current month dates
         this.exportForm = new FormGroup<ExportForm>({
-            timelineView: new FormControl(currentScale, { nonNullable: true }),
-            startDate: new FormControl<Date | null>(projectStart, [Validators.required]),
-            endDate: new FormControl<Date | null>(projectEnd, [Validators.required])
+            timelineView: new FormControl(TimeScale.MONTH, { nonNullable: true }),
+            startDate: new FormControl<Date | null>(currentMonthStart, [Validators.required]),
+            endDate: new FormControl<Date | null>(currentMonthEnd, [Validators.required])
         }, { validators: [this.dateRangeValidator.bind(this)] });
 
         // Seed signals with initial form values
-        this.selectedTimelineView.set(currentScale);
-        this.selectedStartDate.set(projectStart);
-        this.selectedEndDate.set(projectEnd);
+        this.selectedTimelineView.set(TimeScale.MONTH);
+        this.selectedStartDate.set(currentMonthStart);
+        this.selectedEndDate.set(currentMonthEnd);
 
         // Keep signals in sync with form changes so preview recomputes
         this.exportForm.valueChanges.subscribe(value => {
-            this.selectedTimelineView.set(value.timelineView ?? currentScale);
+            const newView = value.timelineView ?? TimeScale.MONTH;
+            const previousView = this.selectedTimelineView();
+
+            this.selectedTimelineView.set(newView);
             this.selectedStartDate.set(this.getDateFromFormValue(value.startDate));
             this.selectedEndDate.set(this.getDateFromFormValue(value.endDate));
+
+            // If view changed to QUARTER, set dates to current quarter
+            if (newView === TimeScale.QUARTER && previousView !== TimeScale.QUARTER) {
+                const quarterDates = this.getCurrentQuarterDates();
+                this.exportForm.patchValue({
+                    startDate: quarterDates.start,
+                    endDate: quarterDates.end
+                }, { emitEvent: false });
+                this.selectedStartDate.set(quarterDates.start);
+                this.selectedEndDate.set(quarterDates.end);
+            }
+            // If view changed to MONTH, set dates to current month
+            else if (newView === TimeScale.MONTH && previousView !== TimeScale.MONTH) {
+                const monthDates = this.getCurrentMonthDates();
+                this.exportForm.patchValue({
+                    startDate: monthDates.start,
+                    endDate: monthDates.end
+                }, { emitEvent: false });
+                this.selectedStartDate.set(monthDates.start);
+                this.selectedEndDate.set(monthDates.end);
+            }
         });
     }
 
@@ -115,6 +140,23 @@ export class ExportTimelineModalComponent implements OnInit, AfterViewInit {
         // after the view (and container dimensions) are fully initialized.
         // This fixes the initial "zoomed in" (scale 1) issue.
         this.cdr.detectChanges();
+    }
+
+    // Helper to get current month date range
+    private getCurrentMonthDates(): { start: Date; end: Date } {
+        const today = new Date();
+        const start = new Date(today.getFullYear(), today.getMonth(), 1);
+        const end = new Date(today.getFullYear(), today.getMonth() + 1, 0);
+        return { start, end };
+    }
+
+    // Helper to get current quarter date range
+    private getCurrentQuarterDates(): { start: Date; end: Date } {
+        const today = new Date();
+        const quarter = Math.floor(today.getMonth() / 3);
+        const start = new Date(today.getFullYear(), quarter * 3, 1);
+        const end = new Date(today.getFullYear(), quarter * 3 + 3, 0);
+        return { start, end };
     }
 
     // Custom validator to ensure start date <= end date

@@ -2,6 +2,9 @@ import { Component, input, output, signal, effect, computed, inject } from '@ang
 import { CommonModule } from '@angular/common';
 import { ChangeDetectionStrategy } from '@angular/core';
 import { User, UserManagementService } from '../../../services/user-management.service';
+import { ProjectService } from '../../../services/project.service';
+import { forkJoin, of } from 'rxjs';
+import { catchError } from 'rxjs/operators';
 
 @Component({
     selector: 'app-user-details-modal',
@@ -12,6 +15,7 @@ import { User, UserManagementService } from '../../../services/user-management.s
 })
 export class UserDetailsModalComponent {
     private userManagementService = inject(UserManagementService);
+    private projectService = inject(ProjectService);
 
     // Inputs
     isOpen = input.required<boolean>();
@@ -20,6 +24,7 @@ export class UserDetailsModalComponent {
 
     // Outputs
     close = output<void>();
+    projectClick = output<{ projectId: number; memberId: string }>();
 
     // State
     loading = signal(false);
@@ -43,8 +48,39 @@ export class UserDetailsModalComponent {
 
         this.userManagementService.getUserProjectMemberships(this.userId()).subscribe({
             next: (memberships) => {
-                this.projectMemberships.set(memberships);
-                this.loading.set(false);
+                if (!memberships.length) {
+                    this.projectMemberships.set([]);
+                    this.loading.set(false);
+                    return;
+                }
+
+                // Fetch project details for each membership in parallel
+                const projectRequests = memberships.map((m: any) =>
+                    this.projectService.getProjectById(m.projectId).pipe(
+                        catchError(() => of(null))
+                    )
+                );
+
+                forkJoin(projectRequests).subscribe({
+                    next: (projects) => {
+                        const enriched = memberships.map((m: any, i: number) => {
+                            const proj = projects[i] as any;
+                            return {
+                                ...m,
+                                clientName: proj?.client ?? null,
+                                startDate: proj?.startDate ?? null,
+                                endDate: proj?.endDate ?? null,
+                            };
+                        });
+                        this.projectMemberships.set(enriched);
+                        this.loading.set(false);
+                    },
+                    error: () => {
+                        // Fall back to memberships without enrichment
+                        this.projectMemberships.set(memberships);
+                        this.loading.set(false);
+                    }
+                });
             },
             error: (err) => {
                 console.error('Error loading user projects:', err);
@@ -110,16 +146,49 @@ export class UserDetailsModalComponent {
 
     formatDate(dateString: string | undefined): string {
         if (!dateString) return 'N/A';
-
         try {
-            const date = new Date(dateString);
-            return date.toLocaleDateString('en-US', {
+            const date = this.parseDate(dateString);
+            if (!date) return 'N/A';
+            return date.toLocaleDateString('en-GB', {
                 year: 'numeric',
                 month: 'short',
-                day: 'numeric'
+                day: '2-digit'
             });
-        } catch (error) {
+        } catch {
             return dateString;
         }
+    }
+
+    formatDuration(startDate: string | undefined, endDate: string | undefined): string {
+        if (!startDate && !endDate) return '—';
+        const fmt = (d: string) => {
+            const date = this.parseDate(d);
+            if (!date) return '—';
+            return date.toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' });
+        };
+        if (startDate && endDate) return `${fmt(startDate)} – ${fmt(endDate)}`;
+        if (startDate) return `From ${fmt(startDate)}`;
+        return `Until ${fmt(endDate!)}`;
+    }
+
+    // Handles dd-MM-yyyy, yyyy-MM-dd, and ISO datetime strings
+    private parseDate(dateString: string): Date | null {
+        if (!dateString) return null;
+        // dd-MM-yyyy
+        const ddMMyyyy = /^(\d{2})-(\d{2})-(\d{4})$/;
+        const match = dateString.match(ddMMyyyy);
+        if (match) {
+            return new Date(+match[3], +match[2] - 1, +match[1]);
+        }
+        // yyyy-MM-dd or ISO
+        const date = new Date(dateString);
+        return isNaN(date.getTime()) ? null : date;
+    }
+
+    onProjectRowClick(membership: any): void {
+        this.projectClick.emit({
+            projectId: membership.projectId,
+            memberId: membership.memberId
+        });
     }
 }

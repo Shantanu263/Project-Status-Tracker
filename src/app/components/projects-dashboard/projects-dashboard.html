@@ -94,7 +94,6 @@
                     </div>
                 </div>
             </div>
-
             <!-- Delayed Projects Card -->
             <div class="rounded-xl border border-gray-200 bg-white p-5 shadow-sm transition-shadow hover:shadow-md">
                 <div class="flex items-center justify-between">
@@ -110,7 +109,6 @@
                     </div>
                 </div>
             </div>
-
             <!-- Average Progress Card -->
             <div class="rounded-xl border border-gray-200 bg-white p-5 shadow-sm transition-shadow hover:shadow-md">
                 <div class="flex items-center justify-between">
@@ -152,26 +150,31 @@
                             <canvas #statusChart></canvas>
                         </div>
                         <!-- Legend Container (Right) -->
-                        <div class="flex flex-col gap-3 min-w-[140px]">
+                        <div class="flex flex-col gap-3 min-w-[150px]">
+                            <div class="flex items-center gap-2" id="legend-open">
+                                <div class="h-3 w-3 rounded-full bg-gray-400 flex-shrink-0"></div>
+                                <span class="text-sm text-gray-700 font-medium">Open: <span
+                                        id="count-open">0</span></span>
+                            </div>
                             <div class="flex items-center gap-2" id="legend-ongoing">
                                 <div class="h-3 w-3 rounded-full bg-blue-500 flex-shrink-0"></div>
                                 <span class="text-sm text-gray-700 font-medium">Ongoing: <span
                                         id="count-ongoing">0</span></span>
                             </div>
-                            <div class="flex items-center gap-2" id="legend-delayed">
-                                <div class="h-3 w-3 rounded-full bg-red-500 flex-shrink-0"></div>
-                                <span class="text-sm text-gray-700 font-medium">Delayed: <span
-                                        id="count-delayed">0</span></span>
-                            </div>
-                            <div class="flex items-center gap-2" id="legend-onhold">
+                            <div class="flex items-center gap-2" id="legend-on_hold">
                                 <div class="h-3 w-3 rounded-full bg-amber-500 flex-shrink-0"></div>
                                 <span class="text-sm text-gray-700 font-medium">On Hold: <span
-                                        id="count-onhold">0</span></span>
+                                        id="count-on_hold">0</span></span>
                             </div>
                             <div class="flex items-center gap-2" id="legend-completed">
                                 <div class="h-3 w-3 rounded-full bg-green-500 flex-shrink-0"></div>
                                 <span class="text-sm text-gray-700 font-medium">Completed: <span
                                         id="count-completed">0</span></span>
+                            </div>
+                            <div class="flex items-center gap-2" id="legend-cancelled">
+                                <div class="h-3 w-3 rounded-full bg-red-500 flex-shrink-0"></div>
+                                <span class="text-sm text-gray-700 font-medium">Cancelled: <span
+                                        id="count-cancelled">0</span></span>
                             </div>
                         </div>
                     </div>
@@ -234,8 +237,8 @@
                 <div class="flex flex-wrap items-center gap-3">
                     <!-- Filter Dropdown (left of view toggle) -->
                     <div class="relative projects-dashboard-filter-trigger">
-                        <button type="button" (click)="toggleFilterPanel(); $event.stopPropagation()" [class.bg-[#8c2d1b]/10]="showFilterPanel()"
-                            [class.text-[#8c2d1b]]="showFilterPanel()"
+                        <button type="button" (click)="toggleFilterPanel(); $event.stopPropagation()"
+                            [class.bg-[#8c2d1b]/10]="showFilterPanel()" [class.text-[#8c2d1b]]="showFilterPanel()"
                             class="inline-flex items-center gap-2 px-3 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-[#8c2d1b]/20">
                             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
@@ -243,15 +246,20 @@
                             </svg>
                             <span>Filter</span>
                             @if (hasActiveFilters()) {
-                            <span class="flex h-5 w-5 items-center justify-center rounded-full bg-[#8c2d1b] text-xs font-medium text-white" [title]="activeFilterSummary()">{{ activeFilterCount() }}</span>
+                            <span
+                                class="flex h-5 w-5 items-center justify-center rounded-full bg-[#8c2d1b] text-xs font-medium text-white"
+                                [title]="activeFilterSummary()">{{ activeFilterCount() }}</span>
                             }
-                            <svg class="w-4 h-4 transition" [class.rotate-180]="showFilterPanel()" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+                            <svg class="w-4 h-4 transition" [class.rotate-180]="showFilterPanel()" fill="none"
+                                stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                    d="M19 9l-7 7-7-7" />
                             </svg>
                         </button>
 
                         @if (showFilterPanel()) {
-                        <div class="projects-dashboard-filter-panel absolute right-0 top-full z-20 mt-2 w-80 rounded-lg border border-gray-200 bg-white py-3 shadow-lg">
+                        <div
+                            class="projects-dashboard-filter-panel absolute right-0 top-full z-20 mt-2 w-80 rounded-lg border border-gray-200 bg-white py-3 shadow-lg">
                             <div class="px-4 pb-3 border-b border-gray-200">
                                 <h3 class="text-sm font-semibold text-gray-900">Filter by</h3>
                                 @if (hasActiveFilters()) {
@@ -261,35 +269,43 @@
                             <div class="max-h-96 overflow-y-auto px-4 pt-3 space-y-4">
                                 <!-- Date range -->
                                 <div>
-                                    <label class="block text-xs font-medium text-gray-500 uppercase tracking-wide mb-2">Date range</label>
+                                    <label
+                                        class="block text-xs font-medium text-gray-500 uppercase tracking-wide mb-2">Date
+                                        range</label>
                                     <div class="grid grid-cols-2 gap-2">
                                         <div>
                                             <label class="sr-only">From</label>
-                                            <input type="date" [ngModel]="filterDateFrom()" (ngModelChange)="filterDateFrom.set($event)"
+                                            <input type="date" [ngModel]="filterDateFrom()"
+                                                (ngModelChange)="filterDateFrom.set($event)"
                                                 class="w-full px-3 py-1.5 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#8c2d1b]/30 focus:border-[#8c2d1b]/50" />
                                         </div>
                                         <div>
                                             <label class="sr-only">To</label>
-                                            <input type="date" [ngModel]="filterDateTo()" (ngModelChange)="filterDateTo.set($event)"
+                                            <input type="date" [ngModel]="filterDateTo()"
+                                                (ngModelChange)="filterDateTo.set($event)"
                                                 class="w-full px-3 py-1.5 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#8c2d1b]/30 focus:border-[#8c2d1b]/50" />
                                         </div>
                                     </div>
                                 </div>
                                 <!-- Status -->
                                 <div>
-                                    <label for="filter-status" class="block text-xs font-medium text-gray-500 uppercase tracking-wide mb-2">Status</label>
-                                    <select id="filter-status" [ngModel]="filterStatus()" (ngModelChange)="filterStatus.set($event)"
+                                    <label for="filter-status"
+                                        class="block text-xs font-medium text-gray-500 uppercase tracking-wide mb-2">Status</label>
+                                    <select id="filter-status" [ngModel]="filterStatus()"
+                                        (ngModelChange)="filterStatus.set($event)"
                                         class="w-full px-3 py-1.5 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#8c2d1b]/30 focus:border-[#8c2d1b]/50 bg-white">
                                         <option value="">All statuses</option>
                                         @for (s of statusOptions(); track s) {
-                                        <option [value]="s">{{ s }}</option>
+                                        <option [value]="s">{{ getStatusLabel(s) }}</option>
                                         }
                                     </select>
                                 </div>
                                 <!-- Priority -->
                                 <div>
-                                    <label for="filter-priority" class="block text-xs font-medium text-gray-500 uppercase tracking-wide mb-2">Priority</label>
-                                    <select id="filter-priority" [ngModel]="filterPriority()" (ngModelChange)="filterPriority.set($event)"
+                                    <label for="filter-priority"
+                                        class="block text-xs font-medium text-gray-500 uppercase tracking-wide mb-2">Priority</label>
+                                    <select id="filter-priority" [ngModel]="filterPriority()"
+                                        (ngModelChange)="filterPriority.set($event)"
                                         class="w-full px-3 py-1.5 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#8c2d1b]/30 focus:border-[#8c2d1b]/50 bg-white">
                                         <option value="">All priorities</option>
                                         <option value="High">High</option>
@@ -300,7 +316,8 @@
                             </div>
                             <div class="mt-3 px-4 pt-3 border-t border-gray-200 flex justify-end">
                                 <button type="button" (click)="clearFilters()"
-                                    class="text-sm font-medium text-[#8c2d1b] hover:text-[#6b2115]">Clear filters</button>
+                                    class="text-sm font-medium text-[#8c2d1b] hover:text-[#6b2115]">Clear
+                                    filters</button>
                             </div>
                         </div>
                         }
@@ -308,31 +325,31 @@
 
                     <!-- View Toggle Buttons -->
                     <div class="flex items-center space-x-2">
-                    <button (click)="toggleView('grid')" [class.bg-[#8c2d1b]]="viewMode() === 'grid'"
-                        [class.text-white]="viewMode() === 'grid'" [class.bg-white]="viewMode() !== 'grid'"
-                        [class.text-gray-700]="viewMode() !== 'grid'"
-                        class="px-4 py-2 rounded-lg text-sm font-medium transition flex items-center space-x-2 border border-gray-300"
-                        [class.hover:bg-[#6b2115]]="viewMode() === 'grid'"
-                        [class.hover:bg-gray-50]="viewMode() !== 'grid'">
-                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z">
-                            </path>
-                        </svg>
-                        <span>Grid</span>
-                    </button>
-                    <button (click)="toggleView('table')" [class.bg-[#8c2d1b]]="viewMode() === 'table'"
-                        [class.text-white]="viewMode() === 'table'" [class.bg-white]="viewMode() !== 'table'"
-                        [class.text-gray-700]="viewMode() !== 'table'"
-                        class="px-4 py-2 rounded-lg text-sm font-medium transition flex items-center space-x-2 border border-gray-300"
-                        [class.hover:bg-[#6b2115]]="viewMode() === 'table'"
-                        [class.hover:bg-gray-50]="viewMode() !== 'table'">
-                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                d="M4 6h16M4 10h16M4 14h16M4 18h16"></path>
-                        </svg>
-                        <span>Table</span>
-                    </button>
+                        <button (click)="toggleView('grid')" [class.bg-[#8c2d1b]]="viewMode() === 'grid'"
+                            [class.text-white]="viewMode() === 'grid'" [class.bg-white]="viewMode() !== 'grid'"
+                            [class.text-gray-700]="viewMode() !== 'grid'"
+                            class="px-4 py-2 rounded-lg text-sm font-medium transition flex items-center space-x-2 border border-gray-300"
+                            [class.hover:bg-[#6b2115]]="viewMode() === 'grid'"
+                            [class.hover:bg-gray-50]="viewMode() !== 'grid'">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                    d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z">
+                                </path>
+                            </svg>
+                            <span>Grid</span>
+                        </button>
+                        <button (click)="toggleView('table')" [class.bg-[#8c2d1b]]="viewMode() === 'table'"
+                            [class.text-white]="viewMode() === 'table'" [class.bg-white]="viewMode() !== 'table'"
+                            [class.text-gray-700]="viewMode() !== 'table'"
+                            class="px-4 py-2 rounded-lg text-sm font-medium transition flex items-center space-x-2 border border-gray-300"
+                            [class.hover:bg-[#6b2115]]="viewMode() === 'table'"
+                            [class.hover:bg-gray-50]="viewMode() !== 'table'">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                    d="M4 6h16M4 10h16M4 14h16M4 18h16"></path>
+                            </svg>
+                            <span>Table</span>
+                        </button>
                     </div>
                 </div>
             </div>
@@ -358,13 +375,27 @@
             <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
                 @for (project of filteredProjects(); track project.projectId) {
                 <!-- Project Card -->
-                <div class="bg-white rounded-xl border border-gray-200 shadow-sm hover:shadow-md transition">
-                    <div class="p-6">
-                        <!-- Project Header -->
-                        <div class="flex items-start justify-between mb-4">
-                            <h3 class="text-lg font-semibold text-gray-900">{{ project.projectName }}</h3>
+                <div
+                    class="bg-white rounded-xl border border-gray-200 shadow-sm hover:shadow-md transition flex flex-col">
+                    <div class="p-6 flex flex-col flex-1">
+                        <!-- Project Header: fixed height so all cards align regardless of name length or client -->
+                        <div class="flex items-start justify-between mb-4" style="min-height: 48px;">
+                            <div class="flex-1 min-w-0 pr-2">
+                                <h3 class="text-lg font-semibold text-gray-900 leading-snug line-clamp-2">{{
+                                    project.projectName }}</h3>
+                                <!-- Client row: always rendered to keep consistent height; invisible when absent -->
+                                <div class="flex items-center gap-1 mt-1" [class.invisible]="!project.client">
+                                    <svg class="w-3.5 h-3.5 text-gray-400 flex-shrink-0" fill="none"
+                                        stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                            d="M21 13.255A23.931 23.931 0 0112 15c-3.183 0-6.22-.62-9-1.745M16 6V4a2 2 0 00-2-2h-4a2 2 0 00-2 2v2m4 6h.01M5 20h14a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z">
+                                        </path>
+                                    </svg>
+                                    <span class="text-xs text-gray-500 truncate">{{ project.client || '&nbsp;' }}</span>
+                                </div>
+                            </div>
                             <span [class]="getStatusClass(project.status)"
-                                class="px-3 py-1 text-xs font-medium rounded-full">
+                                class="px-3 py-1 text-xs font-medium rounded-full flex-shrink-0">
                                 {{ getStatusLabel(project.status) }}
                             </span>
                         </div>
@@ -382,19 +413,40 @@
                             </div>
                         </div>
 
-                        <!-- Project Details -->
-                        <div class="space-y-2 mb-4">
+                        <!-- Project Details: flex-1 so it fills remaining space, pushing buttons to bottom -->
+                        <div class="space-y-2 flex-1">
                             <div class="flex items-center text-sm text-gray-600">
-                                <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <svg class="w-4 h-4 mr-2 flex-shrink-0" fill="none" stroke="currentColor"
+                                    viewBox="0 0 24 24">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                                         d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z">
                                     </path>
                                 </svg>
                                 <span>{{ project.startDate }} – {{ project.endDate }}</span>
                             </div>
+
+                            <!-- Completion Status: always rendered to keep uniform height -->
+                            <div class="flex items-center gap-2">
+                                <svg class="w-4 h-4 text-gray-700 flex-shrink-0" fill="none" stroke="currentColor"
+                                    viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                        d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z">
+                                    </path>
+                                </svg>
+                                @if (getProjectCompletionStatus(project); as cs) {
+                                <span class="px-2.5 py-0.5 rounded-full text-xs font-semibold"
+                                    [class]="cs.bgClass + ' ' + cs.textClass">
+                                    {{ cs.label }}
+                                </span>
+                                } @else {
+                                <span class="text-xs text-gray-400">—</span>
+                                }
+                            </div>
+
                             <div class="flex items-center justify-between text-sm">
                                 <div class="flex items-center text-gray-600">
-                                    <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <svg class="w-4 h-4 mr-2 flex-shrink-0" fill="none" stroke="currentColor"
+                                        viewBox="0 0 24 24">
                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                                             d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2">
                                         </path>
@@ -403,7 +455,8 @@
                                 </div>
                                 <div class="flex items-center" [class.text-red-600]="project.overdueTasks > 0"
                                     [class.text-green-600]="project.overdueTasks === 0">
-                                    <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <svg class="w-4 h-4 mr-1 flex-shrink-0" fill="none" stroke="currentColor"
+                                        viewBox="0 0 24 24">
                                         @if (project.overdueTasks > 0) {
                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                                             d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
@@ -417,8 +470,8 @@
                             </div>
                         </div>
 
-                        <!-- Action Buttons -->
-                        <div class="flex items-center space-x-2 pt-4 border-t border-gray-200">
+                        <!-- Action Buttons: always at the bottom -->
+                        <div class="flex items-center space-x-2 pt-4 mt-4 border-t border-gray-200">
                             <button (click)="viewProject(project.projectId)"
                                 class="flex-1 px-3 py-2 bg-[#8c2d1b] text-white text-sm font-medium rounded-lg hover:bg-[#6b2115] transition">
                                 View Project

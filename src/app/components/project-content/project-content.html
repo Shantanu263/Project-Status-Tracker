@@ -90,7 +90,8 @@
         <!-- Project Metadata Bar -->
         <div class="mt-2">
           <app-project-meta-bar [startDate]="project.startDate" [endDate]="project.endDate"
-            [status]="project.status || ''" [priority]="project.priority || ''" />
+            [status]="project.status || ''" [priority]="project.priority || ''" [client]="project.client || ''"
+            [completedOn]="project.completedOn || ''" />
         </div>
 
         <p class="text-gray-600 mt-3">{{ project.description }}</p>

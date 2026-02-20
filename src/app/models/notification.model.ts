@@ -10,6 +10,7 @@ export enum NotificationType {
 
 export enum EntityType {
     TASK = 'TASK',
+    SUBTASK = 'SUBTASK',
     PHASE = 'PHASE',
     PROJECT = 'PROJECT'
 }
@@ -24,6 +25,8 @@ export interface Notification {
     type: NotificationType;
     entityId: number;
     entityType: EntityType;
+    projectId: number;
+    projectName: string;
 }
 
 export interface NotificationGroup {

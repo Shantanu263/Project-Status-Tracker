@@ -55,7 +55,7 @@ export class PhaseFormComponent implements OnInit {
             description: [existingPhase?.description || ''],
             startDate: [existingPhase?.startDate || ''],
             endDate: [existingPhase?.endDate || ''],
-            status: [existingPhase?.status || 'TO_DO'],
+            status: [existingPhase?.status || 'OPEN'],
             assignedTo: [existingPhase?.projectMemberId || '']
         });
 
@@ -103,12 +103,12 @@ export class PhaseFormComponent implements OnInit {
 
             // Map display status to backend format
             const statusMapping: Record<string, string> = {
-                'To Do': 'TO_DO',
-                'In Progress': 'IN_PROGRESS',
+                'Open': 'OPEN',
+                'Ongoing': 'ONGOING',
                 'Completed': 'COMPLETED',
                 'On Hold': 'ON_HOLD',
-                'TO_DO': 'TO_DO',
-                'IN_PROGRESS': 'IN_PROGRESS',
+                'OPEN': 'OPEN',
+                'ONGOING': 'ONGOING',
                 'COMPLETED': 'COMPLETED',
                 'ON_HOLD': 'ON_HOLD'
             };

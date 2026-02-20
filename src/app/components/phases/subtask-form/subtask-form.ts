@@ -10,7 +10,7 @@ interface SubTaskForm {
     subTaskName: string;
     startDate: string;
     endDate: string;
-    status: 'TO_DO' | 'IN_PROGRESS' | 'REVIEW' | 'DONE';
+    status: 'OPEN' | 'ONGOING' | 'ON_HOLD' | 'COMPLETED';
     priority: 'Low' | 'Medium' | 'High';
     assignedTo: number | null;
 }
@@ -42,7 +42,7 @@ export class SubtaskFormComponent implements OnInit {
         subTaskName: '',
         startDate: '',
         endDate: '',
-        status: 'TO_DO',
+        status: 'OPEN',
         priority: 'Medium',
         assignedTo: null
     });

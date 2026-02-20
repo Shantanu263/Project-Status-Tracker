@@ -23,7 +23,8 @@ import {
     AlertTriangle,
     ListTodo,
     Folder,
-    Calendar
+    Calendar,
+    ArrowRight
 } from 'lucide-angular';
 
 @Component({
@@ -45,6 +46,7 @@ export class NotificationDropdownComponent implements OnInit, OnDestroy {
     ListTodo = ListTodo;
     Folder = Folder;
     Calendar = Calendar;
+    ArrowRight = ArrowRight;
 
     isOpen = input<boolean>(false);
     close = output<void>();
@@ -173,6 +175,15 @@ export class NotificationDropdownComponent implements OnInit, OnDestroy {
         if (!notification.isRead) {
             this.notificationService.markAsRead(notification.id).subscribe();
         }
+    }
+
+    onActionButtonClick(notification: Notification, event: Event): void {
+        event.stopPropagation(); // Prevent parent click handler
+
+        // Mark as read if not already
+        if (!notification.isRead) {
+            this.notificationService.markAsRead(notification.id).subscribe();
+        }
 
         // Navigate to the entity
         this.navigateToEntity(notification);
@@ -182,16 +193,55 @@ export class NotificationDropdownComponent implements OnInit, OnDestroy {
     }
 
     private navigateToEntity(notification: Notification): void {
-        // TODO: Implement navigation based on entity type and ID
-        // For now, just log the navigation intent
-        console.log('Navigate to:', notification.entityType, notification.entityId);
+        const { entityType, entityId, projectId } = notification;
 
-        // Example navigation (adjust based on your routing structure):
-        // if (notification.entityType === 'TASK') {
-        //   this.router.navigate(['/tasks', notification.entityId]);
-        // } else if (notification.entityType === 'PHASE') {
-        //   this.router.navigate(['/phases', notification.entityId]);
-        // }
+        console.log('[NotificationDropdown] Navigating to:', { entityType, entityId, projectId });
+
+        switch (entityType) {
+            case 'PROJECT':
+                // Navigate to project dashboard
+                this.router.navigate(['/home/projects', projectId, 'dashboard']);
+                break;
+
+            case 'PHASE':
+                // Navigate to project phases tab
+                // The phase details modal will need to be opened by the phases component
+                this.router.navigate(['/home/projects', projectId, 'phases'], {
+                    queryParams: { openPhaseId: entityId }
+                });
+                break;
+
+            case 'TASK':
+            case 'SUBTASK':
+                // Navigate to project tasks tab
+                // The task details modal will need to be opened by the tasks component
+                this.router.navigate(['/home/projects', projectId, 'tasks'], {
+                    queryParams: { openTaskId: entityId }
+                });
+                break;
+
+            default:
+                console.warn('[NotificationDropdown] Unknown entity type:', entityType);
+        }
+    }
+
+    getActionButtonText(notification: Notification): string {
+        switch (notification.entityType) {
+            case 'PROJECT':
+                return 'Go to Project';
+            case 'PHASE':
+                return 'Go to Phase';
+            case 'TASK':
+                return 'Go to Task';
+            case 'SUBTASK':
+                return 'Go to Subtask';
+            default:
+                return 'View';
+        }
+    }
+
+    showProjectName(notification: Notification): boolean {
+        return notification.entityType !== 'PROJECT';
     }
 
     markAllAsRead(): void {

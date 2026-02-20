@@ -14,7 +14,7 @@ import { DataSyncService } from '../../services/data-sync.service';
 import { PermissionService } from '../../services/permission.service';
 import { AuthService } from '../../services/auth.service';
 
-type TaskStatus = 'TO_DO' | 'IN_PROGRESS' | 'REVIEW' | 'DONE';
+type TaskStatus = 'OPEN' | 'ONGOING' | 'ON_HOLD' | 'COMPLETED';
 
 interface TaskResponse {
   taskId: number;
@@ -32,7 +32,7 @@ interface TaskResponse {
 interface SubTask {
   subTaskId: number;
   subTaskName: string;
-  status: 'TO_DO' | 'IN_PROGRESS' | 'DONE' | 'REVIEW';
+  status: 'OPEN' | 'ONGOING' | 'COMPLETED' | 'ON_HOLD';
 }
 
 interface PhaseResponse {
@@ -84,29 +84,29 @@ export class BoardComponent {
   columns = signal<Column[]>([
     {
       id: 'todo',
-      title: 'To Do',
-      statusValue: 'TO_DO',
+      title: 'Open',
+      statusValue: 'OPEN',
       colorDot: 'gray',
       tasks: []
     },
     {
       id: 'ongoing',
-      title: 'In Progress',
-      statusValue: 'IN_PROGRESS',
+      title: 'Ongoing',
+      statusValue: 'ONGOING',
       colorDot: 'blue',
       tasks: []
     },
     {
-      id: 'review',
-      title: 'Review',
-      statusValue: 'REVIEW',
+      id: 'onhold',
+      title: 'On Hold',
+      statusValue: 'ON_HOLD',
       colorDot: 'yellow',
       tasks: []
     },
     {
       id: 'completed',
-      title: 'Done',
-      statusValue: 'DONE',
+      title: 'Completed',
+      statusValue: 'COMPLETED',
       colorDot: 'green',
       tasks: []
     }
@@ -507,7 +507,7 @@ export class BoardComponent {
         description: '',
         startDate: '',
         endDate: '',
-        status: 'TO_DO',
+        status: 'OPEN',
         priority: 'Medium',
         projectPhaseId: phase?.phaseId
       };
@@ -822,7 +822,7 @@ export class BoardComponent {
       return '';
     }
 
-    const completed = subTasks.filter(st => st.status === 'DONE').length;
+    const completed = subTasks.filter(st => st.status === 'COMPLETED').length;
     const total = subTasks.length;
 
     return `${completed}/${total} subtask${total !== 1 ? 's' : ''} completed`;

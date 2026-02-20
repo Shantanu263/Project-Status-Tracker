@@ -25,7 +25,7 @@ export interface TimelineBar {
     name: string;
     startDate: string;
     endDate: string;
-    completedAt?: string;
+    completedOn?: string;
     progress?: number;
     assignedTo?: number;
     assignedToName?: string;
@@ -43,7 +43,7 @@ export interface TimelineRow {
     startDate?: string;
     endDate?: string;
     progress?: number;
-    completedAt?: string;
+    completedOn?: string;
     assignedToName?: string;
     status?: string;
     isExpanded?: boolean;

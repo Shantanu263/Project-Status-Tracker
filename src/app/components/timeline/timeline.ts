@@ -112,7 +112,7 @@ export class TimelineComponent implements OnInit, AfterViewInit {
                 startDate: phase.startDate,
                 endDate: phase.endDate,
                 progress: phase.completionPercentage,
-                completedAt: phase.completedAt,
+                completedOn: phase.completedOn,
                 isExpanded: expanded.has(phase.phaseId!),
                 level: 0
             });
@@ -128,7 +128,7 @@ export class TimelineComponent implements OnInit, AfterViewInit {
                         name: task.taskName,
                         startDate: task.startDate,
                         endDate: task.endDate,
-                        completedAt: task.completedAt,
+                        completedOn: task.completedOn,
                         assignedToName: task.assignedToName,
                         status: task.status,
                         level: 1
@@ -314,7 +314,7 @@ export class TimelineComponent implements OnInit, AfterViewInit {
                     if (phase.phaseId) {
                         this.projectService.getTasks(projectId, phase.phaseId).subscribe({
                             next: (tasks) => {
-                                const completedTasks = tasks.filter(t => t.status === 'DONE' || t.completedAt).length;
+                                const completedTasks = tasks.filter(t => t.status === 'COMPLETED' || t.completedOn).length;
                                 const completionPercentage = tasks.length > 0
                                     ? Math.round((completedTasks / tasks.length) * 100)
                                     : 0;
@@ -1147,13 +1147,18 @@ export class TimelineComponent implements OnInit, AfterViewInit {
 
     //Get status color class
     getStatusClass(status?: string): string {
-        switch (status) {
-            case 'DONE': return 'bg-green-500';
-            case 'IN_PROGRESS': return 'bg-blue-500';
-            case 'REVIEW': return 'bg-yellow-500';
-            case 'TO_DO': return 'bg-gray-400';
-            default: return 'bg-gray-400';
+        const statusUpper = status?.toUpperCase() || '';
+
+        if (statusUpper === 'COMPLETED' || statusUpper === 'DONE') {
+            return 'status-completed';
+        } else if (statusUpper === 'ONGOING' || statusUpper === 'IN_PROGRESS') {
+            return 'status-ongoing';
+        } else if (statusUpper === 'ON_HOLD' || statusUpper === 'REVIEW') {
+            return 'status-on-hold';
+        } else if (statusUpper === 'OPEN' || statusUpper === 'TO_DO' || statusUpper === 'NOT_STARTED') {
+            return 'status-open';
         }
+        return 'status-open';
     }
 
 
@@ -1219,7 +1224,7 @@ export class TimelineComponent implements OnInit, AfterViewInit {
                 name: phase.phaseName || '',
                 startDate: phase.startDate,
                 endDate: phase.endDate,
-                completedAt: phase.completedAt,
+                completedOn: phase.completedOn,
                 progress: phaseWithTasks?.completionPercentage || 0,
                 status: phase.status,
                 level: 0
@@ -1236,7 +1241,7 @@ export class TimelineComponent implements OnInit, AfterViewInit {
                 name: task.taskName || '',
                 startDate: task.startDate,
                 endDate: task.endDate,
-                completedAt: task.completedAt,
+                completedOn: task.completedOn,
                 assignedToName: task.assignedToName,
                 status: task.status,
                 level: 1

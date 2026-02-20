@@ -382,9 +382,9 @@ export class DashboardComponent implements AfterViewInit {
   private formatTaskLabel(label: string): string {
     const labelMap: { [key: string]: string } = {
       'TODO': 'To Do',
-      'IN_PROGRESS': 'In Progress',
-      'REVIEW': 'Review',
-      'DONE': 'Completed'
+      'ONGOING': 'Ongoing',
+      'ON_HOLD': 'On Hold',
+      'COMPLETED': 'Completed'
     };
     return labelMap[label] || label;
   }

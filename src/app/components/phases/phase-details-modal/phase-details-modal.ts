@@ -84,7 +84,7 @@ export class PhaseDetailsModalComponent {
     });
 
     completedTasksCount = computed(() => {
-        return this.phaseTasks().filter(t => t.status === 'DONE').length;
+        return this.phaseTasks().filter(t => t.status === 'COMPLETED').length;
     });
 
     progressPercentage = computed(() => {
@@ -303,8 +303,8 @@ export class PhaseDetailsModalComponent {
 
     getStatusLabel(status?: string): string {
         const labelMap: { [key: string]: string } = {
-            'TO_DO': 'To Do',
-            'IN_PROGRESS': 'In Progress',
+            'OPEN': 'Open',
+            'ONGOING': 'Ongoing',
             'ON_HOLD': 'On Hold',
             'COMPLETED': 'Completed'
         };
@@ -313,20 +313,20 @@ export class PhaseDetailsModalComponent {
 
     getTaskStatusClass(status: string): string {
         const statusMap: { [key: string]: string } = {
-            'TO_DO': 'bg-gray-100 text-gray-800',
-            'IN_PROGRESS': 'bg-blue-100 text-blue-800',
-            'REVIEW': 'bg-purple-100 text-purple-800',
-            'DONE': 'bg-green-100 text-green-800'
+            'OPEN': 'bg-gray-100 text-gray-800',
+            'ONGOING': 'bg-blue-100 text-blue-800',
+            'ON_HOLD': 'bg-purple-100 text-purple-800',
+            'COMPLETED': 'bg-green-100 text-green-800'
         };
         return statusMap[status] || 'bg-gray-100 text-gray-800';
     }
 
     getTaskStatusLabel(status: string): string {
         const labelMap: { [key: string]: string } = {
-            'TO_DO': 'To Do',
-            'IN_PROGRESS': 'In Progress',
-            'REVIEW': 'Review',
-            'DONE': 'Done'
+            'OPEN': 'Open',
+            'ONGOING': 'Ongoing',
+            'ON_HOLD': 'On Hold',
+            'COMPLETED': 'Completed'
         };
         return labelMap[status] || status;
     }

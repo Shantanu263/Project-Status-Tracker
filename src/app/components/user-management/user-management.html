@@ -350,6 +350,13 @@
 <!-- User Details Modal -->
 @if (showUserDetailsModal() && selectedUser()) {
 <app-user-details-modal [isOpen]="showUserDetailsModal()" [userId]="selectedUser()!.userId" [user]="selectedUser()!"
-    (close)="closeUserDetailsModal()">
+    (close)="closeUserDetailsModal()" (projectClick)="onProjectClick($event)">
 </app-user-details-modal>
+}
+
+<!-- Member Details Modal -->
+@if (showMemberDetailsModal()) {
+<app-member-details-modal [isOpen]="showMemberDetailsModal()" [projectId]="selectedProjectId()"
+    [memberId]="selectedMemberId()" [projectMembers]="projectMembers()" (close)="closeMemberDetailsModal()">
+</app-member-details-modal>
 }

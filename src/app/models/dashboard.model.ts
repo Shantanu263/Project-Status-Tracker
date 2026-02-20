@@ -78,6 +78,8 @@ export interface ProjectCard {
     totalTasks: number;
     overdueTasks: number;
     priority?: string;
+    completedOn?: string;
+    client?: string;
 }
 
 export interface ProjectProgress {

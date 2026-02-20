@@ -42,7 +42,22 @@
                         <span *ngIf="!notification.isRead" class="unread-dot"></span>
                     </div>
                     <p class="notification-message">{{ notification.message }}</p>
-                    <span class="notification-time">{{ getRelativeTime(notification.createdAt) }}</span>
+
+                    <!-- Show project name for non-PROJECT entities -->
+                    <p *ngIf="showProjectName(notification)" class="notification-project">
+                        <lucide-angular [img]="Folder" [size]="14" class="project-icon"></lucide-angular>
+                        {{ notification.projectName }}
+                    </p>
+
+                    <!-- Actions row with timestamp and link -->
+                    <div class="notification-actions">
+                        <span class="notification-time">{{ getRelativeTime(notification.createdAt) }}</span>
+                        <a class="notification-action-link" (click)="onActionButtonClick(notification, $event)"
+                            role="button" tabindex="0">
+                            {{ getActionButtonText(notification) }}
+                            <lucide-angular [img]="ArrowRight" [size]="14"></lucide-angular>
+                        </a>
+                    </div>
                 </div>
             </div>
         </div>

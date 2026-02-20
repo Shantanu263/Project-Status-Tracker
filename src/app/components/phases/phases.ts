@@ -1,6 +1,7 @@
 import { Component, input, inject, signal, computed, effect } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
+import { ActivatedRoute } from '@angular/router';
 import { ProjectService } from '../../services/project.service';
 import { SelectedProjectService } from '../../services/selected-project.service';
 import { PermissionService } from '../../services/permission.service';
@@ -28,6 +29,7 @@ export class PhasesComponent {
   private readonly authService = inject(AuthService);
   private readonly permissionService = inject(PermissionService);
   private readonly dataSyncService = inject(DataSyncService);
+  private readonly route = inject(ActivatedRoute);
 
   projectId = input.required<number>();
 
@@ -166,6 +168,19 @@ export class PhasesComponent {
     this.dataSyncService.projectMembersUpdated$.subscribe(projectId => {
       if (projectId === this.projectId()) {
         this.loadProjectMembers();
+      }
+    });
+
+    // Listen for query params to open phase modal from notifications
+    this.route.queryParams.subscribe(params => {
+      const openPhaseId = params['openPhaseId'];
+      if (openPhaseId) {
+        console.log('[PhasesComponent] Opening phase from notification:', openPhaseId);
+        // Wait a bit for phases to load
+        setTimeout(() => {
+          this.selectedPhaseId.set(Number(openPhaseId));
+          this.showPhaseDetailsModal.set(true);
+        }, 500);
       }
     });
   }
@@ -309,7 +324,7 @@ export class PhasesComponent {
   }
 
   getCompletedTaskCount(phase: Phase): number {
-    return phase.tasks?.filter(t => t.status?.toLowerCase() === 'done').length || 0;
+    return phase.tasks?.filter(t => t.status?.toLowerCase() === 'completed').length || 0;
   }
 
   getProgressPercentage(phase: Phase): number {
@@ -562,21 +577,20 @@ export class PhasesComponent {
   }
 
   getStatusText(status?: string): string {
-    if (!status) return 'Not Started';
+    if (!status) return 'Open';
     const statusUpper = status.toUpperCase();
     if (statusUpper === 'COMPLETED' || statusUpper === 'DONE') return 'Completed';
-    if (statusUpper === 'IN_PROGRESS') return 'In Progress';
-    if (statusUpper === 'TO_DO') return 'To Do';
+    if (statusUpper === 'ONGOING' || statusUpper === 'IN_PROGRESS') return 'Ongoing';
+    if (statusUpper === 'OPEN' || statusUpper === 'TO_DO' || statusUpper === 'NOT_STARTED') return 'Open';
     if (statusUpper === 'ON_HOLD') return 'On Hold';
-    if (statusUpper === 'REVIEW') return 'In Progress';
-    return 'Not Started';
+    return 'Open';
   }
 
   getStatusBadgeColorNew(status?: string): string {
     const statusText = this.getStatusText(status);
     if (statusText === 'Completed') {
       return 'bg-green-50 border border-green-200 text-green-700';
-    } else if (statusText === 'In Progress') {
+    } else if (statusText === 'Ongoing') {
       return 'bg-blue-50 border border-blue-200 text-blue-600';
     } else if (statusText === 'On Hold') {
       return 'bg-yellow-50 border border-yellow-200 text-yellow-700';

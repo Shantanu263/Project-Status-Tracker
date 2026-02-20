@@ -205,6 +205,50 @@
     color: #9ca3af;
 }
 
+.notification-project {
+    display: flex;
+    align-items: center;
+    gap: 0.25rem;
+    font-size: 0.75rem;
+    color: #6b7280;
+    margin: 0.375rem 0 0 0;
+
+    .project-icon {
+        color: #9ca3af;
+    }
+}
+
+.notification-actions {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.5rem;
+    margin-top: 0.5rem;
+}
+
+.notification-action-link {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.25rem;
+    font-size: 0.8125rem;
+    font-weight: 500;
+    color: #6366f1;
+    text-decoration: underline;
+    cursor: pointer;
+    transition: all 0.15s ease;
+    white-space: nowrap;
+
+    &:hover {
+        color: #4f46e5;
+        text-decoration-thickness: 2px;
+    }
+
+    &:active {
+        color: #3730a3;
+    }
+}
+
+
 .loading-state {
     padding: 1rem 1.25rem;
 }

@@ -71,15 +71,15 @@
                             <select id="status" [value]="subtaskForm().status"
                                 (change)="updateField('status', $any($event.target).value)"
                                 class="form-input custom-select">
-                                <option value="TO_DO">To Do</option>
-                                <option value="IN_PROGRESS">In Progress</option>
-                                <option value="DONE">Done</option>
-                                <option value="REVIEW">Review</option>
+                                <option value="OPEN">Open</option>
+                                <option value="ONGOING">Ongoing</option>
+                                <option value="COMPLETED">Completed</option>
+                                <option value="ON_HOLD">On Hold</option>
                             </select>
-                            <div class="select-color-indicator" [class.todo]="subtaskForm().status === 'TO_DO'"
-                                [class.in-progress]="subtaskForm().status === 'IN_PROGRESS'"
-                                [class.review]="subtaskForm().status === 'REVIEW'"
-                                [class.done]="subtaskForm().status === 'DONE'">
+                            <div class="select-color-indicator" [class.open]="subtaskForm().status === 'OPEN'"
+                                [class.ongoing]="subtaskForm().status === 'ONGOING'"
+                                [class.on-hold]="subtaskForm().status === 'ON_HOLD'"
+                                [class.completed]="subtaskForm().status === 'COMPLETED'">
                             </div>
                         </div>
                     </div>

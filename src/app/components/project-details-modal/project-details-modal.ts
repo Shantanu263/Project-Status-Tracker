@@ -32,12 +32,14 @@ export class ProjectDetailsModalComponent {
     editingDescription = signal<boolean>(false);
     editingStartDate = signal<boolean>(false);
     editingEndDate = signal<boolean>(false);
+    editingClient = signal<boolean>(false);
 
     // Temporary edit values
     tempProjectName = signal<string>('');
     tempDescription = signal<string>('');
     tempStartDate = signal<string>('');
     tempEndDate = signal<string>('');
+    tempClient = signal<string>('');
 
     constructor() {
         effect(() => {
@@ -64,7 +66,7 @@ export class ProjectDetailsModalComponent {
         });
     }
 
-    startEditing(field: 'projectName' | 'description' | 'startDate' | 'endDate') {
+    startEditing(field: 'projectName' | 'description' | 'startDate' | 'endDate' | 'client') {
         const project = this.projectDetails();
         if (!project) return;
 
@@ -85,10 +87,14 @@ export class ProjectDetailsModalComponent {
                 this.tempEndDate.set(project.endDate);
                 this.editingEndDate.set(true);
                 break;
+            case 'client':
+                this.tempClient.set(project.client || '');
+                this.editingClient.set(true);
+                break;
         }
     }
 
-    cancelEditing(field: 'projectName' | 'description' | 'startDate' | 'endDate') {
+    cancelEditing(field: 'projectName' | 'description' | 'startDate' | 'endDate' | 'client') {
         switch (field) {
             case 'projectName':
                 this.editingProjectName.set(false);
@@ -102,10 +108,13 @@ export class ProjectDetailsModalComponent {
             case 'endDate':
                 this.editingEndDate.set(false);
                 break;
+            case 'client':
+                this.editingClient.set(false);
+                break;
         }
     }
 
-    saveField(field: 'projectName' | 'description' | 'startDate' | 'endDate') {
+    saveField(field: 'projectName' | 'description' | 'startDate' | 'endDate' | 'client') {
         const project = this.projectDetails();
         if (!project) return;
 
@@ -123,6 +132,9 @@ export class ProjectDetailsModalComponent {
             case 'endDate':
                 value = this.tempEndDate();
                 break;
+            case 'client':
+                value = this.tempClient();
+                break;
         }
 
         this.updateProject({ [field]: value });
@@ -130,7 +142,7 @@ export class ProjectDetailsModalComponent {
     }
 
     updateStatus(status: string) {
-        this.updateProject({ status });
+        this.updateProject({ status: status as Project['status'] });
     }
 
     updatePriority(priority: string) {
@@ -224,6 +236,7 @@ export class ProjectDetailsModalComponent {
         this.editingDescription.set(false);
         this.editingStartDate.set(false);
         this.editingEndDate.set(false);
+        this.editingClient.set(false);
         this.close.emit();
     }
 }

@@ -88,23 +88,23 @@
                         <label for="status" class="form-label">Status</label>
                         <div class="custom-select-wrapper">
                             <select id="status" formControlName="status" class="form-input custom-select">
-                                <option value="TO_DO">
-                                    <span class="color-indicator todo"></span>To Do
+                                <option value="OPEN">
+                                    <span class="color-indicator open"></span>Open
                                 </option>
-                                <option value="IN_PROGRESS">
-                                    <span class="color-indicator in-progress"></span>In Progress
+                                <option value="ONGOING">
+                                    <span class="color-indicator ongoing"></span>Ongoing
                                 </option>
-                                <option value="DONE">
-                                    <span class="color-indicator done"></span>Done
+                                <option value="COMPLETED">
+                                    <span class="color-indicator completed"></span>Completed
                                 </option>
-                                <option value="REVIEW">
-                                    <span class="color-indicator review"></span>Review
+                                <option value="ON_HOLD">
+                                    <span class="color-indicator on-hold"></span>On Hold
                                 </option>
                             </select>
-                            <div class="select-color-indicator" [class.todo]="taskForm.get('status')?.value === 'TO_DO'"
-                                [class.in-progress]="taskForm.get('status')?.value === 'IN_PROGRESS'"
-                                [class.review]="taskForm.get('status')?.value === 'REVIEW'"
-                                [class.done]="taskForm.get('status')?.value === 'DONE'">
+                            <div class="select-color-indicator" [class.open]="taskForm.get('status')?.value === 'OPEN'"
+                                [class.ongoing]="taskForm.get('status')?.value === 'ONGOING'"
+                                [class.on-hold]="taskForm.get('status')?.value === 'ON_HOLD'"
+                                [class.completed]="taskForm.get('status')?.value === 'COMPLETED'">
                             </div>
                         </div>
                     </div>

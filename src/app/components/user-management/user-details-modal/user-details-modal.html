@@ -81,31 +81,33 @@
                                         Project Name</th>
                                     <th
                                         class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                        Role in Project</th>
+                                        Client</th>
                                     <th
                                         class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                        Status</th>
+                                        Duration</th>
+                                    <th
+                                        class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                        Role in Project</th>
                                 </tr>
                             </thead>
                             <tbody class="bg-white divide-y divide-gray-100">
                                 @for (membership of projectMemberships(); track membership.memberId) {
-                                <tr class="hover:bg-gray-50 transition-colors">
+                                <tr class="hover:bg-gray-50 transition-colors cursor-pointer"
+                                    (click)="onProjectRowClick(membership)">
                                     <td class="px-4 py-3">
                                         <span class="text-sm font-medium text-gray-900">{{ membership.project }}</span>
+                                    </td>
+                                    <td class="px-4 py-3">
+                                        <span class="text-sm text-gray-600">{{ membership.clientName || '—' }}</span>
+                                    </td>
+                                    <td class="px-4 py-3">
+                                        <span class="text-sm text-gray-600">{{ formatDuration(membership.startDate,
+                                            membership.endDate) }}</span>
                                     </td>
                                     <td class="px-4 py-3">
                                         <span
                                             [class]="'px-3 py-1 inline-flex text-xs leading-5 font-semibold rounded-full ' + getProjectRoleColorClass(membership.role)">
                                             {{ getProjectRoleLabel(membership.role) }}
-                                        </span>
-                                    </td>
-                                    <td class="px-4 py-3">
-                                        <span class="text-sm text-gray-600">
-                                            @if (membership.isActive) {
-                                            <span class="text-green-600">● Active</span>
-                                            } @else {
-                                            <span class="text-gray-400">● Inactive</span>
-                                            }
                                         </span>
                                     </td>
                                 </tr>

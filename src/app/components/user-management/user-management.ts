@@ -5,19 +5,23 @@ import { Overlay, OverlayModule, OverlayRef } from '@angular/cdk/overlay';
 import { ComponentPortal } from '@angular/cdk/portal';
 import { InviteUserModalComponent } from '../invite-user-modal/invite-user-modal';
 import { UserDetailsModalComponent } from './user-details-modal/user-details-modal';
+import { MemberDetailsModalComponent } from '../members/member-details-modal/member-details-modal';
+import { ProjectService } from '../../services/project.service';
+import { ProjectMember } from '../../models/project.model';
 
 type SortOrder = 'asc' | 'desc';
 type SortColumn = 'userId' | 'name' | 'email' | 'role' | 'createdAt';
 
 @Component({
     selector: 'app-user-management',
-    imports: [CommonModule, OverlayModule, InviteUserModalComponent, UserDetailsModalComponent],
+    imports: [CommonModule, OverlayModule, InviteUserModalComponent, UserDetailsModalComponent, MemberDetailsModalComponent],
     templateUrl: './user-management.html',
     styleUrl: './user-management.scss',
     changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class UserManagementComponent {
     private userManagementService = inject(UserManagementService);
+    private projectService = inject(ProjectService);
     private overlay = inject(Overlay);
     private viewContainerRef = inject(ViewContainerRef);
 
@@ -27,6 +31,12 @@ export class UserManagementComponent {
     // User details modal state
     showUserDetailsModal = signal(false);
     selectedUser = signal<User | null>(null);
+
+    // Member details modal state
+    showMemberDetailsModal = signal(false);
+    selectedProjectId = signal<number>(0);
+    selectedMemberId = signal<string>('');
+    projectMembers = signal<ProjectMember[]>([]);
 
     // Pagination & Filtering
     searchQuery = signal('');
@@ -352,5 +362,32 @@ export class UserManagementComponent {
     closeUserDetailsModal(): void {
         this.showUserDetailsModal.set(false);
         this.selectedUser.set(null);
+    }
+
+    // Member details modal methods
+    onProjectClick(data: { projectId: number; memberId: string }): void {
+        this.selectedProjectId.set(data.projectId);
+        this.selectedMemberId.set(data.memberId);
+
+        // Fetch project members before showing the modal
+        this.projectService.getProjectMembers(data.projectId).subscribe({
+            next: (members) => {
+                this.projectMembers.set(members);
+                this.showMemberDetailsModal.set(true);
+            },
+            error: (error) => {
+                console.error('Error loading project members:', error);
+                // Still show modal even if members fetch fails
+                this.projectMembers.set([]);
+                this.showMemberDetailsModal.set(true);
+            }
+        });
+    }
+
+    closeMemberDetailsModal(): void {
+        this.showMemberDetailsModal.set(false);
+        this.selectedProjectId.set(0);
+        this.selectedMemberId.set('');
+        this.projectMembers.set([]);
     }
 }

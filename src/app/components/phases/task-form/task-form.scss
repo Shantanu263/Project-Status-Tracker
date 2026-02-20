@@ -401,19 +401,19 @@ select#status {
     }
 
     // Status colors
-    &.todo {
+    &.open {
         background-color: #6b7280; // gray
     }
 
-    &.in-progress {
+    &.ongoing {
         background-color: #3b82f6; // blue
     }
 
-    &.review {
+    &.on-hold {
         background-color: #f97316; // orange
     }
 
-    &.done {
+    &.completed {
         background-color: #10b981; // green
     }
 }

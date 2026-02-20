@@ -22,9 +22,10 @@ export interface SubTask {
   taskId: number;
   startDate: string;
   endDate: string;
-  status: 'TO_DO' | 'IN_PROGRESS' | 'DONE' | 'REVIEW';
+  status: 'OPEN' | 'ONGOING' | 'COMPLETED' | 'ON_HOLD';
   priority: 'Low' | 'Medium' | 'High';
   assignedToProjectMemberId?: number;
+  completedOn?: string;
   comments?: Comment[];
   logs?: Log[];
 }
@@ -35,13 +36,13 @@ export interface Task {
   description?: string;
   startDate?: string;
   endDate?: string;
-  status?: 'TO_DO' | 'IN_PROGRESS' | 'DONE' | 'REVIEW';
+  status?: 'OPEN' | 'ONGOING' | 'COMPLETED' | 'ON_HOLD';
   priority?: 'Low' | 'Medium' | 'High';
   assignedTo?: number;
   assignedToName?: string;
   assignedToProjectMemberId?: number;
   projectPhaseId?: number;
-  completedAt?: string;
+  completedOn?: string;
   progress?: number;
   subTasks?: SubTask[];
   comments?: Comment[];
@@ -57,11 +58,11 @@ export interface Phase {
   description?: string;
   startDate?: string;
   endDate?: string;
-  status?: 'IN_PROGRESS' | 'COMPLETED' | 'NOT_STARTED' | 'ON_HOLD';
+  status?: 'OPEN' | 'ONGOING' | 'COMPLETED' | 'ON_HOLD';
   tasks?: Task[];
   projectMemberId?: number;
   assignedToName?: string;
-  completedAt?: string;
+  completedOn?: string;
   progress?: number;
   updatedAt?: string;
 }
