@@ -2,7 +2,6 @@ package com.shantanu.projectstatustracker.dtos;
 
 import lombok.Data;
 
-import java.time.LocalDate;
 import java.util.Date;
 
 @Data
@@ -11,6 +10,8 @@ public class ProjectRequestDTO {
     String projectName;
 
     String description;
+
+    String client;
 
     Date startDate;
 

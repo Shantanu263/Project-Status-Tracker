@@ -26,6 +26,9 @@ public class PhaseDetailsResponseDTO {
     @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "dd-MM-yyyy")
     private Date endDate;
 
+    @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "dd-MM-yyyy")
+    private Date completedOn;
+
     private String status;
 
     private Double progress;

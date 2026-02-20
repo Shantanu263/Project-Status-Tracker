@@ -21,7 +21,6 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.http.*;
-import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -84,7 +83,8 @@ public class ProjectServiceImpl implements ProjectService {
                 .startDate(projectRequestDTO.getStartDate())
                 .endDate(projectRequestDTO.getEndDate())
                 .priority(projectRequestDTO.getPriority())
-                .status("ongoing")
+                .status(ProjectStatus.ONGOING)
+                .client(projectRequestDTO.getClient() == null ? null : projectRequestDTO.getClient())
                 .progress(0.00)
                 .createdBySuperAdmin(userRepo.findByEmail(email)
                         .orElseThrow(() -> new ResourceNotFoundException("Admin not found")))
@@ -102,7 +102,7 @@ public class ProjectServiceImpl implements ProjectService {
             List<Phase> clonedPhases = projectTemplate.getProjectTemplatePhases().stream().map(templatePhase -> {
                 Phase phase = new Phase();
                 phase.setPhaseName(templatePhase.getPhaseName());
-                phase.setStatus(PhaseStatus.TO_DO); // Default status
+                phase.setStatus(PhaseStatus.OPEN); // Default status
                 phase.setStartDate(project.getStartDate()); // start same as a project
                 phase.setEndDate(project.getEndDate());     // end same as a project
                 phase.setProject(project);
@@ -150,12 +150,18 @@ public class ProjectServiceImpl implements ProjectService {
 
         projectMapper.updateProjectFromDTO(projectUpdateRequestDTO,existingProject);
 
-        if (projectUpdateRequestDTO.getEndDate()!=null && !existingProject.getStatus().equals("completed")){
-            LocalDate endDate = projectUpdateRequestDTO.getEndDate().toInstant().atZone(ZoneId.systemDefault()).toLocalDate();
-            if (endDate.isAfter(LocalDate.now()) || endDate.isEqual(LocalDate.now())){
-                existingProject.setStatus("ongoing");
-            }
-            else existingProject.setStatus("delayed");
+//        if (projectUpdateRequestDTO.getEndDate()!=null && !existingProject.getStatus().equals(ProjectStatus.COMPLETED)){
+//            LocalDate endDate = projectUpdateRequestDTO.getEndDate().toInstant().atZone(ZoneId.systemDefault()).toLocalDate();
+//            if (endDate.isAfter(LocalDate.now()) || endDate.isEqual(LocalDate.now())){
+//                existingProject.setStatus(ProjectStatus.ONGOING);
+//            }
+//            else existingProject.setStatus(ProjectStatus.CANCELLED);
+//        }
+
+        //Update completion date is status is changed
+        if (projectUpdateRequestDTO.getStatus()!= null) {
+            if (projectUpdateRequestDTO.getStatus().equals(ProjectStatus.COMPLETED)) existingProject.setCompletedOn(new Date());
+            else existingProject.setCompletedOn(null);
         }
 
         projectRepo.save(existingProject);
@@ -296,8 +302,8 @@ public class ProjectServiceImpl implements ProjectService {
 
         // ----- BASIC COUNTS -----
         dto.setTotalTasks(taskRepo.countByProjectPhase_Project(project));
-        dto.setCompletedTasks(taskRepo.countByProjectPhase_ProjectAndStatus(project, TaskStatus.DONE));
-        dto.setPendingTasks(taskRepo.countByProjectPhase_ProjectAndStatus(project, TaskStatus.IN_PROGRESS));
+        dto.setCompletedTasks(taskRepo.countByProjectPhase_ProjectAndStatus(project, Status.COMPLETED));
+        dto.setPendingTasks(taskRepo.countByProjectPhase_ProjectAndStatus(project, Status.ONGOING));
         dto.setOverdueTasks(taskRepo.countOverdueTasks(projectId));
 
         dto.setTotalPhases(phaseRepo.countByProject_ProjectId(projectId));
@@ -375,9 +381,9 @@ public class ProjectServiceImpl implements ProjectService {
         // KPI Cards
         dashboard.setTotalProjects(projectRepo.countTotalProjects(userId));
 
-        dashboard.setActiveProjects(projectRepo.countByStatus("ongoing", userId));
+        dashboard.setActiveProjects(projectRepo.countByStatus(ProjectStatus.ONGOING, userId));
 
-        dashboard.setCompletedProjects(projectRepo.countByStatus("COMPLETED", userId));
+        dashboard.setCompletedProjects(projectRepo.countByStatus(ProjectStatus.COMPLETED, userId));
 
         dashboard.setDelayedProjects(projectRepo.countDelayedProjects(userId));
 
@@ -636,16 +642,16 @@ public class ProjectServiceImpl implements ProjectService {
         return radar;
     }
 
-    @Scheduled(cron = "0 0 1 * * ?") // Every day
-    public void updateDelayedProjects() {
-        System.out.println("running");
-        List<Project> overdueProjects = projectRepo.findProjectsToMarkDelayed();
-
-        for (Project project : overdueProjects) {
-            System.out.println(project.getProjectName() + " is delayed");
-            project.setStatus("delayed");
-            projectRepo.save(project);
-        }
-    }
+//    @Scheduled(cron = "0 0 1 * * ?") // Every day
+//    public void updateDelayedProjects() {
+//        System.out.println("running");
+//        List<Project> overdueProjects = projectRepo.findProjectsToMarkDelayed();
+//
+//        for (Project project : overdueProjects) {
+//            System.out.println(project.getProjectName() + " is delayed");
+//            project.setStatus("delayed");
+//            projectRepo.save(project);
+//        }
+//    }
 
 }

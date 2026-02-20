@@ -1,7 +1,7 @@
 package com.shantanu.projectstatustracker.services;
 
 import com.shantanu.projectstatustracker.dtos.TaskRequestDTO;
-import com.shantanu.projectstatustracker.models.TaskStatus;
+import com.shantanu.projectstatustracker.models.Status;
 import org.springframework.http.ResponseEntity;
 
 public interface SubTaskService {
@@ -14,6 +14,6 @@ public interface SubTaskService {
 
     ResponseEntity<Object> updateSubTask(Long projectId, Long phaseId, Long taskId, Long subTaskId, TaskRequestDTO dto);
 
-    ResponseEntity<Object> updateSubTaskStatus(Long projectId, Long phaseId, Long taskId, Long subTaskId, TaskStatus taskStatus);
+    ResponseEntity<Object> updateSubTaskStatus(Long projectId, Long phaseId, Long taskId, Long subTaskId, Status status);
 
 }

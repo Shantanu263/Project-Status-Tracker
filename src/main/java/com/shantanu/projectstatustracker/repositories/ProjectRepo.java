@@ -2,6 +2,7 @@ package com.shantanu.projectstatustracker.repositories;
 
 import com.shantanu.projectstatustracker.dtos.superDashboard.*;
 import com.shantanu.projectstatustracker.models.Project;
+import com.shantanu.projectstatustracker.models.ProjectStatus;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
@@ -33,7 +34,7 @@ LEFT JOIN p.projectMembers pm
 WHERE p.status = :status
 AND (:userId IS NULL OR pm.user.userId = :userId)
 """)
-    long countByStatus(@Param("status") String status,
+    long countByStatus(@Param("status") ProjectStatus status,
                        @Param("userId") Long userId);
 
 
@@ -41,8 +42,7 @@ AND (:userId IS NULL OR pm.user.userId = :userId)
 SELECT COUNT(p)
 FROM Project p
 WHERE p.endDate < CURRENT_DATE
-  AND p.status <> 'completed'
-  AND p.status <> 'on hold'
+  AND p.status <> 'COMPLETED'
   AND (
         :userId IS NULL
         OR EXISTS (
@@ -69,6 +69,7 @@ WHERE (:userId IS NULL OR pm.user.userId = :userId)
 SELECT new com.shantanu.projectstatustracker.dtos.superDashboard.ProjectCardDTO(
     p.projectId,
     p.projectName,
+    p.client,
     p.status,
     COALESCE(AVG(ph.progress), 0),
     p.startDate,
@@ -76,7 +77,7 @@ SELECT new com.shantanu.projectstatustracker.dtos.superDashboard.ProjectCardDTO(
     COUNT(DISTINCT ph.phaseId),
     COUNT(DISTINCT t.taskId),
     SUM(CASE\s
-        WHEN t.endDate < CURRENT_DATE AND t.status <> 'DONE'\s
+        WHEN t.endDate < CURRENT_DATE AND t.status <> 'COMPLETED'\s
         THEN 1 ELSE 0\s
     END)
 )
@@ -122,7 +123,7 @@ GROUP BY p.projectId, p.projectName
 SELECT
 CASE
     WHEN COUNT(t) = 0 THEN 0
-    ELSE (SUM(CASE WHEN t.status = 'DONE' THEN 1 ELSE 0 END) * 100.0) / COUNT(t)
+    ELSE (SUM(CASE WHEN t.status = 'COMPLETED' THEN 1 ELSE 0 END) * 100.0) / COUNT(t)
 END
 FROM Project p
 LEFT JOIN p.projectMembers pm
@@ -139,7 +140,7 @@ CASE
     WHEN COUNT(t) = 0 THEN 100
     ELSE 100.0 -
         ((SUM(CASE
-            WHEN t.endDate < CURRENT_DATE AND t.status <> 'DONE' THEN 1
+            WHEN t.endDate < CURRENT_DATE AND t.status <> 'COMPLETED' THEN 1
             ELSE 0
         END) * 100.0) / COUNT(t))
 END
@@ -157,7 +158,7 @@ CASE
     WHEN COUNT(p) = 0 THEN 100
     ELSE 100.0 -
         ((SUM(CASE
-            WHEN p.endDate < CURRENT_DATE AND p.status <> 'completed' THEN 1
+            WHEN p.endDate < CURRENT_DATE AND p.status <> 'COMPLETED' THEN 1
             ELSE 0
         END) * 100.0) / COUNT(p))
 END
@@ -182,7 +183,7 @@ WHERE (:userId IS NULL OR pm.user.userId = :userId)
 SELECT
 CASE
     WHEN COUNT(t) = 0 THEN 0
-    ELSE (SUM(CASE WHEN t.status = 'DONE' THEN 1 ELSE 0 END) * 100.0) / COUNT(t)
+    ELSE (SUM(CASE WHEN t.status = 'COMPLETED' THEN 1 ELSE 0 END) * 100.0) / COUNT(t)
 END
 FROM Project p
 LEFT JOIN p.phases ph
@@ -197,7 +198,7 @@ CASE
     WHEN COUNT(t) = 0 THEN 100
     ELSE 100.0 -
         ((SUM(CASE
-            WHEN t.endDate < CURRENT_DATE AND t.status <> 'DONE' THEN 1
+            WHEN t.endDate < CURRENT_DATE AND t.status <> 'COMPLETED' THEN 1
             ELSE 0
         END) * 100.0) / COUNT(t))
 END
@@ -214,7 +215,7 @@ CASE
     WHEN COUNT(t) = 0 THEN 100
     ELSE 100.0 -
         ((SUM(CASE
-            WHEN t.endDate >= CURRENT_DATE OR t.status = 'DONE' THEN 1
+            WHEN t.endDate >= CURRENT_DATE OR t.status = 'COMPLETED' THEN 1
             ELSE 0
         END) * 100.0) / COUNT(t))
 END
@@ -276,9 +277,9 @@ ORDER BY bucket
 SELECT p
 FROM Project p
 WHERE p.endDate < CURRENT_DATE
-  AND p.status <> "completed"
-  AND p.status <> "delayed"
-  AND p.status <> "on hold"
+  AND p.status <> "COMPLETED"
+  AND p.status <> "DELAYED"
+  AND p.status <> "ON_HOLD"
 """)
     List<Project> findProjectsToMarkDelayed();
 

@@ -100,7 +100,7 @@
     }
 
     /* Status Badge */
-    .taskStatus-badge, .priority-badge {
+    .status-badge, .priority-badge {
       display: inline-block;
       padding: 4px 12px;
       border-radius: 16px;
@@ -109,25 +109,25 @@
       margin-top: 6px;
     }
 
-    .taskStatus-not-started, .taskStatus-to_do, .priority-Low {
+    .status-not-started, .status-to_do, .priority-Low {
       background-color: #e3f2fd;
       color: #1976d2;
       border: 1px solid #90caf9;
     }
 
-    .taskStatus-ongoing, .taskStatus-in_progress, .priority-Medium {
+    .status-ongoing, .status-in_progress, .priority-Medium {
       background-color: #fef5e7;
       color: #975a16;
       border: 1px solid #fbd38d;
     }
 
-    .taskStatus-completed, .taskStatus-done {
+    .status-completed, .status-done {
       background-color: #c6f6d5;
       color: #22543d;
       border: 1px solid #9ae6b4;
     }
 
-    .taskStatus-on-hold, .taskStatus-on_hold, .taskStatus-review, .priority-High {
+    .status-on-hold, .status-on_hold, .status-review, .priority-High {
       background-color: #fed7d7;
       color: #742a2a;
       border: 1px solid #fc8181;
@@ -367,7 +367,7 @@
     }
 
     /* Status Text Block */
-    .taskStatus-text {
+    .status-text {
       background-color: #f7fafc;
       padding: 15px;
       border-radius: 4px;
@@ -377,17 +377,17 @@
       font-size: 10pt;
     }
 
-    .taskStatus-text ul {
+    .status-text ul {
       margin-left: 18px;
       margin-top: 6px;
     }
 
-    .taskStatus-text li {
+    .status-text li {
       margin-bottom: 4px;
       color: #2d3748;
     }
 
-    .taskStatus-text p {
+    .status-text p {
       margin-bottom: 8px;
     }
 
@@ -501,8 +501,8 @@
       <div class="card-item" style="padding-top: 0">
         <span class="card-label">Project Status</span>
         <!--        <span class="card-value" th:text="${PROJECT_STATUS}">{{PROJECT_STATUS}}</span>-->
-        <span class="taskStatus-badge"
-              th:classappend="' taskStatus-' + ${PROJECT_STATUS_CLASS}"
+        <span class="status-badge"
+              th:classappend="' status-' + ${PROJECT_STATUS_CLASS}"
               th:text="${PROJECT_STATUS}">Status</span>
       </div>
     </div>
@@ -540,7 +540,7 @@
 <!-- Current Status Section -->
 <section class="section">
   <h2>Current Status</h2>
-  <div class="taskStatus-text" th:utext="${CURRENT_STATUS}">
+  <div class="status-text" th:utext="${CURRENT_STATUS}">
     {{CURRENT_STATUS}}
     <!-- Example content:
     <p>The project is currently in the development phase and progressing well. All major deliverables from the design phase have been completed and approved by stakeholders.</p>

@@ -2,7 +2,7 @@ package com.shantanu.projectstatustracker.services;
 
 import com.shantanu.projectstatustracker.dtos.SubTaskRequestDTO;
 import com.shantanu.projectstatustracker.dtos.TaskRequestDTO;
-import com.shantanu.projectstatustracker.models.TaskStatus;
+import com.shantanu.projectstatustracker.models.Status;
 import com.shantanu.projectstatustracker.models.SubTask;
 import com.shantanu.projectstatustracker.models.Task;
 import org.springframework.http.ResponseEntity;
@@ -21,7 +21,7 @@ public interface TaskService {
 
     ResponseEntity<Object> deleteTask(Long projectId, Long phaseId, Long taskId);
 
-    ResponseEntity<Object> updateTaskStatus(Long projectId, Long phaseId, Long taskId, TaskStatus taskStatus);
+    ResponseEntity<Object> updateTaskStatus(Long projectId, Long phaseId, Long taskId, Status status);
 
     ResponseEntity<Object> getTasksOfAMember(Long projectId, Long memberId);
 
@@ -41,7 +41,7 @@ public interface TaskService {
             Long taskId,
             String taskName,
             String description,
-            TaskStatus status,
+            Status status,
             String priority,
             Long assignedToId,
             String assignedToUsername,
@@ -72,7 +72,7 @@ public interface TaskService {
     record SubTaskSnapshot(
             Long subTaskId,
             String subTaskName,
-            TaskStatus status,
+            Status status,
             String priority,
             Long assignedToId,
             String assignedToUsername,

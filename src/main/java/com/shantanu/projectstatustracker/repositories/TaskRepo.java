@@ -1,7 +1,7 @@
 package com.shantanu.projectstatustracker.repositories;
 
 import com.shantanu.projectstatustracker.models.Project;
-import com.shantanu.projectstatustracker.models.TaskStatus;
+import com.shantanu.projectstatustracker.models.Status;
 import com.shantanu.projectstatustracker.models.Task;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -35,7 +35,7 @@ public interface TaskRepo extends JpaRepository<Task,Long> {
     JOIN phase p ON t.project_phase_phase_id = p.phase_id
     WHERE p.project_id = :projectId
       AND t.end_date < CURRENT_DATE
-      AND t.status <> 'DONE'
+      AND t.status <> 'COMPLETED'
     """, nativeQuery = true)
     int countOverdueTasks(Long projectId);
 
@@ -51,7 +51,7 @@ public interface TaskRepo extends JpaRepository<Task,Long> {
     LEFT JOIN users u ON m.user_user_id = u.user_id
     WHERE p.project_id = :projectId
       AND t.end_date >= CURRENT_DATE
-      AND t.status <> 'DONE'
+      AND t.status <> 'COMPLETED'
     ORDER BY t.end_date ASC
     LIMIT 5
     """, nativeQuery = true)
@@ -89,7 +89,7 @@ public interface TaskRepo extends JpaRepository<Task,Long> {
 
     int countByProjectPhase_Project(Project projectPhaseProject);
 
-    int countByProjectPhase_ProjectAndStatus(Project projectPhaseProject, TaskStatus status);
+    int countByProjectPhase_ProjectAndStatus(Project projectPhaseProject, Status status);
 
     @Query(value = """
     SELECT COUNT(*)
@@ -108,7 +108,7 @@ public interface TaskRepo extends JpaRepository<Task,Long> {
         SET t.assignedTo = NULL
         WHERE t.projectPhase.project.projectId = :projectId
           AND t.assignedTo.memberId = :memberId
-          AND t.status <> 'DONE'
+          AND t.status <> 'COMPLETED'
     """)
     void deassignTasks(@Param("projectId") Long projectId,
                        @Param("memberId") Long memberId);
@@ -127,7 +127,7 @@ public interface TaskRepo extends JpaRepository<Task,Long> {
     @Query("""
    SELECT t FROM Task t
    WHERE t.projectPhase.project.projectId = :projectId
-   AND t.status <> 'DONE'
+   AND t.status <> 'COMPLETED'
    ORDER BY ABS(t.endDate - CURRENT_DATE)
 """)
     List<Task> findNearestEndDateOngoingTasks(
@@ -138,7 +138,7 @@ public interface TaskRepo extends JpaRepository<Task,Long> {
     @Query("""
    SELECT t FROM Task t
    WHERE t.projectPhase.project.projectId = :projectId
-   AND t.status = 'DONE'
+   AND t.status = 'COMPLETED'
    ORDER BY t.completedAt DESC\s
 """)
     List<Task> findRecentlyCompletedTasks(
@@ -151,7 +151,7 @@ public interface TaskRepo extends JpaRepository<Task,Long> {
 SELECT t
 FROM Task t
 WHERE t.endDate BETWEEN CURRENT_DATE AND :targetDate
-AND t.status <> 'DONE'
+AND t.status <> 'COMPLETED'
 AND t.assignedTo IS NOT NULL
 """)
     List<Task> findTasksNearingDeadline(Date targetDate);
@@ -161,7 +161,7 @@ AND t.assignedTo IS NOT NULL
 SELECT t
 FROM Task t
 WHERE t.endDate < CURRENT_DATE
-AND t.status <> 'DONE'
+AND t.status <> 'COMPLETED'
 AND t.assignedTo IS NOT NULL
 """)
     List<Task> findOverdueTasks();

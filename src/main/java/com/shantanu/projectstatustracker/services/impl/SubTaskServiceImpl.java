@@ -15,6 +15,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 
+import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -37,7 +38,7 @@ public class SubTaskServiceImpl implements SubTaskService {
         phaseRepo.findByPhaseIdAndProject_ProjectId(phaseId, projectId)
                 .orElseThrow(() -> new ResourceNotFoundException("Phase not found"));
 
-        // Verify task exists in the phase
+        // Verify a task exists in the phase
         Task task = taskRepo.findByTaskIdAndProjectPhase_PhaseId(taskId, phaseId)
                 .orElseThrow(() -> new ResourceNotFoundException("Task not found"));
 
@@ -58,7 +59,7 @@ public class SubTaskServiceImpl implements SubTaskService {
         phaseRepo.findByPhaseIdAndProject_ProjectId(phaseId, projectId)
                 .orElseThrow(() -> new ResourceNotFoundException("Phase not found"));
 
-        // Verify task exists in the phase
+        // Verify a task exists in the phase
         Task task = taskRepo.findByTaskIdAndProjectPhase_PhaseId(taskId, phaseId)
                 .orElseThrow(() -> new ResourceNotFoundException("Task not found"));
 
@@ -81,11 +82,11 @@ public class SubTaskServiceImpl implements SubTaskService {
         phaseRepo.findByPhaseIdAndProject_ProjectId(phaseId, projectId)
                 .orElseThrow(() -> new ResourceNotFoundException("Phase not found"));
 
-        // Verify task exists in the phase
+        // Verify a task exists in the phase
         Task task = taskRepo.findByTaskIdAndProjectPhase_PhaseId(taskId, phaseId)
                 .orElseThrow(() -> new ResourceNotFoundException("Task not found"));
 
-        // Find assigned member if provided
+        // Find an assigned member if provided
         ProjectMember assignedTo = null;
         if (taskRequestDTO.getAssignedTo() != null) {
             assignedTo = projectMemberRepo.findById(taskRequestDTO.getAssignedTo())
@@ -123,7 +124,7 @@ public class SubTaskServiceImpl implements SubTaskService {
         phaseRepo.findByPhaseIdAndProject_ProjectId(phaseId, projectId)
                 .orElseThrow(() -> new ResourceNotFoundException("Phase not found"));
 
-        // Verify task exists in the phase
+        // Verify a task exists in the phase
         Task task = taskRepo.findByTaskIdAndProjectPhase_PhaseId(taskId, phaseId)
                 .orElseThrow(() -> new ResourceNotFoundException("Task not found"));
 
@@ -137,7 +138,7 @@ public class SubTaskServiceImpl implements SubTaskService {
                     HttpStatus.BAD_REQUEST);
         }
 
-        // Find assigned member if provided
+        // Find an assigned member if provided
         ProjectMember assignedTo = null;
         if (dto.getAssignedTo() != null) {
             assignedTo = projectMemberRepo.findById(dto.getAssignedTo())
@@ -164,6 +165,11 @@ public class SubTaskServiceImpl implements SubTaskService {
             existingSubTask.setAssignedTo(assignedTo);
         }
 
+        if (dto.getStatus()!= null) {
+            if (dto.getStatus().equals(Status.COMPLETED)) existingSubTask.setCompletedOn(new Date());
+            else existingSubTask.setCompletedOn(null);
+        }
+
         subTaskRepo.save(existingSubTask);
 
         // Log the activity
@@ -182,12 +188,12 @@ public class SubTaskServiceImpl implements SubTaskService {
     }
 
     @Override
-    public ResponseEntity<Object> updateSubTaskStatus(Long projectId, Long phaseId, Long taskId, Long subTaskId, TaskStatus status) {
+    public ResponseEntity<Object> updateSubTaskStatus(Long projectId, Long phaseId, Long taskId, Long subTaskId, Status status) {
         // Verify phase exists in the project
         phaseRepo.findByPhaseIdAndProject_ProjectId(phaseId, projectId)
                 .orElseThrow(() -> new ResourceNotFoundException("Phase not found"));
 
-        // Verify task exists in the phase
+        // Verify a task exists in the phase
         Task task = taskRepo.findByTaskIdAndProjectPhase_PhaseId(taskId, phaseId)
                 .orElseThrow(() -> new ResourceNotFoundException("Task not found"));
 
@@ -216,6 +222,10 @@ public class SubTaskServiceImpl implements SubTaskService {
 
         // Update the status
         existingSubTask.setStatus(status);
+
+        if (status.equals(Status.COMPLETED)) existingSubTask.setCompletedOn(new Date());
+        else existingSubTask.setCompletedOn(null);
+
         subTaskRepo.save(existingSubTask);
 
         // Log the activity
@@ -234,7 +244,7 @@ public class SubTaskServiceImpl implements SubTaskService {
         ));
     }
 
-    // Helper method to map SubTask to response object
+    // Helper method to map SubTask to a response object
     private Map<String, Object> mapSubTaskToResponse(SubTask subTask) {
         Map<String, Object> response = new HashMap<>();
         response.put("subTaskId", subTask.getSubTaskId());

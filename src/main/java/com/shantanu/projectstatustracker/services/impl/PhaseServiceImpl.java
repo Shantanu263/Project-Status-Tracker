@@ -88,6 +88,12 @@ public class PhaseServiceImpl implements PhaseService {
         Phase existingPhase = phaseRepo.findByPhaseIdAndProject_ProjectId(phaseId,projectId).orElseThrow(() -> new ResourceNotFoundException("Phase not found"));
         phaseMapper.updatePhaseFromDTO(phaseRequestDTO,assignedTo,existingPhase);
 
+        //Update completion date is status is changed
+        if (phaseRequestDTO.getStatus()!= null) {
+            if (phaseRequestDTO.getStatus().equals(PhaseStatus.COMPLETED)) existingPhase.setCompletedOn(new Date());
+            else existingPhase.setCompletedOn(null);
+        }
+
         phaseRepo.save(existingPhase);
         
         // Update phase progress after updating a phase
@@ -131,6 +137,10 @@ public class PhaseServiceImpl implements PhaseService {
                 .orElseThrow(() -> new RuntimeException("Phase not found"));
 
         phase.setStatus(status);
+
+        if (status.equals(PhaseStatus.COMPLETED)) phase.setCompletedOn(new Date());
+        else phase.setCompletedOn(null);
+
         phaseRepo.save(phase);
         
         // Update phase progress after updating its status
@@ -152,7 +162,7 @@ public class PhaseServiceImpl implements PhaseService {
         List<Phase> clonedPhases = projectTemplate.getProjectTemplatePhases().stream().map(templatePhase -> {
             Phase phase = new Phase();
             phase.setPhaseName(templatePhase.getPhaseName());
-            phase.setStatus(PhaseStatus.TO_DO);   // Default status
+            phase.setStatus(PhaseStatus.OPEN);   // Default status
             phase.setStartDate(project.getStartDate()); // start same as project
             phase.setEndDate(project.getEndDate());     // end same as project
             phase.setProject(project);
@@ -170,7 +180,7 @@ public class PhaseServiceImpl implements PhaseService {
         Phase phase = phaseRepo.findByPhaseIdAndProject_ProjectId(phaseId, projectId)
                 .orElseThrow(() -> new RuntimeException("Phase not found"));
 
-        phase.setCompletedAt(completedAt);
+        phase.setCompletedOn(completedAt);
         phaseRepo.save(phase);
 
         return ResponseEntity.ok(Map.of("message","Completion updated"));
@@ -190,7 +200,7 @@ public class PhaseServiceImpl implements PhaseService {
         }
         
         long completedTasks = tasks.stream()
-                .filter(task -> TaskStatus.DONE.equals(task.getStatus()))
+                .filter(task -> Status.COMPLETED.equals(task.getStatus()))
                 .count();
         
         Double progress = (double) completedTasks / tasks.size() * 100;
@@ -226,4 +236,5 @@ public class PhaseServiceImpl implements PhaseService {
 
         return averageProgress;
     }
+
 }

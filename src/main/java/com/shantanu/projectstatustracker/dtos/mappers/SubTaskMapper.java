@@ -12,6 +12,7 @@ public interface SubTaskMapper {
     @Mapping(source = "subTask.task.taskId",target = "taskId")
     @Mapping(source = "subTask.comments",target = "comments")
     @Mapping(source = "subTask.logs", target = "logs")
+    @Mapping(source = "subTask.completedOn", target = "completedOn")
     SubTaskResponseDTO mapSubTaskToResponse(SubTask subTask);
 //
 //    List<SubTaskResponseDTO> mapSubTasksToResponse(List<SubTask> subTasks);

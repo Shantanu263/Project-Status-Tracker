@@ -78,7 +78,7 @@ public class NotificationServiceImpl implements NotificationService {
     }
 
     @Override
-    public void createNotification(User user, String title, String message, NotificationType type, Long entityId, EntityType entityType) {
+    public void createNotification(User user, String title, String message, NotificationType type, Long entityId, EntityType entityType, Long projectId) {
 
         Notification notification = Notification.builder()
                 .user(user)
@@ -87,6 +87,7 @@ public class NotificationServiceImpl implements NotificationService {
                 .type(type)
                 .entityId(entityId)
                 .entityType(entityType)
+                .projectId(projectId)
                 .build();
 
         notificationRepo.save(notification);
@@ -101,7 +102,7 @@ public class NotificationServiceImpl implements NotificationService {
     }
 
     @Override
-    @Scheduled(cron = "10 58 13 * * ?") // every day
+    @Scheduled(cron = "10 57 15 * * ?") // every day
     public void checkDeadlinesAndNotify() {
         System.out.println("checking deadlines ....");
         List<Phase> nearDeadlinePhases = phaseRepo.findPhasesNearingDeadline(targetDate);
@@ -109,12 +110,12 @@ public class NotificationServiceImpl implements NotificationService {
 
         for (Phase phase : nearDeadlinePhases) {
             notifyPhases(phase, NotificationType.NEARING_DEADLINE);
-            notifyDeadlineInApp(EntityType.PHASE, phase.getPhaseId(), phase.getPhaseName(), NotificationType.NEARING_DEADLINE, phase.getAssignedTo());
+            notifyDeadlineInApp(EntityType.PHASE, phase.getPhaseId(), phase.getPhaseName(), NotificationType.NEARING_DEADLINE, phase.getAssignedTo(), phase.getProject().getProjectId());
         }
 
         for (Phase phase : overduePhases) {
             notifyPhases(phase, NotificationType.OVERDUE);
-            notifyDeadlineInApp(EntityType.PHASE, phase.getPhaseId(), phase.getPhaseName(), NotificationType.OVERDUE, phase.getAssignedTo());
+            notifyDeadlineInApp(EntityType.PHASE, phase.getPhaseId(), phase.getPhaseName(), NotificationType.OVERDUE, phase.getAssignedTo(), phase.getProject().getProjectId());
         }
 
         List<Task> nearDeadlineTasks = taskRepo.findTasksNearingDeadline(targetDate);
@@ -122,12 +123,12 @@ public class NotificationServiceImpl implements NotificationService {
 
         for (Task task : nearDeadlineTasks) {
             notifyTasks(task, NotificationType.NEARING_DEADLINE);
-            notifyDeadlineInApp(EntityType.TASK, task.getTaskId(), task.getTaskName(), NotificationType.NEARING_DEADLINE, task.getAssignedTo());
+            notifyDeadlineInApp(EntityType.TASK, task.getTaskId(), task.getTaskName(), NotificationType.NEARING_DEADLINE, task.getAssignedTo(), task.getProjectPhase().getProject().getProjectId());
         }
 
         for (Task task : overdueTasks) {
             notifyTasks(task, NotificationType.OVERDUE);
-            notifyDeadlineInApp(EntityType.TASK, task.getTaskId(), task.getTaskName(), NotificationType.OVERDUE, task.getAssignedTo());
+            notifyDeadlineInApp(EntityType.TASK, task.getTaskId(), task.getTaskName(), NotificationType.OVERDUE, task.getAssignedTo(), task.getProjectPhase().getProject().getProjectId());
         }
 
         //Subtask
@@ -136,12 +137,12 @@ public class NotificationServiceImpl implements NotificationService {
 
         for (SubTask subTask : nearDeadlineSubTasks) {
             notifySubTasks(subTask, NotificationType.NEARING_DEADLINE);
-            notifyDeadlineInApp(EntityType.SUBTASK, subTask.getSubTaskId(), subTask.getSubTaskName(), NotificationType.NEARING_DEADLINE, subTask.getAssignedTo());
+            notifyDeadlineInApp(EntityType.SUBTASK, subTask.getSubTaskId(), subTask.getSubTaskName(), NotificationType.NEARING_DEADLINE, subTask.getAssignedTo(), subTask.getTask().getProjectPhase().getProject().getProjectId());
         }
 
         for (SubTask subTask : overdueSubTasks) {
             notifySubTasks(subTask, NotificationType.OVERDUE);
-            notifyDeadlineInApp(EntityType.SUBTASK, subTask.getSubTaskId(), subTask.getSubTaskName(), NotificationType.OVERDUE, subTask.getAssignedTo());
+            notifyDeadlineInApp(EntityType.SUBTASK, subTask.getSubTaskId(), subTask.getSubTaskName(), NotificationType.OVERDUE, subTask.getAssignedTo(), subTask.getTask().getProjectPhase().getProject().getProjectId());
         }
 
         System.out.println("Deadlines checked");
@@ -271,7 +272,7 @@ public class NotificationServiceImpl implements NotificationService {
     @Async
     protected void notifyDeadlineInApp(EntityType entityType,
                                        Long entityId, String entityName,
-                                       NotificationType type, ProjectMember assignedTo) {
+                                       NotificationType type, ProjectMember assignedTo, Long projectId) {
 
         boolean alreadyAppNotificationSent =
                 notificationRepo.existsByEntityIdAndEntityTypeAndTypeAndUser_UserId(
@@ -296,7 +297,8 @@ public class NotificationServiceImpl implements NotificationService {
                     message,
                     type,
                     entityId,
-                    entityType);
+                    entityType,
+                    projectId);
         }
     }
 

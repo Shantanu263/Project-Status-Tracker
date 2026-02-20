@@ -30,6 +30,7 @@ public interface TaskMapper {
     @Mapping(source = "task.logs", target = "logs")
     @Mapping(source = "task.subTasks", target = "subTasks")
     @Mapping(source = "task.progress", target = "progress")
+    @Mapping(source = "task.completedAt", target = "completedOn")
     TaskResponseDTO mapTaskToResponse(Task task);
 
     @Mapping(source = "task.assignedTo.memberId",target = "assignedToProjectMemberId")

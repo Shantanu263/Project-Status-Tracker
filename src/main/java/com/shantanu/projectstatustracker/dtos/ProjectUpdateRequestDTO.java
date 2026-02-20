@@ -1,5 +1,6 @@
 package com.shantanu.projectstatustracker.dtos;
 
+import com.shantanu.projectstatustracker.models.ProjectStatus;
 import lombok.Data;
 
 import java.util.Date;
@@ -11,11 +12,13 @@ public class ProjectUpdateRequestDTO {
 
     String description;
 
+    String client;
+
     Date startDate;
 
     Date endDate;
 
     String priority;
 
-    String  status;
+    ProjectStatus status;
 }

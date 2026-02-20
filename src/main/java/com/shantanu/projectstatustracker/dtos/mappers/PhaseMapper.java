@@ -29,6 +29,7 @@ public interface PhaseMapper {
 
     @Mapping(source = "phase.project.projectId", target = "projectId")
     @Mapping(source = "phase.assignedTo.memberId", target = "projectMemberId")
+    @Mapping(source = "phase.completedOn", target = "completedOn")
     PhaseDetailsResponseDTO mapPhaseToPhaseDetailsResponse(Phase phase);
 
     List<PhaseDetailsResponseDTO> mapPhasesToPhaseDetailsResponse(List<Phase> phases);

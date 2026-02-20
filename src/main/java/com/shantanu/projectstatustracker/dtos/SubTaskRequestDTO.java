@@ -1,6 +1,6 @@
 package com.shantanu.projectstatustracker.dtos;
 
-import com.shantanu.projectstatustracker.models.TaskStatus;
+import com.shantanu.projectstatustracker.models.Status;
 import lombok.Data;
 
 import java.util.Date;
@@ -14,7 +14,7 @@ public class SubTaskRequestDTO {
 
     private Date endDate;
 
-    private TaskStatus status;
+    private Status status;
 
     private String priority;
 

@@ -1,8 +1,9 @@
 package com.shantanu.projectstatustracker.models;
 
-public enum PhaseStatus {
-    COMPLETED,
+//Task Status
+public enum Status {
     OPEN,
     ONGOING,
-    ON_HOLD
+    ON_HOLD,
+    COMPLETED
 }

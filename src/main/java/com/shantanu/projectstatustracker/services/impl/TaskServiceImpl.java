@@ -90,7 +90,8 @@ public class TaskServiceImpl implements TaskService {
                     "You have been assigned task: " + task.getTaskName(),
                     NotificationType.ASSIGNMENT,
                     task.getTaskId(),
-                    EntityType.TASK
+                    EntityType.TASK,
+                    task.getAssignedTo().getUser().getUserId()
             );
         }
 
@@ -120,7 +121,7 @@ public class TaskServiceImpl implements TaskService {
 
         //Update completion date is status is changed
         if (dto.getStatus()!= null) {
-            if (dto.getStatus().equals(TaskStatus.DONE)) existingTask.setCompletedAt(new Date());
+            if (dto.getStatus().equals(Status.COMPLETED)) existingTask.setCompletedAt(new Date());
             else existingTask.setCompletedAt(null);
         }
 
@@ -141,7 +142,8 @@ public class TaskServiceImpl implements TaskService {
                     "You have been assigned task: " + existingTask.getTaskName(),
                     NotificationType.ASSIGNMENT,
                     existingTask.getTaskId(),
-                    EntityType.TASK
+                    EntityType.TASK,
+                    existingTask.getAssignedTo().getUser().getUserId()
             );
 
             notificationService.createNotification(
@@ -150,7 +152,8 @@ public class TaskServiceImpl implements TaskService {
                     "You have been removed as the assignee of the task: " + existingTask.getTaskName(),
                     NotificationType.ASSIGNMENT,
                     existingTask.getTaskId(),
-                    EntityType.TASK
+                    EntityType.TASK,
+                    existingTask.getAssignedTo().getUser().getUserId()
             );
         }
 
@@ -180,7 +183,7 @@ public class TaskServiceImpl implements TaskService {
     }
 
     @Override
-    public ResponseEntity<Object> updateTaskStatus(Long projectId, Long phaseId, Long taskId, TaskStatus status) {
+    public ResponseEntity<Object> updateTaskStatus(Long projectId, Long phaseId, Long taskId, Status status) {
         phaseRepo.findByPhaseIdAndProject_ProjectId(phaseId,projectId)
                 .orElseThrow(() -> new ResourceNotFoundException("Phase not found"));
 
@@ -198,10 +201,10 @@ public class TaskServiceImpl implements TaskService {
 //                    HttpStatus.BAD_REQUEST);
 //        }
 
-        TaskStatus existingTaskStatus = existingTask.getStatus();
+        Status existingStatus = existingTask.getStatus();
         existingTask.setStatus(status);
 
-        if (status.equals(TaskStatus.DONE)) existingTask.setCompletedAt(new Date());
+        if (status.equals(Status.COMPLETED)) existingTask.setCompletedAt(new Date());
         else existingTask.setCompletedAt(null);
 
         taskRepo.save(existingTask);
@@ -215,7 +218,7 @@ public class TaskServiceImpl implements TaskService {
         activityLogService.log(
                 projectId,
                 (String) request.getAttribute("email"),
-                request.getAttribute("username") + " changed status from " + existingTaskStatus + " to " + status,
+                request.getAttribute("username") + " changed status from " + existingStatus + " to " + status,
                 EntityType.TASK,
                 existingTask.getTaskId()
         );
@@ -299,6 +302,11 @@ public class TaskServiceImpl implements TaskService {
         SubTaskSnapshot oldSnapshot = SubTaskSnapshot.from(existingSubTask);
 
         subTaskMapper.updateSubTaskFromDTO(subTaskRequestDTO,assignedTo,existingSubTask);
+
+        if (subTaskRequestDTO.getStatus()!= null) {
+            if (subTaskRequestDTO.getStatus().equals(Status.COMPLETED)) existingSubTask.setCompletedOn(new Date());
+            else existingSubTask.setCompletedOn(null);
+        }
 
         subTaskRepo.save(existingSubTask);
 
@@ -462,20 +470,20 @@ public class TaskServiceImpl implements TaskService {
         List<SubTask> subTasks = subTaskRepo.findByTask_TaskId(taskId);
 
         if (subTasks.isEmpty()) {
-            if (TaskStatus.DONE.equals(task.getStatus())) task.setProgress(100.0);
+            if (Status.COMPLETED.equals(task.getStatus())) task.setProgress(100.0);
             else task.setProgress(0.0);
             taskRepo.save(task);
             return task.getProgress();
         }
 
         long completedSubTasks = subTasks.stream()
-                .filter(subTask -> TaskStatus.DONE.equals(subTask.getStatus()))
+                .filter(subTask -> Status.COMPLETED.equals(subTask.getStatus()))
                 .count();
 
         Double progress = (double) completedSubTasks / subTasks.size() * 100;
 
         //If the task is completed, but a new subtask has been added later
-        if (task.getStatus().equals(TaskStatus.DONE) && progress!=100.0) task.setStatus(TaskStatus.IN_PROGRESS);
+        if (task.getStatus().equals(Status.COMPLETED) && progress!=100.0) task.setStatus(Status.ONGOING);
 
         //If all subtasks are completed, set Task Status to 'DONE'
 //        if (progress == 100.0) task.setStatus(Status.DONE);

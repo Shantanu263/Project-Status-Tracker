@@ -119,7 +119,7 @@ public class ProjectSummaryServiceImpl implements ProjectSummaryService {
                     <td>%s</td>
                     <td>%s</td>
                     <td>%s</td>
-                    <td><span class="taskStatus-badge taskStatus-%s">%s</span></td>
+                    <td><span class="status-badge status-%s">%s</span></td>
                     <td>%s</td>
                 </tr>
             """.formatted(

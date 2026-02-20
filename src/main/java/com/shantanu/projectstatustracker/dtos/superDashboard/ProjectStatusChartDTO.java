@@ -1,5 +1,6 @@
 package com.shantanu.projectstatustracker.dtos.superDashboard;
 
+import com.shantanu.projectstatustracker.models.ProjectStatus;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -8,7 +9,7 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 @AllArgsConstructor
 public class ProjectStatusChartDTO {
-    String status;
+    ProjectStatus status;
     long count;
 }
 

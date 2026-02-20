@@ -11,6 +11,7 @@ import java.util.List;
 public interface NotificationMapper {
 
     @Mapping(source = "notification.user.userId",target = "userId")
+    @Mapping(source = "notification.projectId",target = "projectId")
     NotificationResponseDTO mapNotificationToResponse(Notification notification);
 
     List<NotificationResponseDTO> mapNotificationsToResponse(List<Notification> notifications);

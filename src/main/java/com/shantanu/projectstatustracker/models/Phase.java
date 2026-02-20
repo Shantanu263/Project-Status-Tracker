@@ -38,7 +38,7 @@ public class Phase {
     private Date endDate;
 
     @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "dd-MM-yyyy")
-    private Date completedAt;
+    private Date completedOn;
 
     @Enumerated(EnumType.STRING)
     private PhaseStatus status;

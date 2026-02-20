@@ -28,6 +28,8 @@ public class NotificationResponseDTO {
 
     private Long entityId;
 
+    private Long projectId; //optional
+
     private EntityType entityType;
 
 }

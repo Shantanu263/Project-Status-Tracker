@@ -13,6 +13,8 @@ public class ProjectMemberResponseDTO {
 
     private String email;
 
+    private Long projectId;
+
     private String project;
 
     private String role;

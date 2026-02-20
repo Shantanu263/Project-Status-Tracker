@@ -1,6 +1,7 @@
 package com.shantanu.projectstatustracker.dtos.superDashboard;
 
 import com.fasterxml.jackson.annotation.JsonFormat;
+import com.shantanu.projectstatustracker.models.ProjectStatus;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -13,7 +14,8 @@ import java.util.Date;
 public class ProjectCardDTO {
             Long projectId;
             String projectName;
-            String status;
+            String client;
+            ProjectStatus status;
             double progress;
     @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "dd-MM-yyyy")
     Date startDate;

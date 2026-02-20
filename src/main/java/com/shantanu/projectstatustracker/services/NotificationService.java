@@ -17,7 +17,8 @@ public interface NotificationService {
                             String message,
                             NotificationType type,
                             Long entityId,
-                            EntityType entityType);
+                            EntityType entityType,
+                            Long projectId);
 
     public void checkDeadlinesAndNotify();
 

@@ -25,7 +25,7 @@ public interface SubTaskRepo extends JpaRepository<SubTask, Long> {
         SET s.assignedTo = NULL
         WHERE s.task.projectPhase.project.projectId = :projectId
           AND s.assignedTo.memberId = :memberId
-          AND s.status <> 'DONE'
+          AND s.status <> 'COMPLETED'
     """)
     void deassignSubtasks(@Param("projectId") Long projectId,
                           @Param("memberId") Long memberId);
@@ -35,7 +35,7 @@ public interface SubTaskRepo extends JpaRepository<SubTask, Long> {
 SELECT t
 FROM SubTask t
 WHERE t.endDate BETWEEN CURRENT_DATE AND :targetDate
-AND t.status <> 'DONE'
+AND t.status <> 'COMPLETED'
 AND t.assignedTo IS NOT NULL
 """)
     List<SubTask> findSubTasksNearingDeadline(Date targetDate);
@@ -45,7 +45,7 @@ AND t.assignedTo IS NOT NULL
 SELECT t
 FROM SubTask t
 WHERE t.endDate < CURRENT_DATE
-AND t.status <> 'DONE'
+AND t.status <> 'COMPLETED'
 AND t.assignedTo IS NOT NULL
 """)
     List<SubTask> findOverdueSubTasks();

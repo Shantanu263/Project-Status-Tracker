@@ -36,6 +36,7 @@ public class Notification {
 
     private Long entityId;
     private EntityType entityType;
+    private Long projectId;
 
     @PrePersist
     public void onCreate(){

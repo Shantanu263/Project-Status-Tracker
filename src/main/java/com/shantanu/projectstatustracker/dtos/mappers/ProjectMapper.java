@@ -10,6 +10,8 @@ import java.util.List;
 public interface ProjectMapper {
 
     @Mapping(source = "project.projectMembers", target = "projectMembers")
+    @Mapping(source = "project.completedOn", target = "completedOn")
+    @Mapping(source = "project.client", target = "client")
     ProjectResponseDTO mapProjectResponse(Project project);
 
     @Mapping(source = "project.projectMembers",target = "projectMembers")
@@ -20,6 +22,7 @@ public interface ProjectMapper {
     Project mapUpdateRequestToProject(ProjectUpdateRequestDTO projectUpdateRequestDTO);
 
     @BeanMapping(nullValuePropertyMappingStrategy = NullValuePropertyMappingStrategy.IGNORE)
+    @Mapping(source = "client",target = "project.client")
     void updateProjectFromDTO(ProjectUpdateRequestDTO projectUpdateRequestDTO, @MappingTarget Project project);
 
 }
