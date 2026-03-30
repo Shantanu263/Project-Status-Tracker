@@ -4,5 +4,6 @@ public enum PhaseStatus {
     COMPLETED,
     OPEN,
     ONGOING,
-    ON_HOLD
+    ON_HOLD,
+    CANCELLED
 }

@@ -1,20 +1,28 @@
 package com.shantanu.projectstatustracker.services.impl;
 
+import com.shantanu.projectstatustracker.dtos.FailedItem;
 import com.shantanu.projectstatustracker.dtos.SubTaskRequestDTO;
 import com.shantanu.projectstatustracker.dtos.TaskRequestDTO;
+import com.shantanu.projectstatustracker.dtos.mappers.DependencyMapper;
 import com.shantanu.projectstatustracker.dtos.mappers.SubTaskMapper;
 import com.shantanu.projectstatustracker.dtos.mappers.TaskMapper;
+import com.shantanu.projectstatustracker.dtos.BulkUpdateResponseDTO;
+import com.shantanu.projectstatustracker.exceptions.SchedulingConstraintException;
 import com.shantanu.projectstatustracker.globalExceptionHandlers.ResourceNotFoundException;
 import com.shantanu.projectstatustracker.models.*;
 import com.shantanu.projectstatustracker.repositories.*;
 import com.shantanu.projectstatustracker.services.ActivityLogService;
 import com.shantanu.projectstatustracker.services.NotificationService;
 import com.shantanu.projectstatustracker.services.TaskService;
+import jakarta.annotation.PostConstruct;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.PlatformTransactionManager;
+import org.springframework.transaction.TransactionDefinition;
+import org.springframework.transaction.support.TransactionTemplate;
 
 import java.util.*;
 
@@ -34,6 +42,18 @@ public class TaskServiceImpl implements TaskService {
     private final SubTaskRepo subTaskRepo;
     private final NotificationService notificationService;
     private final UserRepo userRepo;
+    private final DependencyEngine<Task> dependencyEngine;
+    private final TaskDependencyRepo taskDependencyRepo;
+    private final DependencyMapper dependencyMapper;
+
+    private final PlatformTransactionManager transactionManager;
+    private final TransactionTemplate transactionTemplate;
+
+    @PostConstruct
+    public void init() {
+        TransactionTemplate transactionTemplate = new TransactionTemplate(transactionManager);
+        transactionTemplate.setPropagationBehavior(TransactionDefinition.PROPAGATION_REQUIRES_NEW);
+    }
 
     @Override
     public ResponseEntity<Object> getPhaseTasks(Long projectId, Long phaseId) {
@@ -102,71 +122,18 @@ public class TaskServiceImpl implements TaskService {
 
     @Override
     public ResponseEntity<Object> updateTask(Long projectId, Long phaseId, Long taskId, TaskRequestDTO dto) {
-        phaseRepo.findByPhaseIdAndProject_ProjectId(phaseId,projectId)
-                .orElseThrow(() -> new ResourceNotFoundException("Phase not found"));
+        try {
+            Task updatedTask = updateTaskInternal(projectId, phaseId, taskId, dto);
 
-        ProjectMember assignedTo = null;
+            return ResponseEntity.ok(Map.of(
+                    "message", "Task updated",
+                    "updatedTask", taskMapper.mapTaskToResponse(updatedTask)
+            ));
 
-        if (dto.getAssignedTo() != null) {
-            assignedTo = projectMemberRepo.findById(dto.getAssignedTo())
-                    .orElseThrow(() -> new ResourceNotFoundException("Project member not found"));
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                    .body(Map.of("message", e.getMessage()));
         }
-
-        Task existingTask = taskRepo.findByTaskIdAndProjectPhase_PhaseId(taskId,phaseId)
-                .orElseThrow(() -> new ResourceNotFoundException("Task not found"));
-
-        TaskSnapshot oldSnapshot = TaskSnapshot.from(existingTask);
-
-        taskMapper.updateTaskFromDTO(dto,assignedTo,existingTask);
-
-        //Update completion date is status is changed
-        if (dto.getStatus()!= null) {
-            if (dto.getStatus().equals(Status.COMPLETED)) existingTask.setCompletedAt(new Date());
-            else existingTask.setCompletedAt(null);
-        }
-
-        taskRepo.save(existingTask);
-        
-        // Update phase progress with respect to Task Status
-        phaseService.updatePhaseProgress(phaseId);
-
-        // Update task progress with respect to subTask Status
-        updateTaskProgress(taskId);
-
-        List<String> changes = detectChanges(oldSnapshot, existingTask);
-
-        if (dto.getAssignedTo() != null) {
-            notificationService.createNotification(
-                    existingTask.getAssignedTo().getUser(),
-                    "Task Assigned",
-                    "You have been assigned task: " + existingTask.getTaskName(),
-                    NotificationType.ASSIGNMENT,
-                    existingTask.getTaskId(),
-                    EntityType.TASK,
-                    existingTask.getAssignedTo().getUser().getUserId()
-            );
-
-            notificationService.createNotification(
-                    userRepo.findById(oldSnapshot.assignedToId()).orElseThrow(),
-                    "Task Removed",
-                    "You have been removed as the assignee of the task: " + existingTask.getTaskName(),
-                    NotificationType.ASSIGNMENT,
-                    existingTask.getTaskId(),
-                    EntityType.TASK,
-                    existingTask.getAssignedTo().getUser().getUserId()
-            );
-        }
-
-        for (String change : changes) {
-            activityLogService.log(
-                    projectId,
-                    (String) request.getAttribute("email"),
-                    request.getAttribute("username") + " " + change,
-                    EntityType.TASK,
-                    existingTask.getTaskId());
-        }
-
-        return ResponseEntity.ok(Map.of("message","Task updated","update Task",taskMapper.mapTaskToResponse(existingTask)));
     }
 
     @Override
@@ -176,7 +143,7 @@ public class TaskServiceImpl implements TaskService {
 
         taskRepo.delete(task);
 
-        // Update task progress with respect to subTask Status
+        // Update phase progress after deleting a task
         phaseService.updatePhaseProgress(phaseId);
 
         return ResponseEntity.ok(Map.of("message","Task deleted"));
@@ -495,6 +462,259 @@ public class TaskServiceImpl implements TaskService {
         //phaseService.updatePhaseProgress(task.getProjectPhase().getPhaseId());
 
         return progress;
+    }
+
+    @Override
+    public ResponseEntity<Object> createDependency(Long predecessorId, Long successorId, Long phaseId, DependencyType dependencyType) {
+
+        Task predecessor = taskRepo.findById(predecessorId)
+                .orElseThrow(() -> new ResourceNotFoundException("Predecessor task not found"));
+
+        Task successor = taskRepo.findById(successorId)
+                .orElseThrow(() -> new ResourceNotFoundException("Successor task not found"));
+
+        Phase phase = phaseRepo.findById(phaseId)
+                .orElseThrow(() -> new ResourceNotFoundException("Phase not found"));
+
+        // Default to FS if not provided
+        if (dependencyType == null) {
+            dependencyType = DependencyType.FS;
+        }
+
+        if (predecessor.getId().equals(successor.getId())) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                    .body(Map.of("message", "Task cannot depend on itself"));
+        }
+
+        if (taskDependencyRepo.existsByPredecessorAndSuccessor(predecessor, successor)) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                    .body(Map.of("message", "Dependency already exists"));
+        }
+
+        // Cycle detection
+        boolean cycle = dependencyEngine.createsCycle(
+                predecessor,
+                successor,
+                task -> taskDependencyRepo
+                        .findByPredecessor(task)
+                        .stream()
+                        .map(TaskDependency::getSuccessor)
+                        .toList()
+        );
+
+        if (cycle) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                    .body(Map.of("message", "Circular dependency detected"));
+        }
+
+        // Align successor dates to satisfy the new constraint
+        dependencyEngine.adjustDates(predecessor, successor, dependencyType);
+        taskRepo.save(successor);
+
+        TaskDependency dependency = new TaskDependency();
+        dependency.setPredecessor(predecessor);
+        dependency.setSuccessor(successor);
+        dependency.setDependencyType(dependencyType);
+        dependency.setPhase(phase);
+
+        taskDependencyRepo.save(dependency);
+        return ResponseEntity.ok(Map.of("message","Dependency created successfully"));
+    }
+
+    @Override
+    public ResponseEntity<Object> deleteDependency(Long phaseId, Long dependencyId) {
+        TaskDependency dependency = taskDependencyRepo.findByIdAndPhase_PhaseId(dependencyId, phaseId)
+                .orElseThrow(() -> new ResourceNotFoundException("Dependency not found"));
+        taskDependencyRepo.delete(dependency);
+        return ResponseEntity.ok(Map.of("message","Dependency deleted successfully"));
+    }
+
+    @Override
+    public ResponseEntity<Object> getTaskDependencies(Long phaseId) {
+        List<TaskDependency> dependencies = taskDependencyRepo.findByPhase_PhaseId(phaseId);
+
+        return ResponseEntity.ok(dependencyMapper.mapTaskDependenciesToResponse(dependencies));
+    }
+
+    @Override
+    public ResponseEntity<Object> updateTaskDependencyType(Long phaseId, Long dependencyId, DependencyType newDependencyType) {
+        TaskDependency dependency = taskDependencyRepo.findByIdAndPhase_PhaseId(dependencyId, phaseId)
+                .orElseThrow(() -> new ResourceNotFoundException("Dependency not found"));
+
+        dependency.setDependencyType(newDependencyType);
+
+        Task predecessor = dependency.getPredecessor();
+        Task successor   = dependency.getSuccessor();
+
+        // Re-align successor dates according to the new dependency type
+        dependencyEngine.adjustDates(predecessor, successor, newDependencyType);
+        taskRepo.save(successor);
+
+        taskDependencyRepo.save(dependency);
+
+        // Propagate any cascading adjustments from the successor onward
+        dependencyEngine.propagateAdjustments(
+                successor,
+                taskDependencyRepo::findByPredecessor,
+                (dep, ignored) -> dep.getSuccessor(),
+                (dep, ignored) -> dep.getDependencyType(),
+                taskRepo::save
+        );
+
+        return ResponseEntity.ok(Map.of("message", "Dependency type updated successfully"));
+    }
+
+    @Override
+    public ResponseEntity<Object> bulkUpdate(
+            Long projectId,
+            List<Long> ids,
+            TaskRequestDTO updates) {
+
+        BulkUpdateResponseDTO result = new BulkUpdateResponseDTO();
+
+        for (Long taskId : ids) {
+            try {
+                Task task = taskRepo.findById(taskId).orElseThrow(()  -> new Exception("Task not found"));
+                transactionTemplate.executeWithoutResult(status -> {
+                    try {
+                        updateTaskInternal(projectId, task.getProjectPhase().getPhaseId(), taskId, updates);
+                    } catch (Exception e) {
+                        throw new RuntimeException(e);
+                    }
+                });
+                result.getSuccessIds().add(taskId);
+
+            } catch (Exception e) {
+                result.getFailedItems().add(
+                        new FailedItem(taskId, e.getMessage())
+                );
+            }
+        }
+
+        return ResponseEntity.ok(result);
+    }
+
+    @Override
+    public ResponseEntity<Object> bulkDelete(Long projectId, List<Long> ids) {
+        List<Task> tasks = taskRepo.findAllById(ids);
+        Set<Long> phaseIds = new HashSet<>();
+
+        for (Task task : tasks) phaseIds.add(task.getProjectPhase().getPhaseId());
+
+        taskRepo.deleteAllById(ids);
+
+        for (Long phaseId : phaseIds) phaseService.updatePhaseProgress(phaseId);
+
+        return ResponseEntity.ok(Map.of("message", "Tasks deleted successfully"));
+    }
+
+    public Task updateTaskInternal(Long projectId, Long phaseId, Long taskId, TaskRequestDTO dto) throws Exception {
+        phaseRepo.findByPhaseIdAndProject_ProjectId(phaseId,projectId)
+                .orElseThrow(() -> new Exception("Phase not found"));
+
+        ProjectMember assignedTo = null;
+
+        if (dto.getAssignedTo() != null) {
+            assignedTo = projectMemberRepo.findById(dto.getAssignedTo())
+                    .orElseThrow(() -> new Exception("Project member not found"));
+        }
+
+        if (dto.getAssignedTo() != null) {
+            assignedTo = projectMemberRepo.findById(dto.getAssignedTo())
+                    .orElseThrow(() -> new Exception("Project member not found"));
+        }
+
+        Task existingTask = taskRepo.findByTaskIdAndProjectPhase_PhaseId(taskId,phaseId)
+                .orElseThrow(() -> new Exception("Task not found"));
+
+        validateDate(dto.getStartDate(), existingTask.getStartDate(), dto.getEndDate(), existingTask.getEndDate());
+
+        TaskSnapshot oldSnapshot = TaskSnapshot.from(existingTask);
+
+        taskMapper.updateTaskFromDTO(dto,assignedTo,existingTask);
+
+        //Update completion date is status is changed
+        if (dto.getStatus()!= null) {
+            if (dto.getStatus().equals(Status.COMPLETED)) existingTask.setCompletedAt(new Date());
+            else existingTask.setCompletedAt(null);
+        }
+
+        // --- Scheduling constraint check against predecessors ---
+        // If the user has changed dates, verify the new dates don't violate any
+        // incoming dependency constraints (i.e., this task acting as a successor).
+        if (dto.getStartDate() != null || dto.getEndDate() != null) {
+            List<TaskDependency> incomingDeps = taskDependencyRepo.findBySuccessor(existingTask);
+            for (TaskDependency dep : incomingDeps) {
+                try {
+                    dependencyEngine.checkConstraint(dep.getPredecessor(), existingTask, dep.getDependencyType());
+                } catch (SchedulingConstraintException e) {
+                    throw new Exception(e.getMessage());
+                }
+            }
+        }
+
+        taskRepo.save(existingTask);
+
+        // --- Propagate scheduling adjustments to successors ---
+        if (dto.getStartDate() != null || dto.getEndDate() != null) {
+            dependencyEngine.propagateAdjustments(
+                    existingTask,
+                    taskDependencyRepo::findByPredecessor,
+                    (dep, ignored) -> dep.getSuccessor(),
+                    (dep, ignored) -> dep.getDependencyType(),
+                    taskRepo::save
+            );
+        }
+
+        // Update phase progress with respect to Task Status
+        phaseService.updatePhaseProgress(phaseId);
+
+        // Update task progress with respect to subTask Status
+        updateTaskProgress(taskId);
+
+        List<String> changes = detectChanges(oldSnapshot, existingTask);
+
+        if (dto.getAssignedTo() != null) {
+            notificationService.createNotification(
+                    existingTask.getAssignedTo().getUser(),
+                    "Task Assigned",
+                    "You have been assigned task: " + existingTask.getTaskName(),
+                    NotificationType.ASSIGNMENT,
+                    existingTask.getTaskId(),
+                    EntityType.TASK,
+                    existingTask.getAssignedTo().getUser().getUserId()
+            );
+
+            notificationService.createNotification(
+                    userRepo.findById(oldSnapshot.assignedToId()).orElseThrow(),
+                    "Task Removed",
+                    "You have been removed as the assignee of the task: " + existingTask.getTaskName(),
+                    NotificationType.ASSIGNMENT,
+                    existingTask.getTaskId(),
+                    EntityType.TASK,
+                    existingTask.getAssignedTo().getUser().getUserId()
+            );
+        }
+
+        for (String change : changes) {
+            activityLogService.log(
+                    projectId,
+                    (String) request.getAttribute("email"),
+                    request.getAttribute("username") + " " + change,
+                    EntityType.TASK,
+                    existingTask.getTaskId());
+        }
+
+        return existingTask;
+    }
+
+    static void validateDate(Date startDate, Date startDate2, Date endDate, Date endDate2) throws Exception {
+        Date newStart = startDate != null ? startDate : startDate2;
+        Date newEnd = endDate != null ? endDate : endDate2;
+
+        if (newEnd.before(newStart)) throw new Exception("End date cannot be before start date");
+
+        if (newStart.after(newEnd)) throw new Exception("Start date cannot be after start date");
     }
 
 }

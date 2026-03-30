@@ -21,7 +21,7 @@ import java.util.List;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-public class Task {
+public class Task implements Schedulable{
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -74,6 +74,14 @@ public class Task {
     @SQLRestriction("entity_type = 'TASK'")
     private List<ActivityLog> logs;
 
+    @OneToMany(mappedBy = "predecessor", cascade = CascadeType.ALL, orphanRemoval = true)
+    @JsonManagedReference
+    private List<TaskDependency> dependencies;
+
+    @Override
+    public Long getId() {
+        return taskId;
+    }
 }
 
 

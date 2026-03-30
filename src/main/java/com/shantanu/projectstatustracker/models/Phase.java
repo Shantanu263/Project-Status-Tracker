@@ -19,7 +19,7 @@ import java.util.List;
 @AllArgsConstructor
 @NoArgsConstructor
 @Entity
-public class Phase {
+public class Phase implements Schedulable{
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -61,6 +61,10 @@ public class Phase {
     @JsonManagedReference
     List<Task> tasks;
 
+    @OneToMany(mappedBy = "predecessor", cascade = CascadeType.ALL, orphanRemoval = true)
+    @JsonManagedReference
+    List<PhaseDependency> dependencies;
+
     @OneToMany
     @JoinColumn(name = "entity_id", referencedColumnName = "phase_id",
             insertable = false, updatable = false,
@@ -77,6 +81,11 @@ public class Phase {
     @PreUpdate
     protected void onUpdate() {
         this.updatedAt = LocalDateTime.now();
+    }
+
+    @Override
+    public Long getId() {
+        return phaseId;
     }
 
 }

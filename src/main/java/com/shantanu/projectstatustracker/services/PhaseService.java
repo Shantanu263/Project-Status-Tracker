@@ -1,10 +1,12 @@
 package com.shantanu.projectstatustracker.services;
 
 import com.shantanu.projectstatustracker.dtos.PhaseRequestDTO;
+import com.shantanu.projectstatustracker.models.DependencyType;
 import com.shantanu.projectstatustracker.models.PhaseStatus;
 import org.springframework.http.ResponseEntity;
 
 import java.util.Date;
+import java.util.List;
 
 public interface PhaseService {
 
@@ -26,4 +28,15 @@ public interface PhaseService {
 
     Double updatePhaseProgress(Long phaseId);
 
+    ResponseEntity<Object> createDependency(Long predecessorId, Long successorId, Long projectId, DependencyType dependencyType);
+
+    ResponseEntity<Object> deleteDependency(Long projectId, Long dependencyId);
+
+    ResponseEntity<Object> getPhaseDependencies(Long projectId);
+
+    ResponseEntity<Object> updatePhaseDependencyType(Long projectId, Long dependencyId, DependencyType newDependencyType);
+
+    ResponseEntity<Object> bulkUpdate(Long projectId, List<Long> ids, PhaseRequestDTO updates);
+
+    ResponseEntity<Object> bulkDelete(Long projectId, List<Long> ids);
 }

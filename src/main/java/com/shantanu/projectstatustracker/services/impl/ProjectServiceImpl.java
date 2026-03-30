@@ -2,6 +2,7 @@ package com.shantanu.projectstatustracker.services.impl;
 
 import com.shantanu.projectstatustracker.dtos.AddMemberRequestDTO;
 import com.shantanu.projectstatustracker.dtos.ProjectRequestDTO;
+import com.shantanu.projectstatustracker.dtos.ProjectTemplateRequestDTO;
 import com.shantanu.projectstatustracker.dtos.ProjectUpdateRequestDTO;
 import com.shantanu.projectstatustracker.dtos.dashboard.*;
 import com.shantanu.projectstatustracker.dtos.mappers.ProjectMapper;
@@ -46,6 +47,7 @@ public class ProjectServiceImpl implements ProjectService {
     private final ActivityLogService activityLogService;
     private final ActivityLogRepo activityLogRepo;
     private final SubTaskRepo subTaskRepo;
+    private final ProjectTemplatePhaseRepo projectTemplatePhaseRepo;
 
     SimpleDateFormat shortFormat = new SimpleDateFormat("dd/MM/yyyy", Locale.ENGLISH);
 
@@ -134,6 +136,33 @@ public class ProjectServiceImpl implements ProjectService {
         );
 
         return ResponseEntity.ok(projectMapper.mapProjectResponse(project));
+    }
+
+    @Override
+    public ResponseEntity<Object> createProjectTemplate(ProjectTemplateRequestDTO projectTemplateRequestDTO) {
+        if (projectTemplateRepo.existsByTemplateName(projectTemplateRequestDTO.getTemplateName())) {
+            return new ResponseEntity<>(Map.of("message","A template with this name already exists!"),
+                    HttpStatus.BAD_REQUEST);
+        }
+
+        ProjectTemplate template = ProjectTemplate.builder()
+                .templateName(projectTemplateRequestDTO.getTemplateName())
+                .description(projectTemplateRequestDTO.getDescription())
+                .build();
+
+        projectTemplateRepo.save(template);
+
+        ProjectTemplate savedTemplate = projectTemplateRepo.findByTemplateName(projectTemplateRequestDTO.getTemplateName());
+
+        for (String phaseName : projectTemplateRequestDTO.getPhaseNames()) {
+            ProjectTemplatePhase templatePhase = ProjectTemplatePhase.builder()
+                    .phaseName(phaseName)
+                    .projectTemplate(savedTemplate)
+                    .build();
+
+            projectTemplatePhaseRepo.save(templatePhase);
+        }
+        return ResponseEntity.ok(Map.of("message","Project Template Created Successfully"));
     }
 
     @Override

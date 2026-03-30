@@ -18,11 +18,13 @@ import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDate;
 import java.time.ZoneId;
 import java.util.Date;
 import java.util.List;
+import java.util.Map;
 
 @Service
 @RequiredArgsConstructor
@@ -47,15 +49,6 @@ public class NotificationServiceImpl implements NotificationService {
                     .toInstant()
     );
 
-//    @Override
-//    public ResponseEntity<Object> getUserNotifications(String email) {
-//        System.out.println("running");
-//        userRepo.findByEmail(email)
-//                .orElseThrow(() -> new RuntimeException("User not found"));
-//        //List<Notification> notifications = notificationRepo.findByUserOrderByTimestampDesc(user);
-//        return ResponseEntity.ok("notifications");
-//    }
-
     @Override
     public ResponseEntity<Object> getUserNotifications(Long userId, Pageable pageable) {
         List <Notification> notifications = notificationRepo.findByUser_UserIdOrderByCreatedAtDesc(userId, pageable).getContent().stream().toList();
@@ -69,6 +62,20 @@ public class NotificationServiceImpl implements NotificationService {
         notification.setIsRead(true);
         notificationRepo.save(notification);
         return ResponseEntity.ok("Notification marked as read");
+    }
+
+    @Override
+    @Transactional
+    public ResponseEntity<Object> markAllAsRead(Long userId) {
+        userRepo.findById(userId).orElseThrow(() -> new ResourceNotFoundException("User not found"));
+
+        notificationRepo.findByUser_UserIdAndIsRead(userId, false)
+                .forEach(notification -> {
+                    notification.setIsRead(true);
+                    notificationRepo.save(notification);
+                });
+
+        return ResponseEntity.ok(Map.of("message","All notifications marked as read"));
     }
 
     @Override

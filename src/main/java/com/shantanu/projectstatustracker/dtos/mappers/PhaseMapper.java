@@ -10,7 +10,7 @@ import org.mapstruct.*;
 
 import java.util.List;
 
-@Mapper(componentModel = "spring", uses = {TaskMapper.class})
+@Mapper(componentModel = "spring", uses = {TaskMapper.class, DependencyMapper.class})
 public interface PhaseMapper {
 
     PhaseResponseDTO mapPhaseToPhaseResponseDTO(Phase phase);

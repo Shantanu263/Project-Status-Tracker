@@ -27,7 +27,7 @@ public class ProjectTemplatePhase {
 
     //private Double progress;
 
-    private Integer orderIndex;
+    //private Integer orderIndex;
 
 //    @PrePersist
 //    public void onCreate(){

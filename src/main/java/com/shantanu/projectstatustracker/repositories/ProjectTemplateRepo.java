@@ -8,4 +8,6 @@ import org.springframework.stereotype.Repository;
 public interface ProjectTemplateRepo extends JpaRepository<ProjectTemplate,Long> {
 
     boolean existsByTemplateName(String templateName);
+
+    ProjectTemplate findByTemplateName(String templateName);
 }

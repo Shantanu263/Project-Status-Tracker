@@ -114,11 +114,11 @@ public class DataInitializer implements CommandLineRunner {
 
         ProjectTemplate savedTemplate = projectTemplateRepository.save(template);
 
-        int orderIndex = 1;
+        //int orderIndex = 1;
         for (String phaseName : phases) {
             ProjectTemplatePhase phase = new ProjectTemplatePhase();
             phase.setPhaseName(phaseName);
-            phase.setOrderIndex(orderIndex++);
+            //phase.setOrderIndex(orderIndex++);
             phase.setProjectTemplate(savedTemplate);
 
             projectTemplatePhaseRepository.save(phase);

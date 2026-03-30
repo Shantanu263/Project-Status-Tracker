@@ -2,6 +2,7 @@ package com.shantanu.projectstatustracker.services;
 
 import com.shantanu.projectstatustracker.dtos.AddMemberRequestDTO;
 import com.shantanu.projectstatustracker.dtos.ProjectRequestDTO;
+import com.shantanu.projectstatustracker.dtos.ProjectTemplateRequestDTO;
 import com.shantanu.projectstatustracker.dtos.ProjectUpdateRequestDTO;
 import com.shantanu.projectstatustracker.models.ProjectRole;
 import org.springframework.http.ResponseEntity;
@@ -12,6 +13,8 @@ public interface ProjectService {
     ResponseEntity<Object> getProjects();
 
     ResponseEntity<Object> createProject(ProjectRequestDTO projectRequestDTO);
+
+    ResponseEntity<Object> createProjectTemplate(ProjectTemplateRequestDTO projectTemplateRequestDTO);
 
     ResponseEntity<Object> getProjectById(Long id);
 

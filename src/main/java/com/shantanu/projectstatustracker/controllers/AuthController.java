@@ -80,4 +80,9 @@ public class AuthController {
         notificationService.markAsRead(notificationId);
     }
 
+    @PutMapping("/user/{userId}/notifications/read-all")
+    public void markAllNotificationsAsRead(@PathVariable Long userId) {
+        notificationService.markAllAsRead(userId);
+    }
+
 }

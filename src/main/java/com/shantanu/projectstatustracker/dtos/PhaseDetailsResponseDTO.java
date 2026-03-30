@@ -1,6 +1,7 @@
 package com.shantanu.projectstatustracker.dtos;
 
 import com.fasterxml.jackson.annotation.JsonFormat;
+import com.shantanu.projectstatustracker.models.PhaseDependency;
 import jakarta.persistence.Column;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
@@ -40,5 +41,7 @@ public class PhaseDetailsResponseDTO {
     private Long projectMemberId;
 
     private List<TaskResponseDTO> tasks;
+
+    private List<DependencyResponseDTO> dependencies;
 
 }

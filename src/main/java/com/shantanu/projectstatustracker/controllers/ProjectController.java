@@ -1,6 +1,7 @@
 package com.shantanu.projectstatustracker.controllers;
 
 import com.shantanu.projectstatustracker.dtos.*;
+import com.shantanu.projectstatustracker.services.DelayTrackerService;
 import com.shantanu.projectstatustracker.services.EmailService;
 import com.shantanu.projectstatustracker.services.ProjectService;
 import com.shantanu.projectstatustracker.services.impl.ProjectSummaryServiceImpl;
@@ -14,6 +15,7 @@ import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.Date;
+import java.util.List;
 import java.util.Map;
 
 @RequiredArgsConstructor
@@ -23,6 +25,7 @@ public class ProjectController {
     private final ProjectService projectService;
     private final ProjectSummaryServiceImpl projectSummaryService;
     private final EmailService emailService;
+    private final DelayTrackerService delayTrackerService;
 
 
     @GetMapping()
@@ -34,6 +37,11 @@ public class ProjectController {
     @PostMapping()
     public ResponseEntity<Object> createProject(@RequestBody ProjectRequestDTO projectRequestDTO){
         return projectService.createProject(projectRequestDTO);
+    }
+
+    @PostMapping("/create-template")
+    public ResponseEntity<Object> createProjectTemplate(@RequestBody ProjectTemplateRequestDTO requestDTO){
+        return projectService.createProjectTemplate(requestDTO);
     }
 
     @GetMapping("/{id}")
@@ -143,6 +151,56 @@ public class ProjectController {
         return projectService.generateTimelineCsv(projectId, startDate, endDate);
 
         //byte[] csvData = projectService.generateTimelineCsv(projectId, startDate, endDate);
+    }
+
+    //Project Delay Tracker
+    @GetMapping("/{projectId}/delay-tracker")
+    public ResponseEntity<Object> getProjectDelayTracker(@PathVariable Long projectId) {
+        return delayTrackerService.getDelayLogsForProject(projectId);
+    }
+
+    @PostMapping("/{projectId}/delay-tracker")
+    public ResponseEntity<Object> createDelayLog(@PathVariable Long projectId, @RequestBody DelayLogRequestDTO delayLogRequestDTO) {
+        return delayTrackerService.createDelayLog(projectId, delayLogRequestDTO);
+    }
+
+    @PutMapping("/{projectId}/delay-tracker/{delayLogId}")
+    public ResponseEntity<Object> updateDelayLog(@PathVariable Long projectId, @PathVariable Long delayLogId, @RequestBody DelayLogRequestDTO delayLogRequestDTO) {
+        return delayTrackerService.updateDelayLog(projectId, delayLogId, delayLogRequestDTO);
+    }
+
+    @DeleteMapping("/{projectId}/delay-tracker/{delayLogId}")
+    public ResponseEntity<Object> deleteDelayLog(@PathVariable Long projectId, @PathVariable Long delayLogId) {
+        return delayTrackerService.deleteDelayLog(projectId, delayLogId);
+    }
+
+    @PostMapping("/{projectId}/delay-tracker/pdf")
+    public ResponseEntity<byte[]> downloadDelayReportPdf(@PathVariable Long projectId, @RequestBody DelayReportRequestDTO dto) {
+        byte[] pdf = delayTrackerService.generateDelayReport(projectId, dto.getDelayIds());
+
+        return ResponseEntity.ok()
+                .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=project-delay-report.pdf")
+                .contentType(MediaType.APPLICATION_PDF)
+                .body(pdf);
+    }
+
+    @PostMapping("/{projectId}/delay-tracker/bulk-add")
+    public ResponseEntity<Object> bulkAddDelayLogs(@PathVariable Long projectId,
+                                                   @RequestBody Map<String, List<DelayLogRequestDTO>> request) {
+        List<DelayLogRequestDTO> delayLogRequestDTOS = request.get("delayLogs");
+        return delayTrackerService.bulkAddDelayLogs(projectId, delayLogRequestDTOS);
+    }
+
+    @PutMapping("/{projectId}/delay-tracker/bulk-update")
+    public ResponseEntity<Object> bulkUpdateDelayLogs(@PathVariable Long projectId,
+                                                   @RequestBody BulkUpdateRequestDTO<DelayLogRequestDTO> bulkUpdateRequestDTO) {
+        return delayTrackerService.bulkUpdateDelayLogs(projectId, bulkUpdateRequestDTO);
+    }
+
+    @DeleteMapping("/{projectId}/delay-tracker/bulk-delete")
+    public ResponseEntity<Object> bulkDeleteDelayLogs(@PathVariable Long projectId,
+                                                   @RequestBody BulkUpdateRequestDTO<DelayLogRequestDTO> bulkUpdateRequestDTO) {
+        return delayTrackerService.bulkDeleteDelayLogs(projectId, bulkUpdateRequestDTO.getIds());
     }
 
 }

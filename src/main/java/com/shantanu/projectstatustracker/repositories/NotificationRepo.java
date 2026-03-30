@@ -7,6 +7,8 @@ import com.shantanu.projectstatustracker.models.User;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Modifying;
+import org.springframework.data.jpa.repository.Query;
 import org.springframework.stereotype.Repository;
 
 import java.util.List;
@@ -20,6 +22,6 @@ public interface NotificationRepo extends JpaRepository<Notification, Long> {
 
     long countByUser_UserIdAndIsRead(Long userUserId, Boolean isRead);
 
-
+    List<Notification> findByUser_UserIdAndIsRead(Long userId, boolean b);
     //List<Notification> findByUserOrderByTimestampDesc(User user);
 }

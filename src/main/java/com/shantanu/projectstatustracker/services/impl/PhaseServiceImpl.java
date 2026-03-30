@@ -1,21 +1,28 @@
 package com.shantanu.projectstatustracker.services.impl;
 
+import com.shantanu.projectstatustracker.dtos.FailedItem;
 import com.shantanu.projectstatustracker.dtos.PhaseRequestDTO;
+import com.shantanu.projectstatustracker.dtos.mappers.DependencyMapper;
 import com.shantanu.projectstatustracker.dtos.mappers.PhaseMapper;
+import com.shantanu.projectstatustracker.dtos.BulkUpdateResponseDTO;
+import com.shantanu.projectstatustracker.exceptions.SchedulingConstraintException;
 import com.shantanu.projectstatustracker.globalExceptionHandlers.ResourceNotFoundException;
 import com.shantanu.projectstatustracker.models.*;
 import com.shantanu.projectstatustracker.repositories.*;
 import com.shantanu.projectstatustracker.services.ActivityLogService;
 import com.shantanu.projectstatustracker.services.PhaseService;
+import jakarta.annotation.PostConstruct;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.PlatformTransactionManager;
+import org.springframework.transaction.TransactionDefinition;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.transaction.support.TransactionTemplate;
 
-import java.util.Date;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 @RequiredArgsConstructor
 @Service
@@ -28,6 +35,17 @@ public class PhaseServiceImpl implements PhaseService {
     private final ActivityLogService activityLogService;
     private final HttpServletRequest request;
     private final ProjectTemplateRepo projectTemplateRepo;
+    private final DependencyEngine<Phase> dependencyEngine;
+    private final PhaseDependencyRepo dependencyRepository;
+    private final DependencyMapper dependencyMapper;
+    private final PlatformTransactionManager transactionManager;
+    private final TransactionTemplate transactionTemplate;
+
+    @PostConstruct
+    public void init() {
+        TransactionTemplate transactionTemplate = new TransactionTemplate(transactionManager);
+        transactionTemplate.setPropagationBehavior(TransactionDefinition.PROPAGATION_REQUIRES_NEW);
+    }
 
     @Override
     public ResponseEntity<Object> getProjectPhases(Long id) {
@@ -75,39 +93,18 @@ public class PhaseServiceImpl implements PhaseService {
 
     @Override
     public ResponseEntity<Object> updateProjectPhase(Long projectId, Long phaseId, PhaseRequestDTO phaseRequestDTO) {
-        if (!projectRepo.existsById(projectId)) return ResponseEntity.ok(Map.of("message","Project not found"));
-        if (!phaseRepo.existsById(phaseId)) return ResponseEntity.ok(Map.of("message","Project Phase not found"));
+        try {
+            Phase updatedPhase = updateProjectPhaseInternal(projectId, phaseId, phaseRequestDTO);
 
-        ProjectMember assignedTo = null;
+            return ResponseEntity.ok(Map.of(
+                    "message", "Phase updated",
+                    "updated Phase", phaseMapper.mapPhaseToPhaseDetailsResponse(updatedPhase)
+            ));
 
-        if (phaseRequestDTO.getProjectMemberId() != null) {
-            assignedTo = projectMemberRepo.findById(phaseRequestDTO.getProjectMemberId())
-                    .orElseThrow(() -> new ResourceNotFoundException("Project member not found"));
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                    .body(Map.of("message", e.getMessage()));
         }
-
-        Phase existingPhase = phaseRepo.findByPhaseIdAndProject_ProjectId(phaseId,projectId).orElseThrow(() -> new ResourceNotFoundException("Phase not found"));
-        phaseMapper.updatePhaseFromDTO(phaseRequestDTO,assignedTo,existingPhase);
-
-        //Update completion date is status is changed
-        if (phaseRequestDTO.getStatus()!= null) {
-            if (phaseRequestDTO.getStatus().equals(PhaseStatus.COMPLETED)) existingPhase.setCompletedOn(new Date());
-            else existingPhase.setCompletedOn(null);
-        }
-
-        phaseRepo.save(existingPhase);
-        
-        // Update phase progress after updating a phase
-        updatePhaseProgress(phaseId);
-
-        activityLogService.log(
-                existingPhase.getProject().getProjectId(),
-                (String) request.getAttribute("email"),
-                request.getAttribute("username") + " updated Phase Details of " + phaseRequestDTO.getPhaseName(),
-                EntityType.PHASE,
-                existingPhase.getPhaseId()
-        );
-
-        return ResponseEntity.ok(Map.of("message","Phase updated","update phase",phaseMapper.mapPhaseToPhaseDetailsResponse(existingPhase)));
     }
 
     @Override
@@ -163,8 +160,8 @@ public class PhaseServiceImpl implements PhaseService {
             Phase phase = new Phase();
             phase.setPhaseName(templatePhase.getPhaseName());
             phase.setStatus(PhaseStatus.OPEN);   // Default status
-            phase.setStartDate(project.getStartDate()); // start same as project
-            phase.setEndDate(project.getEndDate());     // end same as project
+            phase.setStartDate(project.getStartDate()); // start same as a project
+            phase.setEndDate(project.getEndDate());     // end same as a project
             phase.setProject(project);
             return phase;
         }).toList();
@@ -235,6 +232,219 @@ public class PhaseServiceImpl implements PhaseService {
         projectRepo.save(project);
 
         return averageProgress;
+    }
+
+    @Override
+    public ResponseEntity<Object> createDependency(Long predecessorId, Long successorId, Long projectId, DependencyType dependencyType) {
+
+        Phase predecessor = phaseRepo.findById(predecessorId)
+                .orElseThrow(() -> new ResourceNotFoundException("Phase not found"));
+
+        Phase successor = phaseRepo.findById(successorId)
+                .orElseThrow(() -> new ResourceNotFoundException("Phase not found"));
+
+        Project project = projectRepo.findById(projectId)
+                .orElseThrow(() -> new ResourceNotFoundException("Project not found"));
+
+        // Default to FS if not provided
+        if (dependencyType == null) {
+            dependencyType = DependencyType.FS;
+        }
+
+        if (predecessor.getPhaseId().equals(successor.getPhaseId())) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                    .body(Map.of("message", "A phase cannot depend on itself"));
+        }
+
+        if (dependencyRepository.existsByPredecessorAndSuccessor(predecessor, successor)) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                    .body(Map.of("message", "Dependency already exists"));
+        }
+
+        boolean cycle = dependencyEngine.createsCycle(
+                predecessor,
+                successor,
+                phase -> dependencyRepository
+                        .findByPredecessor(phase)
+                        .stream()
+                        .map(PhaseDependency::getSuccessor)
+                        .toList()
+        );
+
+        if (cycle) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                    .body(Map.of("message", "Circular dependency detected"));
+        }
+
+        // Align successor dates to satisfy the new constraint
+        dependencyEngine.adjustDates(predecessor, successor, dependencyType);
+        phaseRepo.save(successor);
+
+        PhaseDependency dependency = new PhaseDependency();
+        dependency.setPredecessor(predecessor);
+        dependency.setSuccessor(successor);
+        dependency.setDependencyType(dependencyType);
+        dependency.setProject(project);
+
+        dependencyRepository.save(dependency);
+        return ResponseEntity.ok(Map.of("message","Dependency created successfully"));
+    }
+
+    @Override
+    public ResponseEntity<Object> deleteDependency(Long projectId, Long dependencyId) {
+        PhaseDependency dependency = dependencyRepository.findByIdAndProject_ProjectId(dependencyId, projectId)
+                .orElseThrow(() -> new ResourceNotFoundException("Dependency not found"));
+        dependencyRepository.delete(dependency);
+        return ResponseEntity.ok(Map.of("message","Dependency deleted successfully"));
+    }
+
+    @Override
+    public ResponseEntity<Object> getPhaseDependencies(Long projectId) {
+        List<PhaseDependency> dependencies = dependencyRepository.findByProject_ProjectId(projectId);
+
+        return ResponseEntity.ok(dependencyMapper.mapPhaseDependenciesToResponse(dependencies));
+    }
+
+    @Override
+    public ResponseEntity<Object> updatePhaseDependencyType(Long projectId, Long dependencyId, DependencyType newDependencyType) {
+        PhaseDependency dependency = dependencyRepository.findByIdAndProject_ProjectId(dependencyId, projectId)
+                .orElseThrow(() -> new ResourceNotFoundException("Dependency not found"));
+
+        dependency.setDependencyType(newDependencyType);
+
+        Phase predecessor = dependency.getPredecessor();
+        Phase successor   = dependency.getSuccessor();
+
+        // Re-align successor dates according to the new dependency type
+        dependencyEngine.adjustDates(predecessor, successor, newDependencyType);
+        phaseRepo.save(successor);
+
+        dependencyRepository.save(dependency);
+
+        // Propagate any cascading adjustments from the successor onward
+        dependencyEngine.propagateAdjustments(
+                successor,
+                dependencyRepository::findByPredecessor,
+                (dep, ignored) -> dep.getSuccessor(),
+                (dep, ignored) -> dep.getDependencyType(),
+                phaseRepo::save
+        );
+
+        return ResponseEntity.ok(Map.of("message", "Dependency type updated successfully"));
+    }
+
+    @Override
+    public ResponseEntity<Object> bulkUpdate(Long projectId, List<Long> ids, PhaseRequestDTO updates) {
+        BulkUpdateResponseDTO result = new BulkUpdateResponseDTO();
+
+        for (Long phaseId : ids) {
+            try {
+                phaseRepo.findById(phaseId).orElseThrow(()  -> new Exception("Phase not found"));
+                transactionTemplate.executeWithoutResult(status -> {
+                    try {
+                        updateProjectPhaseInternal(projectId, phaseId, updates);
+                    } catch (Exception e) {
+                        throw new RuntimeException(e);
+                    }
+                });
+                result.getSuccessIds().add(phaseId);
+
+            } catch (Exception e) {
+                result.getFailedItems().add(
+                        new FailedItem(phaseId, e.getMessage())
+                );
+            }
+        }
+
+        return ResponseEntity.ok(result);
+    }
+
+    @Override
+    @Transactional
+    public ResponseEntity<Object> bulkDelete(Long projectId, List<Long> ids) {
+        List<Phase> phases = phaseRepo.findAllById(ids);
+
+        for (Phase phase : phases) {
+            phaseRepo.delete(phase);
+            taskRepo.clearTasksPhase(phase.getId());
+
+            activityLogService.log(
+                    projectId,
+                    (String) request.getAttribute("email"),
+                    request.getAttribute("username") + " deleted Phase " + phase.getPhaseName(),
+                    EntityType.PHASE,
+                    phase.getPhaseId()
+            );
+        }
+        updateProjectProgress(projectId);
+        return ResponseEntity.ok(Map.of("message", "Phases deleted successfully"));
+    }
+
+    public Phase updateProjectPhaseInternal(Long projectId, Long phaseId, PhaseRequestDTO phaseRequestDTO) throws Exception {
+        if (!projectRepo.existsById(projectId)) throw new Exception("Project not found");
+        if (!phaseRepo.existsById(phaseId)) throw new Exception("Phase not found");
+
+        ProjectMember assignedTo = null;
+
+        if (phaseRequestDTO.getProjectMemberId() != null) {
+            assignedTo = projectMemberRepo.findById(phaseRequestDTO.getProjectMemberId())
+                    .orElseThrow(() -> new Exception("Project member not found"));
+        }
+
+        Phase existingPhase = phaseRepo.findByPhaseIdAndProject_ProjectId(phaseId,projectId).orElseThrow(() -> new Exception("Phase not found"));
+
+        TaskServiceImpl.validateDate(phaseRequestDTO.getStartDate(), existingPhase.getStartDate(), phaseRequestDTO.getEndDate(), existingPhase.getEndDate());
+
+
+        phaseMapper.updatePhaseFromDTO(phaseRequestDTO,assignedTo,existingPhase);
+
+        //Update completion date is status is changed
+        if (phaseRequestDTO.getStatus()!= null) {
+            if (phaseRequestDTO.getStatus().equals(PhaseStatus.COMPLETED)) existingPhase.setCompletedOn(new Date());
+            else existingPhase.setCompletedOn(null);
+        }
+
+        // --- Scheduling constraint check against predecessors ---
+        // If the user has changed dates, verify the new dates don't violate any
+        // incoming dependency constraints (i.e., this phase acting as a successor).
+        if (phaseRequestDTO.getStartDate() != null || phaseRequestDTO.getEndDate() != null) {
+            List<PhaseDependency> incomingDeps = dependencyRepository.findBySuccessor(existingPhase);
+            for (PhaseDependency dep : incomingDeps) {
+                try {
+                    dependencyEngine.checkConstraint(dep.getPredecessor(), existingPhase, dep.getDependencyType());
+                } catch (SchedulingConstraintException e) {
+                    throw new Exception(e.getMessage());
+                }
+            }
+        }
+
+        phaseRepo.save(existingPhase);
+
+        // --- Propagate scheduling adjustments to successors ---
+        // If this phase's dates changed, shift any successors whose constraints
+        // are now violated (transitively).
+        if (phaseRequestDTO.getStartDate() != null || phaseRequestDTO.getEndDate() != null) {
+            dependencyEngine.propagateAdjustments(
+                    existingPhase,
+                    dependencyRepository::findByPredecessor,
+                    (dep, ignored) -> dep.getSuccessor(),
+                    (dep, ignored) -> dep.getDependencyType(),
+                    phaseRepo::save
+            );
+        }
+
+        // Update phase progress after updating a phase
+        updatePhaseProgress(phaseId);
+
+        activityLogService.log(
+                existingPhase.getProject().getProjectId(),
+                (String) request.getAttribute("email"),
+                request.getAttribute("username") + " updated Phase Details of " + phaseRequestDTO.getPhaseName(),
+                EntityType.PHASE,
+                existingPhase.getPhaseId()
+        );
+
+        return existingPhase;
     }
 
 }

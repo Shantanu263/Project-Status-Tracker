@@ -2,6 +2,7 @@ package com.shantanu.projectstatustracker.globalExceptionHandlers;
 
 import com.fasterxml.jackson.databind.exc.InvalidFormatException;
 import com.shantanu.projectstatustracker.exceptions.AccessDeniedException;
+import com.shantanu.projectstatustracker.exceptions.SchedulingConstraintException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.http.converter.HttpMessageNotReadableException;
@@ -51,6 +52,11 @@ public class MyControllerAdvice {
     @ExceptionHandler(AccessDeniedException.class)
     public ResponseEntity<Map<String,String>> accessDenied(AccessDeniedException e) {
         return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(Map.of("message",e.getMessage()));
+    }
+
+    @ExceptionHandler(SchedulingConstraintException.class)
+    public ResponseEntity<Map<String,String>> schedulingConstraintViolated(SchedulingConstraintException e) {
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(Map.of("message", e.getMessage()));
     }
 
 }

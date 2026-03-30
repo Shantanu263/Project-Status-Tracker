@@ -1,7 +1,10 @@
 package com.shantanu.projectstatustracker.controllers;
 
+import com.shantanu.projectstatustracker.dtos.BulkUpdateRequestDTO;
+import com.shantanu.projectstatustracker.dtos.DependencyRequestDTO;
 import com.shantanu.projectstatustracker.dtos.SubTaskRequestDTO;
 import com.shantanu.projectstatustracker.dtos.TaskRequestDTO;
+import com.shantanu.projectstatustracker.models.DependencyType;
 import com.shantanu.projectstatustracker.models.Status;
 import com.shantanu.projectstatustracker.services.TaskService;
 import lombok.RequiredArgsConstructor;
@@ -129,6 +132,50 @@ public class TaskController {
             @PathVariable Long subTaskId
     ){
         return taskService.deleteSubTask(projectId,phaseId,taskId,subTaskId);
+    }
+
+    @PostMapping("/phases/{phaseId}/tasks/dependency")
+    public ResponseEntity<Object> createTaskDependency(
+            @PathVariable Long projectId,
+            @PathVariable Long phaseId,
+            @RequestBody DependencyRequestDTO dto){
+        return taskService.createDependency(dto.getPredecessorId(), dto.getSuccessorId(), phaseId, dto.getDependencyType());
+    }
+
+    @DeleteMapping("/phases/{phaseId}/tasks/dependency/{dependencyId}")
+    public ResponseEntity<Object> deleteTaskDependency(
+            @PathVariable Long projectId,
+            @PathVariable Long phaseId,
+            @PathVariable Long dependencyId){
+        return taskService.deleteDependency(phaseId, dependencyId);
+    }
+
+    @PatchMapping("/phases/{phaseId}/tasks/dependency/{dependencyId}")
+    public ResponseEntity<Object> updateTaskDependencyType(
+            @PathVariable Long projectId,
+            @PathVariable Long phaseId,
+            @PathVariable Long dependencyId,
+            @RequestParam DependencyType dependencyType){
+        return taskService.updateTaskDependencyType(phaseId, dependencyId, dependencyType);
+    }
+
+    @GetMapping("/phases/{phaseId}/tasks/dependency")
+    public ResponseEntity<Object> getPhaseDependencies(@PathVariable Long phaseId){
+        return taskService.getTaskDependencies(phaseId);
+    }
+
+    @PutMapping("/tasks/bulk-update")
+    public ResponseEntity<Object> bulkUpdateTasks(
+            @PathVariable Long projectId,
+            @RequestBody BulkUpdateRequestDTO<TaskRequestDTO> request) {
+        return taskService.bulkUpdate(projectId, request.getIds(), request.getUpdates());
+    }
+
+    @DeleteMapping("/tasks/bulk-delete")
+    public ResponseEntity<Object> bulkDeleteTasks(
+            @PathVariable Long projectId,
+            @RequestBody BulkUpdateRequestDTO<TaskRequestDTO> request) {
+        return taskService.bulkDelete(projectId, request.getIds());
     }
 
 }

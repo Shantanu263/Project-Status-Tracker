@@ -12,6 +12,8 @@ public interface NotificationService {
 
     ResponseEntity<Object> markAsRead(Long notificationId);
 
+    ResponseEntity<Object> markAllAsRead(Long userId);
+
     void createNotification(User user,
                             String title,
                             String message,

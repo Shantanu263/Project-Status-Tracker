@@ -5,5 +5,6 @@ public enum Status {
     OPEN,
     ONGOING,
     ON_HOLD,
-    COMPLETED
+    COMPLETED,
+    CANCELLED
 }
