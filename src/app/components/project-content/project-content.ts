@@ -8,6 +8,7 @@ import { DashboardComponent } from '../dashboard/dashboard';
 import { PhasesComponent } from '../phases/phases';
 import { TimelineComponent } from '../timeline/timeline';
 import { TasksComponent } from '../tasks/tasks';
+import { DelayTrackerComponent } from '../delay-tracker/delay-tracker';
 import { UserManagementComponent } from '../user-management/user-management';
 import { ProjectService } from '../../services/project.service';
 import { toSignal } from '@angular/core/rxjs-interop';
@@ -17,11 +18,11 @@ import { ConfirmationDialogComponent } from '../shared/confirmation-dialog/confi
 import { AuthService } from '../../services/auth.service';
 import { ProjectSummaryModalComponent } from '../project-summary-modal/project-summary-modal';
 
-type TabType = 'summary' | 'board' | 'phases' | 'tasks' | 'members' | 'timeline' | 'calendar';
+type TabType = 'summary' | 'board' | 'phases' | 'tasks' | 'members' | 'timeline' | 'delay-tracker' | 'calendar';
 
 @Component({
   selector: 'app-project-content',
-  imports: [CommonModule, BoardComponent, MembersComponent, DashboardComponent, PhasesComponent, TimelineComponent, TasksComponent, UserManagementComponent, ProjectMetaBarComponent, ProjectDetailsModalComponent, ConfirmationDialogComponent, ProjectSummaryModalComponent],
+  imports: [CommonModule, BoardComponent, MembersComponent, DashboardComponent, PhasesComponent, TimelineComponent, TasksComponent, DelayTrackerComponent, UserManagementComponent, ProjectMetaBarComponent, ProjectDetailsModalComponent, ConfirmationDialogComponent, ProjectSummaryModalComponent],
   templateUrl: './project-content.html',
   styleUrl: './project-content.scss',
   changeDetection: ChangeDetectionStrategy.OnPush
@@ -56,7 +57,8 @@ export class ProjectContentComponent {
     { label: 'Phases', value: 'phases' },
     { label: 'Tasks', value: 'tasks' },
     { label: 'Members', value: 'members' },
-    { label: 'Timeline', value: 'timeline' }
+    { label: 'Timeline', value: 'timeline' },
+    { label: 'Delay Tracker', value: 'delay-tracker' }
   ];
 
   constructor() {

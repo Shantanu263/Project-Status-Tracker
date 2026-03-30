@@ -434,10 +434,16 @@
                                     </path>
                                 </svg>
                                 @if (getProjectCompletionStatus(project); as cs) {
-                                <span class="px-2.5 py-0.5 rounded-full text-xs font-semibold"
-                                    [class]="cs.bgClass + ' ' + cs.textClass">
+                                @let tooltip = getCompletionStatusTooltip(project);
+                                <span class="px-2.5 py-0.5 rounded-full text-xs font-semibold cursor-help"
+                                    [class]="cs.bgClass + ' ' + cs.textClass" [title]="tooltip">
                                     {{ cs.label }}
                                 </span>
+                                <!-- <svg class="w-3.5 h-3.5 text-gray-400 flex-shrink-0 cursor-help" fill="none"
+                                    stroke="currentColor" viewBox="0 0 24 24" [title]="tooltip">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                        d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                </svg> -->
                                 } @else {
                                 <span class="text-xs text-gray-400">—</span>
                                 }

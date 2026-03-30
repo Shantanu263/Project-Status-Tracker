@@ -1,0 +1,467 @@
+<div class="w-full" style="height: calc(100vh - 235px);">
+    <!-- Card Container -->
+    <div class="bg-white rounded-lg border border-gray-200 shadow-sm h-full flex flex-col">
+
+        <!-- Top Toolbar -->
+        <div class="flex items-center justify-between gap-2 px-4 py-3 border-b border-gray-200 flex-shrink-0">
+            <div class="flex items-center gap-2">
+                <!-- Search Input -->
+                <div class="relative">
+                    <svg class="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" fill="none"
+                        stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                    </svg>
+                    <input type="text" placeholder="Search delay logs..." [value]="searchQuery()"
+                        (input)="onSearchChange($event)"
+                        class="pl-9 pr-4 py-1.5 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent w-64">
+                </div>
+            </div>
+
+            <!-- Action Buttons -->
+            <div class="flex items-center gap-2">
+                <!-- Add Delay Entry Button -->
+                <button (click)="openAddModal()"
+                    class="px-4 py-1.5 text-sm font-medium text-white bg-[#8c2d1b] rounded-md hover:bg-[#6b2115] transition-colors flex items-center gap-2 cursor-pointer">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
+                    </svg>
+                    <span>Add Delay Entry</span>
+                </button>
+            </div>
+        </div>
+
+        <!-- Toast notification (export error) -->
+        @if (exportError()) {
+        <div
+            class="mx-4 mt-3 flex items-center gap-2 px-4 py-2.5 rounded-md bg-amber-50 border border-amber-200 text-amber-800 text-sm flex-shrink-0">
+            <svg class="w-4 h-4 flex-shrink-0 text-amber-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                    d="M12 9v2m0 4h.01M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z" />
+            </svg>
+            {{ exportError() }}
+        </div>
+        }
+
+        <!-- Table Container -->
+        <div class="flex-1 flex flex-col overflow-hidden">
+            <div class="overflow-x-hidden overflow-y-hidden">
+                <div>
+                    <!-- Table Header -->
+                    <div class="bg-gray-50 border-b border-gray-200">
+                        <div class="grid grid-cols-[32px_1fr_80px_110px_110px_90px_1fr_160px_120px] gap-3 px-4 py-3 text-xs font-medium text-gray-500 uppercase tracking-wider"
+                            style="padding-bottom: 0px;">
+                            <!-- Select All Checkbox -->
+                            <div class="flex items-center">
+                                <input type="checkbox" [checked]="selectAll()" (change)="toggleSelectAll()"
+                                    [indeterminate]="selectedIds().size > 0 && !selectAll()"
+                                    class="w-4 h-4 rounded border-gray-300 text-blue-600 cursor-pointer focus:ring-blue-500" />
+                            </div>
+                            <div>Item</div>
+                            <div class="cursor-pointer hover:text-gray-700" (click)="sortBy('entityType')">
+                                Type {{ getSortIcon('entityType') }}
+                            </div>
+                            <div class="cursor-pointer hover:text-gray-700" (click)="sortBy('originalEndDate')">
+                                Original Date {{ getSortIcon('originalEndDate') }}
+                            </div>
+                            <div class="cursor-pointer hover:text-gray-700" (click)="sortBy('revisedEndDate')">
+                                Revised Date {{ getSortIcon('revisedEndDate') }}
+                            </div>
+                            <div class="cursor-pointer hover:text-gray-700" (click)="sortBy('delayDuration')">
+                                Delay {{ getSortIcon('delayDuration') }}
+                            </div>
+                            <div>Reason</div>
+                            <div>Assigned To</div>
+                            <div class="cursor-pointer hover:text-gray-700" (click)="sortBy('status')">
+                                Status {{ getSortIcon('status') }}
+                            </div>
+                            <div></div>
+                        </div>
+                    </div>
+
+                    <!-- Table Body -->
+                    <div class="flex-1 overflow-y-auto" style="max-height: calc(100vh - 340px);">
+                        @if (isLoading()) {
+                        <div class="px-4 py-16 text-center">
+                            <svg class="w-8 h-8 mx-auto text-gray-400 animate-spin mb-3" fill="none"
+                                viewBox="0 0 24 24">
+                                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor"
+                                    stroke-width="4"></circle>
+                                <path class="opacity-75" fill="currentColor"
+                                    d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"></path>
+                            </svg>
+                            <p class="text-gray-400 text-sm">Loading delay logs...</p>
+                        </div>
+                        } @else if (filteredEntries().length === 0) {
+                        <div class="px-4 py-16 text-center">
+                            <svg class="w-16 h-16 mx-auto text-gray-300 mb-4" fill="none" stroke="currentColor"
+                                viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"
+                                    d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                            </svg>
+                            <p class="text-gray-500 text-sm font-medium">No delayed items tracked</p>
+                            <p class="text-gray-400 text-xs mt-1">Click "Add Delay Entry" to start tracking delays</p>
+                        </div>
+                        } @else {
+                        <div class="divide-y divide-gray-100">
+                            @for (entry of filteredEntries(); track entry.delayLogId) {
+                            <div class="grid grid-cols-[32px_1fr_80px_110px_110px_90px_1fr_160px_120px] gap-3 px-4 py-3 transition-colors group cursor-pointer"
+                                [class]="isSelected(entry.delayLogId) ? 'bg-blue-50 hover:bg-blue-100' : 'hover:bg-gray-50'"
+                                (click)="openEditModal(entry)">
+                                <!-- Checkbox -->
+                                <div class="flex items-center" (click)="$event.stopPropagation()">
+                                    <input type="checkbox" [checked]="isSelected(entry.delayLogId)"
+                                        (change)="toggleSelection(entry.delayLogId)"
+                                        class="w-4 h-4 rounded border-gray-300 text-blue-600 cursor-pointer focus:ring-blue-500" />
+                                </div>
+                                <!-- Item Name (resolved from phaseId/taskId) -->
+                                <div class="flex items-center text-sm font-medium text-gray-900 truncate"
+                                    [title]="getItemName(entry)">
+                                    {{ getItemName(entry) }}
+                                </div>
+                                <!-- Type -->
+                                <div class="flex items-center">
+                                    <span
+                                        [class]="'inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ' + getTypeClass(entry.entityType)">
+                                        {{ entry.entityType === 'PHASE' ? 'Phase' : 'Task' }}
+                                    </span>
+                                </div>
+                                <!-- Original Date -->
+                                <div class="flex items-center text-sm text-gray-600">
+                                    {{ formatDate(entry.originalEndDate) }}
+                                </div>
+                                <!-- Revised Date -->
+                                <div class="flex items-center text-sm text-gray-600">
+                                    {{ formatDate(entry.revisedEndDate) }}
+                                </div>
+                                <!-- Delay Duration -->
+                                <div class="flex items-center text-sm font-medium"
+                                    [class]="getDelayDurationClass(entry)">
+                                    {{ formatDelayDuration(entry) }}
+                                </div>
+                                <!-- Reason -->
+                                <div class="flex items-center text-sm text-gray-600 truncate" [title]="entry.reason">
+                                    {{ entry.reason }}
+                                </div>
+                                <!-- Assigned To -->
+                                <div class="flex items-center">
+                                    @if (getAssigneeName(entry.assigneeId); as name) {
+                                    <div class="flex items-center gap-2">
+                                        <div
+                                            [class]="'w-6 h-6 rounded-full flex items-center justify-center text-white text-[10px] font-semibold flex-shrink-0 ' + getAvatarColor(name)">
+                                            {{ getInitials(name) }}
+                                        </div>
+                                        <span class="text-sm text-gray-700 truncate" [title]="name">{{ name }}</span>
+                                    </div>
+                                    } @else {
+                                    <span class="text-sm text-gray-400">Unassigned</span>
+                                    }
+                                </div>
+                                <!-- Status -->
+                                <div class="flex items-center">
+                                    <span
+                                        [class]="'inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ' + getStatusClass(entry.status)">
+                                        {{ getStatusLabel(entry.status) }}
+                                    </span>
+                                </div>
+                                <!-- Actions -->
+                                <!-- <div class="flex items-center justify-end" (click)="$event.stopPropagation()">
+                                    <button (click)="openDeleteConfirmation(entry, $event)"
+                                        class="p-1 text-gray-400 hover:text-red-600 rounded transition-colors opacity-0 group-hover:opacity-100 cursor-pointer"
+                                        title="Delete entry">
+                                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                                d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                                        </svg>
+                                    </button>
+                                </div> -->
+                            </div>
+                            }
+                        </div>
+                        }
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Add/Edit Modal -->
+@if (showAddModal()) {
+<app-delay-entry-modal [isOpen]="showAddModal()" [projectId]="projectId()" [entry]="editingEntry()"
+    [projectItems]="projectItems()" [projectMembers]="projectMembers()" (close)="closeModal()" (saved)="onEntrySaved()"
+    (updated)="onEntryUpdated()" />
+}
+
+<!-- Delete Confirmation -->
+<app-confirmation-dialog [isOpen]="showDeleteConfirmation()" [title]="'Delete Delay Entry'"
+    [message]="'Are you sure you want to delete this delay entry? This action cannot be undone.'"
+    [confirmText]="'Delete'" [cancelText]="'Cancel'" [isDanger]="true" (confirm)="confirmDelete()"
+    (cancel)="cancelDelete()" />
+
+<!-- ============================================================ -->
+<!-- Bulk Action Bar                                              -->
+<!-- ============================================================ -->
+@if (selectedIds().size > 0) {
+<div
+    class="fixed bottom-6 left-1/2 transform -translate-x-1/2 z-40 bg-white border border-gray-200 shadow-2xl rounded-lg flex items-center px-1.5 py-1.5 h-[48px] box-border whitespace-nowrap">
+    <!-- Count Badge -->
+    <div class="flex items-center gap-2.5 px-3 border-r border-gray-200 mr-1.5 pr-4 h-full">
+        <div
+            class="min-w-[20px] h-5 px-1.5 rounded bg-blue-100 text-blue-700 text-xs font-semibold flex items-center justify-center">
+            {{ selectedIds().size }}
+        </div>
+        <span class="text-[13px] font-medium text-gray-600">
+            selected
+        </span>
+    </div>
+
+    <!-- Select All -->
+    <button (click)="toggleSelectAll()"
+        class="flex items-center gap-2 px-3 h-full text-[13px] font-medium text-gray-700 hover:text-gray-900 hover:bg-gray-100 rounded transition-colors cursor-pointer mr-1">
+        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                d="M15 15l-2 5L9 9l11 4-5 2zm0 0l5 5M7.188 2.239l.777 2.897M5.136 7.965l-2.898-.777M13.95 4.05l-2.122 2.122m-5.657 5.656l-2.12 2.122">
+            </path>
+        </svg>
+        Select all
+    </button>
+
+    <div class="h-4 w-px bg-gray-200 mx-1"></div>
+
+    <!-- Bulk Edit -->
+    <button (click)="openBulkEditModal()"
+        class="flex items-center gap-2 px-3 h-full text-[13px] font-medium text-gray-700 hover:text-gray-900 hover:bg-gray-100 rounded transition-colors cursor-pointer mx-1">
+        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+        </svg>
+        Edit fields
+    </button>
+
+    <!-- Bulk Delete -->
+    <button (click)="openBulkDeleteModal()"
+        class="flex items-center gap-2 px-3 h-full text-[13px] font-medium text-gray-700 hover:text-gray-900 hover:bg-gray-100 rounded transition-colors cursor-pointer mr-1">
+        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+        </svg>
+        Delete
+    </button>
+
+    <!-- Export Delay Report -->
+    <button (click)="exportDelayReport()" [disabled]="isExporting() || isBulkDeleting() || isBulkUpdating()"
+        class="flex items-center gap-2 px-3 h-full text-[13px] font-medium text-gray-700 hover:text-gray-900 hover:bg-gray-100 rounded transition-colors cursor-pointer mr-2 disabled:opacity-60 disabled:cursor-not-allowed">
+        @if (isExporting()) {
+        <svg class="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24">
+            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"></path>
+        </svg>
+        Generating...
+        } @else {
+        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+        </svg>
+        Export Delay Report
+        }
+    </button>
+
+    <div class="h-4 w-px bg-gray-200 mx-1.5"></div>
+
+    <!-- Clear Selection (Close) -->
+    <button (click)="clearBulkSelection()"
+        class="flex items-center justify-center w-8 h-full ml-1 text-gray-500 hover:text-gray-700 hover:bg-gray-100 rounded transition-colors cursor-pointer">
+        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+        </svg>
+    </button>
+</div>
+}
+
+<!-- ─── Bulk Delete Confirmation Modal ───────────────────────────────────── -->
+@if (showBulkDeleteModal()) {
+<div class="fixed inset-0 z-50 flex items-center justify-center">
+    <!-- Backdrop -->
+    <div class="absolute inset-0 bg-black/40 backdrop-blur-sm" (click)="closeBulkDeleteModal()"></div>
+
+    <!-- Modal -->
+    <div class="relative bg-white rounded-xl shadow-2xl w-full max-w-sm mx-4 overflow-hidden">
+        <!-- Icon + Title -->
+        <div class="px-6 pt-6 pb-4 text-center">
+            <div class="w-12 h-12 rounded-full bg-red-100 flex items-center justify-center mx-auto mb-4">
+                <svg class="w-6 h-6 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                        d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                </svg>
+            </div>
+            <h2 class="text-base font-semibold text-gray-900">Delete {{ selectedIds().size }} Delay Log{{
+                selectedIds().size !== 1 ? 's' : '' }}</h2>
+            <p class="mt-2 text-sm text-gray-500">
+                Are you sure you want to delete
+                <span class="font-semibold text-gray-800">{{ selectedIds().size }} delay log{{ selectedIds().size !== 1
+                    ? 's' : '' }}</span>?
+                This action cannot be undone.
+            </p>
+        </div>
+
+        <!-- Footer -->
+        <div class="flex items-center justify-center gap-3 px-6 pb-6">
+            <button (click)="closeBulkDeleteModal()"
+                class="flex-1 px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors cursor-pointer">
+                Cancel
+            </button>
+            <button (click)="executeBulkDelete()" [disabled]="isBulkDeleting()"
+                class="flex-1 px-4 py-2 text-sm font-medium text-white bg-red-600 rounded-lg hover:bg-red-700 transition-colors cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed flex items-center justify-center gap-2">
+                @if (isBulkDeleting()) {
+                <svg class="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24">
+                    <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                    <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z"></path>
+                </svg>
+                }
+                Delete
+            </button>
+        </div>
+    </div>
+</div>
+}
+
+<!-- ============================================================ -->
+<!-- Bulk Edit Modal                                              -->
+<!-- ============================================================ -->
+@if (showBulkEditModal()) {
+<div class="fixed inset-0 z-50 flex items-center justify-center p-4" style="background: rgba(0,0,0,0.45);">
+    <div class="bg-white rounded-xl shadow-2xl w-full max-w-lg flex flex-col" style="max-height: 90vh;">
+        <!-- Header -->
+        <div class="flex items-center justify-between px-6 py-4 border-b border-gray-200">
+            <div>
+                <h2 class="text-lg font-semibold text-gray-900">Bulk Edit Delay Logs</h2>
+                <p class="text-sm text-gray-500 mt-0.5">Editing {{ selectedIds().size }} selected log{{
+                    selectedIds().size !== 1 ? 's' : '' }}. Only filled fields will be updated.</p>
+            </div>
+            <button (click)="closeBulkEditModal()"
+                class="p-2 text-gray-400 hover:text-gray-600 rounded-lg hover:bg-gray-100 transition-colors cursor-pointer">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                </svg>
+            </button>
+        </div>
+
+        <!-- Form -->
+        <div class="flex-1 overflow-y-auto px-6 py-5">
+            <form [formGroup]="bulkEditForm" class="space-y-4">
+                <!-- Type and Status -->
+                <div class="grid grid-cols-2 gap-4">
+                    <div>
+                        <label
+                            class="block text-xs font-medium text-gray-500 uppercase tracking-wider mb-1.5">Type</label>
+                        <select formControlName="entityType"
+                            class="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#8c2d1b] focus:border-transparent bg-white">
+                            <option value="">— No Change —</option>
+                            <option value="PHASE">Phase</option>
+                            <option value="TASK">Task</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label
+                            class="block text-xs font-medium text-gray-500 uppercase tracking-wider mb-1.5">Status</label>
+                        <select formControlName="status"
+                            class="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#8c2d1b] focus:border-transparent bg-white">
+                            <option value="">— No Change —</option>
+                            <option value="OPEN">Open</option>
+                            <option value="ONGOING">Ongoing</option>
+                            <option value="ON_HOLD">On Hold</option>
+                            <option value="COMPLETED">Completed</option>
+                            <option value="CANCELLED">Cancelled</option>
+                        </select>
+                    </div>
+                </div>
+
+                <!-- Original and Revised Dates -->
+                <div class="grid grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-xs font-medium text-gray-500 uppercase tracking-wider mb-1.5">Original
+                            End Date</label>
+                        <input type="date" formControlName="originalEndDate"
+                            class="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#8c2d1b] focus:border-transparent" />
+                    </div>
+                    <div>
+                        <label class="block text-xs font-medium text-gray-500 uppercase tracking-wider mb-1.5">Revised
+                            End Date</label>
+                        <input type="date" formControlName="revisedEndDate"
+                            class="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#8c2d1b] focus:border-transparent" />
+                    </div>
+                </div>
+
+                <!-- Assigned To -->
+                <div>
+                    <label class="block text-xs font-medium text-gray-500 uppercase tracking-wider mb-1.5">Assigned
+                        To</label>
+                    <select formControlName="assigneeId"
+                        class="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#8c2d1b] focus:border-transparent bg-white">
+                        <option value="">— No Change —</option>
+                        @for (member of projectMembers(); track member.memberId) {
+                        @if (member.isActive) {
+                        <option [value]="member.memberId">{{ member.user }}</option>
+                        }
+                        }
+                    </select>
+                </div>
+
+                <!-- Reason -->
+                <div>
+                    <label class="block text-xs font-medium text-gray-500 uppercase tracking-wider mb-1.5">Reason for
+                        Delay</label>
+                    <textarea formControlName="reason" rows="3" placeholder="Leave blank to keep existing reason..."
+                        class="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#8c2d1b] focus:border-transparent resize-none placeholder-gray-400"></textarea>
+                </div>
+            </form>
+        </div>
+
+        <!-- Footer -->
+        <div class="flex items-center justify-end gap-3 px-6 py-4 border-t border-gray-200">
+            <button (click)="closeBulkEditModal()"
+                class="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors cursor-pointer">
+                Cancel
+            </button>
+            <button (click)="onBulkEditSubmit()" [disabled]="isBulkUpdating()"
+                class="px-4 py-2 text-sm font-medium text-white bg-[#8c2d1b] rounded-lg hover:bg-[#6b2115] transition-colors flex items-center gap-2 cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed">
+                @if (isBulkUpdating()) {
+                <svg class="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24">
+                    <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                    <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"></path>
+                </svg>
+                Updating...
+                } @else {
+                Apply Changes
+                }
+            </button>
+        </div>
+    </div>
+</div>
+}
+
+<!-- ============================================================ -->
+<!-- Snackbar                                                     -->
+<!-- ============================================================ -->
+@if (snackbarMessage()) {
+<div class="snackbar" [class.snackbar-success]="snackbarType() === 'success'"
+    [class.snackbar-error]="snackbarType() === 'error'">
+    @if (snackbarType() === 'success') {
+    <svg class="w-4 h-4 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
+    </svg>
+    } @else {
+    <svg class="w-4 h-4 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+    </svg>
+    }
+    <span>{{ snackbarMessage() }}</span>
+    <button class="ml-auto p-0.5 rounded opacity-70 hover:opacity-100 transition-opacity"
+        (click)="snackbarMessage.set(null)">
+        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+        </svg>
+    </button>
+</div>
+}

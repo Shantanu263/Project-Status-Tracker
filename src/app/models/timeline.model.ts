@@ -67,3 +67,10 @@ export interface TimelineBounds {
     totalDays: number;
     paddingDays: number;
 }
+
+export interface PhaseDependency {
+    id?: number;
+    predecessorId: number;
+    successorId: number;
+    dependencyType: 'FS' | 'SS' | 'FF' | 'SF';
+}

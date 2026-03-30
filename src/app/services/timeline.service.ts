@@ -16,6 +16,7 @@ import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { environment } from '../environments/environment';
 import { Phase } from '../models/phase.model';
+import { PhaseDependency } from '../models/timeline.model';
 
 @Injectable({
     providedIn: 'root'
@@ -150,5 +151,29 @@ export class TimelineService {
 
         const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
         return `${months[date.getMonth()]} ${date.getDate()}`;
+    }
+
+    /**
+     * Fetch all phase dependencies for a project
+     * GET /api/project/{projectId}/phases/dependency
+     */
+    getDependencies(projectId: number): Observable<PhaseDependency[]> {
+        return this.http.get<PhaseDependency[]>(`${this.api}/${projectId}/phases/dependency`);
+    }
+
+    /**
+     * Create a phase dependency
+     * POST /api/project/{projectId}/phases/dependency
+     */
+    createDependency(projectId: number, dep: { predecessorId: number; successorId: number; dependencyType?: string }): Observable<PhaseDependency> {
+        return this.http.post<PhaseDependency>(`${this.api}/${projectId}/phases/dependency`, dep);
+    }
+
+    /**
+     * Delete a phase dependency
+     * DELETE /api/project/{projectId}/phases/dependency/{dependencyId}
+     */
+    deleteDependency(projectId: number, dependencyId: number): Observable<void> {
+        return this.http.delete<void>(`${this.api}/${projectId}/phases/dependency/${dependencyId}`);
     }
 }

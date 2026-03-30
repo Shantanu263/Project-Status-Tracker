@@ -900,6 +900,38 @@ export class ProjectsDashboard implements AfterViewInit, OnDestroy {
     }
   }
 
+  /**
+   * Returns a descriptive tooltip for the completion status badge on a project card.
+   */
+  getCompletionStatusTooltip(project: ProjectCard): string {
+    const cs = this.getProjectCompletionStatus(project);
+    if (!cs) return '';
+
+    const label = cs.label;
+
+    if (project.status?.toUpperCase() === 'COMPLETED') {
+      if (label === 'On time') {
+        return `Project completed exactly on the deadline (${project.endDate}).`;
+      }
+      if (label.endsWith('early')) {
+        return `Project completed ${label.replace(' early', '')} before the deadline (due ${project.endDate}, completed ${project.completedOn}).`;
+      }
+      if (label.startsWith('+')) {
+        const late = label.replace('+', '').replace(' late', '');
+        return `Project completed ${late} after the deadline (due ${project.endDate}, completed ${project.completedOn}).`;
+      }
+      return label;
+    } else {
+      if (label.startsWith('Overdue')) {
+        return `Project is ${label.toLowerCase()} — the deadline was ${project.endDate} and it has not been completed yet.`;
+      }
+      if (label === 'On Time') {
+        return `Project is on track and has not passed its deadline (due ${project.endDate}).`;
+      }
+      return label;
+    }
+  }
+
   // Navigation methods
   viewProject(projectId: number): void {
     this.router.navigate(['/home/projects', projectId]);

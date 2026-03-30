@@ -100,11 +100,15 @@
                                 <option value="ON_HOLD">
                                     <span class="color-indicator on-hold"></span>On Hold
                                 </option>
+                                <option value="CANCELLED">
+                                    <span class="color-indicator cancelled"></span>Cancelled
+                                </option>
                             </select>
                             <div class="select-color-indicator" [class.open]="taskForm.get('status')?.value === 'OPEN'"
                                 [class.ongoing]="taskForm.get('status')?.value === 'ONGOING'"
                                 [class.on-hold]="taskForm.get('status')?.value === 'ON_HOLD'"
-                                [class.completed]="taskForm.get('status')?.value === 'COMPLETED'">
+                                [class.completed]="taskForm.get('status')?.value === 'COMPLETED'"
+                                [class.cancelled]="taskForm.get('status')?.value === 'CANCELLED'">
                             </div>
                         </div>
                     </div>

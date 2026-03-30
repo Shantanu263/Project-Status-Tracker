@@ -10,11 +10,12 @@ import { Phase, Task } from '../../../models/phase.model';
 import { TaskDetailsModalComponent } from '../task-details-modal/task-details-modal';
 import { MatSnackBar } from '@angular/material/snack-bar';
 import { DataSyncService } from '../../../services/data-sync.service';
+import { DelayEntryModalComponent, ProjectItem } from '../../delay-tracker/delay-entry-modal/delay-entry-modal';
 
 
 @Component({
     selector: 'app-phase-details-modal',
-    imports: [CommonModule, FormsModule, TaskDetailsModalComponent],
+    imports: [CommonModule, FormsModule, TaskDetailsModalComponent, DelayEntryModalComponent],
     templateUrl: './phase-details-modal.html',
     styleUrl: './phase-details-modal.scss',
     changeDetection: ChangeDetectionStrategy.OnPush
@@ -50,6 +51,10 @@ export class PhaseDetailsModalComponent {
     // Task modal state
     showTaskDetailsModal = signal(false);
     selectedTaskId = signal<number | null>(null);
+
+    // Delay modal state
+    showDelayEntryModal = signal(false);
+    delayProjectItem = signal<ProjectItem[]>([]);
 
     // Permission signals
     currentUserId = computed(() => this.authService.getCurrentUserId());
@@ -306,7 +311,8 @@ export class PhaseDetailsModalComponent {
             'OPEN': 'Open',
             'ONGOING': 'Ongoing',
             'ON_HOLD': 'On Hold',
-            'COMPLETED': 'Completed'
+            'COMPLETED': 'Completed',
+            'CANCELLED': 'Cancelled'
         };
         return labelMap[status || ''] || status || 'Not Set';
     }
@@ -316,7 +322,8 @@ export class PhaseDetailsModalComponent {
             'OPEN': 'bg-gray-100 text-gray-800',
             'ONGOING': 'bg-blue-100 text-blue-800',
             'ON_HOLD': 'bg-purple-100 text-purple-800',
-            'COMPLETED': 'bg-green-100 text-green-800'
+            'COMPLETED': 'bg-green-100 text-green-800',
+            'CANCELLED': 'bg-red-100 text-red-800'
         };
         return statusMap[status] || 'bg-gray-100 text-gray-800';
     }
@@ -326,7 +333,8 @@ export class PhaseDetailsModalComponent {
             'OPEN': 'Open',
             'ONGOING': 'Ongoing',
             'ON_HOLD': 'On Hold',
-            'COMPLETED': 'Completed'
+            'COMPLETED': 'Completed',
+            'CANCELLED': 'Cancelled'
         };
         return labelMap[status] || status;
     }
@@ -350,5 +358,40 @@ export class PhaseDetailsModalComponent {
     onTaskDetailsUpdated(): void {
         // Refresh phase details to get updated task information
         this.loadPhaseDetails();
+    }
+
+    onAddToDelayTracker(): void {
+        const phase = this.phaseDetails();
+        if (!phase) return;
+
+        const assignedMember = this.assignedMember();
+        const item: ProjectItem = {
+            id: phase.phaseId!,
+            phaseId: phase.phaseId!,
+            name: phase.phaseName,
+            type: 'PHASE',
+            endDate: phase.endDate || '',
+            assigneeMemberId: phase.projectMemberId || null,
+            assigneeName: assignedMember ? assignedMember.user : 'Unassigned',
+            status: phase.status || 'OPEN'
+        };
+
+        this.delayProjectItem.set([item]);
+        this.showMoreMenu.set(false);
+        this.showDelayEntryModal.set(true);
+    }
+
+    closeDelayEntryModal(): void {
+        this.showDelayEntryModal.set(false);
+        this.delayProjectItem.set([]);
+    }
+
+    onDelayEntrySaved(): void {
+        this.snackBar.open('Added to Delay Tracker successfully!', 'Close', {
+            duration: 3000,
+            horizontalPosition: 'center',
+            verticalPosition: 'bottom'
+        });
+        this.closeDelayEntryModal();
     }
 }

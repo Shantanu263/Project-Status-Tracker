@@ -7,6 +7,7 @@ import { SelectedProjectService } from '../../services/selected-project.service'
 import { PermissionService } from '../../services/permission.service';
 import { AuthService } from '../../services/auth.service';
 import { DataSyncService } from '../../services/data-sync.service';
+import { DelayTrackerService } from '../../services/delay-tracker.service';
 import { Phase, Task } from '../../models/phase.model';
 import { ProjectMember } from '../../models/project.model';
 import { ChangeDetectionStrategy } from '@angular/core';
@@ -15,6 +16,19 @@ import { ConfirmationDialogComponent } from '../shared/confirmation-dialog/confi
 import { PhaseFormComponent } from './phase-form/phase-form';
 import { TaskFormComponent } from './task-form/task-form';
 import { PhaseDetailsModalComponent } from './phase-details-modal/phase-details-modal';
+import { HttpClient } from '@angular/common/http';
+import { environment } from '../../environments/environment';
+
+interface BulkUpdateResponse {
+  successIds: number[];
+  failedItems: { id: number; reason: string }[];
+}
+
+interface SnackbarMessage {
+  message: string;
+  type: 'success' | 'error' | 'info';
+}
+
 
 @Component({
   selector: 'app-phases',
@@ -29,7 +43,9 @@ export class PhasesComponent {
   private readonly authService = inject(AuthService);
   private readonly permissionService = inject(PermissionService);
   private readonly dataSyncService = inject(DataSyncService);
+  private readonly delayTrackerService = inject(DelayTrackerService);
   private readonly route = inject(ActivatedRoute);
+  private readonly http = inject(HttpClient);
 
   projectId = input.required<number>();
 
@@ -66,6 +82,65 @@ export class PhasesComponent {
   sortBy = signal<'name' | 'date' | 'status'>('name');
   sortOrder = signal<'asc' | 'desc'>('asc');
 
+  // Bulk selection state
+  selectedPhaseIds = signal<Set<number>>(new Set());
+  showBulkEditModal = signal(false);
+  showBulkDeleteModal = signal(false);
+  isBulkOperating = signal(false);
+  snackbar = signal<SnackbarMessage | null>(null);
+  private snackbarTimer: any = null;
+
+  // Bulk edit form values (no Priority for phases)
+  bulkEditStatus = signal<string>('');
+  bulkEditAssignee = signal<string>('');
+  bulkEditStartDate = signal<string>('');
+  bulkEditEndDate = signal<string>('');
+
+  // Bulk Add to Delay Tracker
+  showBulkDelayModal = signal(false);
+  showInvalidItemsModal = signal(false);
+  bulkDelayRevisedEndDate = signal<string>('');
+  bulkDelayReason = signal<string>('');
+
+  private bulkDelayEligibility = computed(() => {
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+
+    const eligible: Phase[] = [];
+    const invalid: { item: Phase; reason: string }[] = [];
+
+    const allPhases = this.phases();
+    for (const id of this.selectedPhaseIds()) {
+      const phase = allPhases.find(p => p.phaseId === id);
+      if (!phase) continue;
+
+      const endDate = phase.endDate ? this.parseBackendDate(phase.endDate) : null;
+
+      if (phase.completedOn && endDate) {
+        const completedDate = this.parseBackendDate(phase.completedOn);
+        if (completedDate && completedDate > endDate) {
+          // Late completed
+          eligible.push(phase);
+          continue;
+        } else {
+          invalid.push({ item: phase, reason: 'Completed on time' });
+          continue;
+        }
+      }
+
+      if (!phase.completedOn && endDate && today > endDate) {
+        // Overdue
+        eligible.push(phase);
+      } else {
+        invalid.push({ item: phase, reason: 'Not overdue' });
+      }
+    }
+    return { eligible, invalid };
+  });
+
+  bulkDelayEligiblePhases = computed(() => this.bulkDelayEligibility().eligible);
+  bulkDelayInvalidPhases = computed(() => this.bulkDelayEligibility().invalid);
+
   // Permission signals
   currentUserId = computed(() => this.authService.getCurrentUserId());
 
@@ -92,6 +167,23 @@ export class PhasesComponent {
   canDeleteTask = computed(() =>
     this.permissionService.canDeleteTask(this.projectMembers(), this.currentUserId())
   );
+
+  // Bulk selection computed
+  selectedCount = computed(() => this.selectedPhaseIds().size);
+
+  allVisibleSelected = computed(() => {
+    const phases = this.filteredPhases();
+    if (phases.length === 0) return false;
+    const selected = this.selectedPhaseIds();
+    return phases.every(p => p.phaseId !== undefined && selected.has(p.phaseId));
+  });
+
+  someButNotAllSelected = computed(() => {
+    const phases = this.filteredPhases();
+    const selected = this.selectedPhaseIds();
+    const count = phases.filter(p => p.phaseId !== undefined && selected.has(p.phaseId)).length;
+    return count > 0 && count < phases.length;
+  });
 
   // Computed filtered and sorted phases
   filteredPhases = computed(() => {
@@ -583,6 +675,7 @@ export class PhasesComponent {
     if (statusUpper === 'ONGOING' || statusUpper === 'IN_PROGRESS') return 'Ongoing';
     if (statusUpper === 'OPEN' || statusUpper === 'TO_DO' || statusUpper === 'NOT_STARTED') return 'Open';
     if (statusUpper === 'ON_HOLD') return 'On Hold';
+    if (statusUpper === 'CANCELLED') return 'Cancelled';
     return 'Open';
   }
 
@@ -594,6 +687,8 @@ export class PhasesComponent {
       return 'bg-blue-50 border border-blue-200 text-blue-600';
     } else if (statusText === 'On Hold') {
       return 'bg-yellow-50 border border-yellow-200 text-yellow-700';
+    } else if (statusText === 'Cancelled') {
+      return 'bg-purple-100 border border-purple-200 text-purple-700';
     } else {
       return 'bg-gray-100 border border-gray-300 text-gray-600';
     }
@@ -692,4 +787,249 @@ export class PhasesComponent {
     const member = this.projectMembers().find(m => m.memberId === memberId);
     return member ? !member.isActive : false;
   }
+
+  // ─── Bulk Selection ─────────────────────────────────────────────────────────
+
+  togglePhaseSelection(phaseId: number, event: Event): void {
+    event.stopPropagation();
+    const current = new Set(this.selectedPhaseIds());
+    if (current.has(phaseId)) {
+      current.delete(phaseId);
+    } else {
+      current.add(phaseId);
+    }
+    this.selectedPhaseIds.set(current);
+  }
+
+  toggleAllPhases(event: Event): void {
+    event.stopPropagation();
+    const phases = this.filteredPhases();
+    if (this.allVisibleSelected()) {
+      this.selectedPhaseIds.set(new Set());
+    } else {
+      const ids = new Set(phases.map(p => p.phaseId!).filter(id => id !== undefined));
+      this.selectedPhaseIds.set(ids);
+    }
+  }
+
+  clearSelection(): void {
+    this.selectedPhaseIds.set(new Set());
+  }
+
+  isPhaseSelected(phaseId: number): boolean {
+    return this.selectedPhaseIds().has(phaseId);
+  }
+
+  // ─── Bulk Edit Modal ────────────────────────────────────────────────────────
+
+  openBulkEditPhasesModal(): void {
+    this.bulkEditStatus.set('');
+    this.bulkEditAssignee.set('');
+    this.bulkEditStartDate.set('');
+    this.bulkEditEndDate.set('');
+    this.showBulkEditModal.set(true);
+  }
+
+  closeBulkEditPhasesModal(): void {
+    this.showBulkEditModal.set(false);
+  }
+
+  onBulkEditStatusChange(event: Event): void {
+    this.bulkEditStatus.set((event.target as HTMLSelectElement).value);
+  }
+
+  onBulkEditAssigneeChange(event: Event): void {
+    this.bulkEditAssignee.set((event.target as HTMLSelectElement).value);
+  }
+
+  onBulkEditStartDateChange(event: Event): void {
+    this.bulkEditStartDate.set((event.target as HTMLInputElement).value);
+  }
+
+  onBulkEditEndDateChange(event: Event): void {
+    this.bulkEditEndDate.set((event.target as HTMLInputElement).value);
+  }
+
+  executeBulkEditPhases(): void {
+    const ids = Array.from(this.selectedPhaseIds());
+    if (ids.length === 0) return;
+
+    const updates: Record<string, any> = {};
+    if (this.bulkEditStatus()) updates['status'] = this.bulkEditStatus();
+    if (this.bulkEditAssignee()) updates['projectMemberId'] = Number(this.bulkEditAssignee());
+    if (this.bulkEditStartDate()) {
+      updates['startDate'] = this.bulkEditStartDate(); // Already yyyy-MM-dd from input
+    }
+    if (this.bulkEditEndDate()) {
+      updates['endDate'] = this.bulkEditEndDate(); // Already yyyy-MM-dd from input
+    }
+
+    if (Object.keys(updates).length === 0) {
+      this.closeBulkEditPhasesModal();
+      return;
+    }
+
+    this.isBulkOperating.set(true);
+    const url = `${environment.apiUrl}/project/${this.projectId()}/phase/bulk-update`;
+    this.http.put<BulkUpdateResponse>(url, { ids, updates }).subscribe({
+      next: (res) => {
+        this.isBulkOperating.set(false);
+        this.closeBulkEditPhasesModal();
+        this.clearSelection();
+        this.loadPhases();
+        this.dataSyncService.notifyPhasesUpdated(this.projectId());
+        const successCount = res.successIds?.length ?? ids.length;
+        const failCount = res.failedItems?.length ?? 0;
+        if (failCount === 0) {
+          this.showSnackbar(`${successCount} phase${successCount !== 1 ? 's' : ''} updated successfully.`, 'success');
+        } else {
+          this.showSnackbar(`${successCount} updated, ${failCount} failed.`, 'error');
+        }
+      },
+      error: (err) => {
+        console.error('Bulk update phases error:', err);
+        this.isBulkOperating.set(false);
+        this.showSnackbar('Bulk update failed. Please try again.', 'error');
+      }
+    });
+  }
+
+  // ─── Bulk Delete Modal ───────────────────────────────────────────────────────
+
+  openBulkDeletePhasesModal(): void {
+    this.showBulkDeleteModal.set(true);
+  }
+
+  closeBulkDeletePhasesModal(): void {
+    this.showBulkDeleteModal.set(false);
+  }
+
+  executeBulkDeletePhases(): void {
+    const ids = Array.from(this.selectedPhaseIds());
+    if (ids.length === 0) return;
+
+    this.isBulkOperating.set(true);
+    const url = `${environment.apiUrl}/project/${this.projectId()}/phase/bulk-delete`;
+    this.http.delete<void>(url, { body: { ids } }).subscribe({
+      next: () => {
+        this.isBulkOperating.set(false);
+        this.closeBulkDeletePhasesModal();
+        const count = ids.length;
+        this.clearSelection();
+        this.loadPhases();
+        this.dataSyncService.notifyPhasesUpdated(this.projectId());
+        this.showSnackbar(`${count} phase${count !== 1 ? 's' : ''} deleted successfully.`, 'success');
+      },
+      error: (err) => {
+        console.error('Bulk delete phases error:', err);
+        this.isBulkOperating.set(false);
+        this.showSnackbar('Bulk delete failed. Please try again.', 'error');
+      }
+    });
+  }
+
+  // ─── Bulk Add to Delay Tracker ──────────────────────────────────────────────
+
+  openBulkDelayModal(): void {
+    this.bulkDelayRevisedEndDate.set('');
+    this.bulkDelayReason.set('');
+    this.showBulkDelayModal.set(true);
+  }
+
+  closeBulkDelayModal(): void {
+    this.showBulkDelayModal.set(false);
+  }
+
+  openInvalidItemsModal(): void {
+    this.showInvalidItemsModal.set(true);
+  }
+
+  closeInvalidItemsModal(): void {
+    this.showInvalidItemsModal.set(false);
+  }
+
+  executeBulkAddDelay(): void {
+    const eligible = this.bulkDelayEligiblePhases();
+    if (eligible.length === 0) return;
+
+    const revisedEndDate = this.bulkDelayRevisedEndDate();
+    const reason = this.bulkDelayReason();
+    if (!revisedEndDate || !reason.trim()) return;
+
+    const delayLogs = eligible.map(phase => ({
+      projectId: this.projectId(),
+      phaseId: phase.phaseId!,
+      entityType: 'PHASE' as const,
+      originalEndDate: this.formatDateToIso(phase.endDate),
+      revisedEndDate,
+      status: 'OPEN' as const,
+      assigneeId: phase.projectMemberId ? Number(phase.projectMemberId) : undefined,
+      reason
+    }));
+
+    this.isBulkOperating.set(true);
+    this.delayTrackerService.bulkAddDelayLogs(this.projectId(), { delayLogs }).subscribe({
+      next: (res) => {
+        this.isBulkOperating.set(false);
+        this.closeBulkDelayModal();
+        const failCount = res.failedEntries?.length ?? 0;
+        const successCount = eligible.length - failCount;
+        if (failCount === 0) {
+          this.showSnackbar(`${successCount} item${successCount !== 1 ? 's' : ''} added to delay tracker.`, 'success');
+        } else {
+          this.showSnackbar(`${successCount} added, ${failCount} failed.`, 'error');
+        }
+      },
+      error: (err) => {
+        console.error('Bulk add delay error:', err);
+        this.isBulkOperating.set(false);
+        this.showSnackbar('Failed to add delay entries. Please try again.', 'error');
+      }
+    });
+  }
+
+  /** Parse backend date formats: dd-MM-yyyy or yyyy-MM-dd */
+  private parseBackendDate(dateStr: string): Date | null {
+    if (!dateStr) return null;
+    const parts = dateStr.split('-');
+    if (parts.length !== 3) return null;
+    let d: Date;
+    if (parts[0].length === 2) {
+      // dd-MM-yyyy
+      d = new Date(+parts[2], +parts[1] - 1, +parts[0]);
+    } else {
+      // yyyy-MM-dd
+      d = new Date(+parts[0], +parts[1] - 1, +parts[2]);
+    }
+    return isNaN(d.getTime()) ? null : d;
+  }
+
+  /** Convert backend date (dd-MM-yyyy or yyyy-MM-dd) to ISO yyyy-MM-dd for API */
+  private formatDateToIso(dateStr: string | undefined): string {
+    if (!dateStr) return '';
+    const parts = dateStr.split('-');
+    if (parts.length === 3 && parts[0].length === 2) {
+      // dd-MM-yyyy → yyyy-MM-dd
+      return `${parts[2]}-${parts[1]}-${parts[0]}`;
+    }
+    return dateStr.substring(0, 10);
+  }
+
+  // ─── Snackbar ────────────────────────────────────────────────────────────────
+
+  showSnackbar(message: string, type: 'success' | 'error' | 'info'): void {
+    if (this.snackbarTimer) clearTimeout(this.snackbarTimer);
+    this.snackbar.set({ message, type });
+    this.snackbarTimer = setTimeout(() => {
+      this.snackbar.set(null);
+    }, 4000);
+  }
+
+  dismissSnackbar(): void {
+    if (this.snackbarTimer) clearTimeout(this.snackbarTimer);
+    this.snackbar.set(null);
+  }
+
 }
+
+

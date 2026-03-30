@@ -199,7 +199,7 @@ export class NotificationService implements OnDestroy {
             return new Observable();
         }
 
-        return this.http.put<void>(`${this.apiUrl}/${userId}/notifications/read`, {}).pipe(
+        return this.http.put<void>(`${this.apiUrl}/${userId}/notifications/read-all`, {}).pipe(
             tap(() => {
                 // Update local state - mark all as read
                 const notifications = this.notificationsSubject.value.map((n) => ({

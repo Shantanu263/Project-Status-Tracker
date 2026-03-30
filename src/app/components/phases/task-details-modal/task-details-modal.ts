@@ -11,12 +11,13 @@ import { SubtaskDetailsModalComponent } from '../subtask-details-modal/subtask-d
 import { SubtaskFormComponent } from '../subtask-form/subtask-form';
 import { MatSnackBar } from '@angular/material/snack-bar';
 import { DataSyncService } from '../../../services/data-sync.service';
+import { DelayEntryModalComponent, ProjectItem } from '../../delay-tracker/delay-entry-modal/delay-entry-modal';
 
 
 
 @Component({
     selector: 'app-task-details-modal',
-    imports: [CommonModule, FormsModule, SubtaskDetailsModalComponent, SubtaskFormComponent],
+    imports: [CommonModule, FormsModule, SubtaskDetailsModalComponent, SubtaskFormComponent, DelayEntryModalComponent],
     templateUrl: './task-details-modal.html',
     styleUrl: './task-details-modal.scss',
     changeDetection: ChangeDetectionStrategy.OnPush
@@ -62,6 +63,10 @@ export class TaskDetailsModalComponent {
     showSubtaskModal = signal(false);
     selectedSubtaskId = signal<number | null>(null);
     showSubtaskFormModal = signal(false);
+
+    // Delay modal state
+    showDelayEntryModal = signal(false);
+    delayProjectItem = signal<ProjectItem[]>([]);
 
     // Permission signals
     currentUserIdComputed = computed(() => this.authService.getCurrentUserId());
@@ -527,5 +532,41 @@ export class TaskDetailsModalComponent {
     onSubtaskCreated(): void {
         // Refresh task details to show the new subtask
         this.loadTaskDetails();
+    }
+
+    onAddToDelayTracker(): void {
+        const task = this.taskDetails();
+        if (!task) return;
+
+        const assignedMember = this.assignedMember();
+        const item: ProjectItem = {
+            id: task.taskId!,
+            phaseId: this.phaseId(),
+            name: task.taskName,
+            type: 'TASK',
+            endDate: task.endDate || '',
+            assigneeMemberId: task.assignedToProjectMemberId || null,
+            assigneeName: assignedMember ? assignedMember.user : 'Unassigned',
+            status: task.status || 'OPEN',
+            phaseName: `Phase ${this.phaseId()}` // Or if you have phase name context, pass it
+        };
+
+        this.delayProjectItem.set([item]);
+        this.showMoreMenu.set(false);
+        this.showDelayEntryModal.set(true);
+    }
+
+    closeDelayEntryModal(): void {
+        this.showDelayEntryModal.set(false);
+        this.delayProjectItem.set([]);
+    }
+
+    onDelayEntrySaved(): void {
+        this.snackBar.open('Added to Delay Tracker successfully!', 'Close', {
+            duration: 3000,
+            horizontalPosition: 'center',
+            verticalPosition: 'bottom'
+        });
+        this.closeDelayEntryModal();
     }
 }

@@ -22,7 +22,7 @@ export interface SubTask {
   taskId: number;
   startDate: string;
   endDate: string;
-  status: 'OPEN' | 'ONGOING' | 'COMPLETED' | 'ON_HOLD';
+  status: 'OPEN' | 'ONGOING' | 'COMPLETED' | 'ON_HOLD' | 'CANCELLED';
   priority: 'Low' | 'Medium' | 'High';
   assignedToProjectMemberId?: number;
   completedOn?: string;
@@ -36,7 +36,7 @@ export interface Task {
   description?: string;
   startDate?: string;
   endDate?: string;
-  status?: 'OPEN' | 'ONGOING' | 'COMPLETED' | 'ON_HOLD';
+  status?: 'OPEN' | 'ONGOING' | 'COMPLETED' | 'ON_HOLD' | 'CANCELLED';
   priority?: 'Low' | 'Medium' | 'High';
   assignedTo?: number;
   assignedToName?: string;
@@ -58,7 +58,7 @@ export interface Phase {
   description?: string;
   startDate?: string;
   endDate?: string;
-  status?: 'OPEN' | 'ONGOING' | 'COMPLETED' | 'ON_HOLD';
+  status?: 'OPEN' | 'ONGOING' | 'COMPLETED' | 'ON_HOLD' | 'CANCELLED';
   tasks?: Task[];
   projectMemberId?: number;
   assignedToName?: string;

@@ -75,11 +75,13 @@
                                 <option value="ONGOING">Ongoing</option>
                                 <option value="COMPLETED">Completed</option>
                                 <option value="ON_HOLD">On Hold</option>
+                                <option value="CANCELLED">Cancelled</option>
                             </select>
                             <div class="select-color-indicator" [class.open]="subtaskForm().status === 'OPEN'"
                                 [class.ongoing]="subtaskForm().status === 'ONGOING'"
                                 [class.on-hold]="subtaskForm().status === 'ON_HOLD'"
-                                [class.completed]="subtaskForm().status === 'COMPLETED'">
+                                [class.completed]="subtaskForm().status === 'COMPLETED'"
+                                [class.cancelled]="subtaskForm().status === 'CANCELLED'">
                             </div>
                         </div>
                     </div>

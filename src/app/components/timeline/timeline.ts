@@ -16,7 +16,8 @@ import {
     TimelineBar,
     TimelineRow,
     DragState,
-    TimelineBounds
+    TimelineBounds,
+    PhaseDependency
 } from '../../models/timeline.model';
 
 interface PhaseWithTasks extends Phase {
@@ -74,6 +75,11 @@ export class TimelineComponent implements OnInit, AfterViewInit {
     hoveredPhase = signal<{ phase: PhaseWithTasks; index: number; x: number; y: number; showAbove: boolean } | null>(null);
     hoveredTask = signal<{ task: Task; x: number; y: number; showAbove: boolean } | null>(null);
 
+    // Sort state
+    sortOption = signal<'id' | 'name' | 'startDate' | 'endDate'>('id');
+    sortDirection = signal<'asc' | 'desc'>('asc');
+    isSortMenuOpen = signal<boolean>(false);
+
     // Export modal state
     showExportModal = signal<boolean>(false);
     showExportMenu = signal<boolean>(false);
@@ -81,6 +87,16 @@ export class TimelineComponent implements OnInit, AfterViewInit {
     // Loading and error states
     isLoading = signal<boolean>(false);
     errorMessage = signal<string>('');
+
+    // ===== Dependency linking state =====
+    dependencies = signal<PhaseDependency[]>([]);
+    isLinkMode = signal(false);
+    linkPredecessorId = signal<number | null>(null);
+    previewLineEnd = signal<{ x: number; y: number } | null>(null);
+    showDependencyTypePopup = signal<{ predecessorId: number; successorId: number; x: number; y: number } | null>(null);
+    toastMessage = signal<string | null>(null);
+    selectedDependencyId = signal<number | null>(null);
+    private toastTimeout: ReturnType<typeof setTimeout> | null = null;
 
     // Project members for permission checks
     projectMembers = signal<ProjectMember[]>([]);
@@ -96,10 +112,69 @@ export class TimelineComponent implements OnInit, AfterViewInit {
         return this.permissionService.canUpdateTaskTimeline(this.projectMembers(), currentUserId);
     });
 
+    // Sorted phases computed
+    sortedPhases = computed(() => {
+        const option = this.sortOption();
+        const direction = this.sortDirection();
+        const data = this.phases();
+
+        // Clone to avoid mutating original source data
+        const phasesCopy = data.map(p => ({
+            ...p,
+            tasks: [...(p.tasks || [])]
+        }));
+
+        const compare = (a: any, b: any, sortTarget: string) => {
+            let result = 0;
+            switch (sortTarget) {
+                case 'name':
+                    // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
+                    const nameA = a.phaseName || a.taskName || '';
+                    // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
+                    const nameB = b.phaseName || b.taskName || '';
+                    result = nameA.localeCompare(nameB);
+                    break;
+                case 'startDate': {
+                    const dateA = this.timelineService.parseDate(a.startDate);
+                    const dateB = this.timelineService.parseDate(b.startDate);
+                    const timeA = dateA ? dateA.getTime() : 0;
+                    const timeB = dateB ? dateB.getTime() : 0;
+                    result = timeA - timeB;
+                    break;
+                }
+                case 'endDate': {
+                    const dateA = this.timelineService.parseDate(a.endDate);
+                    const dateB = this.timelineService.parseDate(b.endDate);
+                    const timeA = dateA ? dateA.getTime() : 0;
+                    const timeB = dateB ? dateB.getTime() : 0;
+                    result = timeA - timeB;
+                    break;
+                }
+                case 'id':
+                default:
+                    // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
+                    const idA = a.phaseId !== undefined ? a.phaseId : (a.taskId !== undefined ? a.taskId : 0);
+                    // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
+                    const idB = b.phaseId !== undefined ? b.phaseId : (b.taskId !== undefined ? b.taskId : 0);
+                    result = idA - idB;
+                    break;
+            }
+            return direction === 'asc' ? result : -result;
+        };
+
+        // Sort both phases and internal tasks
+        phasesCopy.sort((a, b) => compare(a, b, option));
+        phasesCopy.forEach(phase => {
+            phase.tasks.sort((a, b) => compare(a, b, option));
+        });
+
+        return phasesCopy;
+    });
+
     // Computed values
     timelineRows = computed(() => {
         const rows: TimelineRow[] = [];
-        const phasesData = this.phases();
+        const phasesData = this.sortedPhases();
         const expanded = this.expandedPhases();
 
         phasesData.forEach(phase => {
@@ -140,11 +215,167 @@ export class TimelineComponent implements OnInit, AfterViewInit {
         return rows;
     });
 
+    // Computed dependency lines for SVG rendering
+    dependencyLines = computed(() => {
+        const deps = this.dependencies();
+        const phasesData = this.sortedPhases();
+        const columns = this.timelineColumns();
+        // Access signals to re-trigger on zoom/expand changes
+        this.timeScale();
+        this.expandedPhases();
+
+        if (deps.length === 0 || phasesData.length === 0 || columns.length === 0) return [];
+
+        return deps.map(dep => {
+            const predPhase = phasesData.find(p => p.phaseId === dep.predecessorId);
+            const succPhase = phasesData.find(p => p.phaseId === dep.successorId);
+
+            if (!predPhase || !succPhase) return null;
+
+            const predBar = this.calculateBarPosition(predPhase.startDate, predPhase.endDate);
+            const succBar = this.calculateBarPosition(succPhase.startDate, succPhase.endDate);
+
+            const predY = this.getPhaseRowCenterY(dep.predecessorId);
+            const succY = this.getPhaseRowCenterY(dep.successorId);
+
+            if (predY === null || succY === null) return null;
+
+            // 8px bar padding offset applied in template
+            const predLeft = predBar.left + 8;
+            const predRight = predBar.left + predBar.width - 8;
+            const succLeft = succBar.left + 8;
+            const succRight = succBar.left + succBar.width - 8;
+
+            let points: { x: number; y: number }[] = [];
+            let labelX = 0, labelY = 0;
+            const margin = 16;
+            const yMid = predY + (succY - predY) / 2;
+
+            switch (dep.dependencyType) {
+                case 'FS':
+                    if (predRight + margin < succLeft - margin) {
+                        const midX = predRight + margin;
+                        points = [
+                            { x: predRight, y: predY },
+                            { x: midX, y: predY },
+                            { x: midX, y: succY },
+                            { x: succLeft, y: succY }
+                        ];
+                        labelX = midX;
+                        labelY = yMid;
+                    } else {
+                        const midX1 = predRight + margin;
+                        const midX2 = succLeft - margin;
+                        points = [
+                            { x: predRight, y: predY },
+                            { x: midX1, y: predY },
+                            { x: midX1, y: yMid },
+                            { x: midX2, y: yMid },
+                            { x: midX2, y: succY },
+                            { x: succLeft, y: succY }
+                        ];
+                        labelX = midX1 + (midX2 - midX1) / 2;
+                        labelY = yMid - 6;
+                    }
+                    break;
+                case 'SS':
+                    const ssMidX = Math.min(predLeft, succLeft) - margin;
+                    points = [
+                        { x: predLeft, y: predY },
+                        { x: ssMidX, y: predY },
+                        { x: ssMidX, y: succY },
+                        { x: succLeft, y: succY }
+                    ];
+                    labelX = ssMidX;
+                    labelY = yMid;
+                    break;
+                case 'FF':
+                    const ffMidX = Math.max(predRight, succRight) + margin;
+                    points = [
+                        { x: predRight, y: predY },
+                        { x: ffMidX, y: predY },
+                        { x: ffMidX, y: succY },
+                        { x: succRight, y: succY }
+                    ];
+                    labelX = ffMidX;
+                    labelY = yMid;
+                    break;
+                case 'SF':
+                    if (predLeft - margin > succRight + margin) {
+                        const midX = predLeft - margin;
+                        points = [
+                            { x: predLeft, y: predY },
+                            { x: midX, y: predY },
+                            { x: midX, y: succY },
+                            { x: succRight, y: succY }
+                        ];
+                        labelX = midX;
+                        labelY = yMid;
+                    } else {
+                        const midX1 = predLeft - margin;
+                        const midX2 = succRight + margin;
+                        points = [
+                            { x: predLeft, y: predY },
+                            { x: midX1, y: predY },
+                            { x: midX1, y: yMid },
+                            { x: midX2, y: yMid },
+                            { x: midX2, y: succY },
+                            { x: succRight, y: succY }
+                        ];
+                        labelX = midX1 + (midX2 - midX1) / 2;
+                        labelY = yMid - 6;
+                    }
+                    break;
+            }
+
+            // Generate clean path with rounded corners
+            const generateRoundedPath = (pts: { x: number; y: number }[], r: number) => {
+                let d = `M ${pts[0].x} ${pts[0].y}`;
+                for (let i = 1; i < pts.length - 1; i++) {
+                    const p0 = pts[i - 1], p1 = pts[i], p2 = pts[i + 1];
+                    const dx1 = p1.x - p0.x, dy1 = p1.y - p0.y;
+                    const len1 = Math.sqrt(dx1 * dx1 + dy1 * dy1);
+                    const dx2 = p2.x - p1.x, dy2 = p2.y - p1.y;
+                    const len2 = Math.sqrt(dx2 * dx2 + dy2 * dy2);
+                    const currentR = Math.min(r, len1 / 2, len2 / 2);
+
+                    if (currentR <= 0.1 || (dx1 === 0 && dx2 === 0) || (dy1 === 0 && dy2 === 0)) {
+                        d += ` L ${p1.x} ${p1.y}`;
+                        continue;
+                    }
+
+                    const cp1x = p1.x - (dx1 / len1) * currentR;
+                    const cp1y = p1.y - (dy1 / len1) * currentR;
+                    const cp2x = p1.x + (dx2 / len2) * currentR;
+                    const cp2y = p1.y + (dy2 / len2) * currentR;
+
+                    d += ` L ${cp1x} ${cp1y} Q ${p1.x} ${p1.y} ${cp2x} ${cp2y}`;
+                }
+                d += ` L ${pts[pts.length - 1].x} ${pts[pts.length - 1].y}`;
+                return d;
+            };
+
+            const path = generateRoundedPath(points, 8);
+
+            return {
+                dep,
+                path,
+                labelX,
+                labelY,
+                endX: points[points.length - 1].x,
+                endY: points[points.length - 1].y
+            };
+        }).filter(Boolean) as { dep: PhaseDependency; path: string; labelX: number; labelY: number; endX: number; endY: number }[];
+    });
+
+    private todayCentered = false;
+
     constructor() {
         // Reload when project changes
         effect(() => {
             const project = this.selectedProject();
             if (project?.projectId) {
+                this.todayCentered = false;
                 this.loadPhases(project.projectId);
             }
         });
@@ -159,13 +390,17 @@ export class TimelineComponent implements OnInit, AfterViewInit {
                 setTimeout(() => {
                     this.initializeScrollSync();
                     // Auto-center on today after timeline is fully rendered
-                    this.scrollToToday();
+                    if (!this.todayCentered) {
+                        this.scrollToToday();
+                        this.todayCentered = true;
+                    }
                 }, 150);
             }
         });
     }
 
     ngOnInit() {
+        // ... existing logic ...
         const project = this.selectedProject();
         if (project?.projectId) {
             this.loadPhases(project.projectId);
@@ -173,14 +408,14 @@ export class TimelineComponent implements OnInit, AfterViewInit {
 
         this.dataSyncService.phasesUpdated$.subscribe(projectId => {
             if (projectId === this.selectedProject().projectId) {
-                this.loadPhases(projectId);
+                this.loadPhases(projectId, true);
             }
         });
 
         // Subscribe to task updates from other components
         this.dataSyncService.tasksUpdated$.subscribe(({ projectId }) => {
             if (projectId === this.selectedProject().projectId) {
-                this.loadPhases(projectId);
+                this.loadPhases(projectId, true);
             }
         });
 
@@ -204,6 +439,20 @@ export class TimelineComponent implements OnInit, AfterViewInit {
     ngAfterViewInit() {
         // Scroll sync and auto-centering are handled in the effect
         // after data is loaded, so this is just a placeholder for the lifecycle hook
+    }
+
+    toggleSortMenu(event: MouseEvent) {
+        event.stopPropagation();
+        this.isSortMenuOpen.update(val => !val);
+    }
+
+    setSortOption(option: 'id' | 'name' | 'startDate' | 'endDate') {
+        this.sortOption.set(option);
+        this.isSortMenuOpen.set(false);
+    }
+
+    toggleSortDirection() {
+        this.sortDirection.update(dir => dir === 'asc' ? 'desc' : 'asc');
     }
 
     private scrollSyncInitialized = false;
@@ -284,9 +533,14 @@ export class TimelineComponent implements OnInit, AfterViewInit {
     /**
      * Load phases and tasks from backend
      */
-    loadPhases(projectId: number) {
-        this.isLoading.set(true);
+    loadPhases(projectId: number, silent: boolean = false) {
+        if (!silent) {
+            this.isLoading.set(true);
+        }
         this.errorMessage.set('');
+
+        // Also load dependencies
+        this.loadDependencies(projectId);
 
         // Load project members for permission checks
         this.projectService.getProjectMembers(projectId).subscribe({
@@ -327,13 +581,6 @@ export class TimelineComponent implements OnInit, AfterViewInit {
 
                                 loadedCount++;
                                 if (loadedCount === phases.length) {
-                                    // Sort by start date
-                                    phasesWithTasks.sort((a, b) => {
-                                        const dateA = this.timelineService.parseDate(a.startDate);
-                                        const dateB = this.timelineService.parseDate(b.startDate);
-                                        if (!dateA || !dateB) return 0;
-                                        return dateA.getTime() - dateB.getTime();
-                                    });
                                     this.phases.set(phasesWithTasks);
                                     this.calculateTimeline(phasesWithTasks);
                                     this.isLoading.set(false);
@@ -1093,7 +1340,7 @@ export class TimelineComponent implements OnInit, AfterViewInit {
                         console.error('Error updating phase dates:', err);
                         this.errorMessage.set('Failed to update phase dates. Please try again.');
                         // Revert local changes on error
-                        this.loadPhases(project.projectId);
+                        this.loadPhases(project.projectId, true);
                     }
                 });
             }
@@ -1129,7 +1376,7 @@ export class TimelineComponent implements OnInit, AfterViewInit {
                             console.error('Error updating task dates:', err);
                             this.errorMessage.set('Failed to update task dates. Please try again.');
                             // Revert local changes on error
-                            this.loadPhases(project.projectId);
+                            this.loadPhases(project.projectId, true);
                         }
                     });
                     break;
@@ -1144,6 +1391,96 @@ export class TimelineComponent implements OnInit, AfterViewInit {
 
 
 
+
+    // Parse dd-mm-yyyy date string (backend format) to a Date object
+    parseDateFromBackend(date: string | undefined): Date | null {
+        if (!date) return null;
+        const parts = date.split('-');
+        if (parts.length === 3) {
+            const day = parseInt(parts[0], 10);
+            const month = parseInt(parts[1], 10) - 1;
+            const year = parseInt(parts[2], 10);
+            const d = new Date(year, month, day);
+            if (!isNaN(d.getTime())) return d;
+        }
+        const d = new Date(date);
+        return isNaN(d.getTime()) ? null : d;
+    }
+
+    // Format a day count into a compact string like "3d", "1w2d", "2m", "1y3m"
+    private formatDurationText(days: number): string {
+        if (days === 0) return '0d';
+        const abs = Math.abs(days);
+        if (abs >= 365) {
+            const y = Math.floor(abs / 365);
+            const m = Math.floor((abs % 365) / 30);
+            return m > 0 ? `${y}y${m}m` : `${y}y`;
+        }
+        if (abs >= 30) {
+            const m = Math.floor(abs / 30);
+            const w = Math.floor((abs % 30) / 7);
+            return w > 0 ? `${m}m${w}w` : `${m}m`;
+        }
+        if (abs >= 7) {
+            const w = Math.floor(abs / 7);
+            const d = abs % 7;
+            return d > 0 ? `${w}w${d}d` : `${w}w`;
+        }
+        return `${abs}d`;
+    }
+
+    /**
+     * Get completion status label and CSS colour class for a phase or task row.
+     * Mirrors the getDelayInfo logic from the tasks component.
+     * For COMPLETED items: early / on-time / late.
+     * For active items: overdue (past end date) or on-track.
+     */
+    getCompletionStatus(item: { status?: string; endDate?: string; completedOn?: string }): { label: string; colorClass: string } | null {
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+
+        // Use timelineService.parseDate() — handles both dd-MM-yyyy (backend) and
+        // yyyy-MM-dd (API / optimistic-update format) correctly as local midnight.
+        // parseDateFromBackend() falls back to new Date() for yyyy-MM-dd which is UTC
+        // and shifts the day backwards in IST (+5:30), causing false "overdue" results.
+        if (item.status === 'COMPLETED') {
+            if (item.completedOn && item.endDate) {
+                const completedDate = this.timelineService.parseDate(item.completedOn);
+                const endDate = this.timelineService.parseDate(item.endDate);
+                if (completedDate && endDate) {
+                    completedDate.setHours(0, 0, 0, 0);
+                    endDate.setHours(0, 0, 0, 0);
+                    if (completedDate <= endDate) {
+                        const earlyDays = Math.floor((endDate.getTime() - completedDate.getTime()) / (1000 * 60 * 60 * 24));
+                        if (earlyDays > 0) {
+                            return { label: `${this.formatDurationText(earlyDays)} early`, colorClass: 'text-green-600 bg-green-50' };
+                        }
+                        return { label: 'On time', colorClass: 'text-green-600 bg-green-50' };
+                    } else {
+                        const lateDays = Math.ceil((completedDate.getTime() - endDate.getTime()) / (1000 * 60 * 60 * 24));
+                        return { label: `+${this.formatDurationText(lateDays)} late`, colorClass: 'text-red-600 bg-red-50' };
+                    }
+                }
+            }
+            return null;
+        }
+
+        // Active (non-completed, non-cancelled) items — check if overdue
+        if (item.status === 'CANCELLED') return null;
+
+        if (item.endDate) {
+            const endDate = this.timelineService.parseDate(item.endDate);
+            if (endDate) {
+                endDate.setHours(0, 0, 0, 0);
+                if (today > endDate) {
+                    const overdueDays = Math.ceil((today.getTime() - endDate.getTime()) / (1000 * 60 * 60 * 24));
+                    return { label: `Overdue ${this.formatDurationText(overdueDays)}`, colorClass: 'text-orange-600 bg-orange-50' };
+                }
+            }
+        }
+
+        return null;
+    }
 
     //Get status color class
     getStatusClass(status?: string): string {
@@ -1191,7 +1528,7 @@ export class TimelineComponent implements OnInit, AfterViewInit {
 
     getTotalTimelineHeight(): number {
         let totalHeight = 0;
-        const phasesData = this.phases();
+        const phasesData = this.sortedPhases();
         const expanded = this.expandedPhases();
 
         for (const phase of phasesData) {
@@ -1380,5 +1717,244 @@ export class TimelineComponent implements OnInit, AfterViewInit {
         if (exportMenu && !exportMenu.contains(target) && exportButton && !exportButton.contains(target)) {
             this.showExportMenu.set(false);
         }
+
+        // Close sort menu when clicking outside
+        const sortContainer = document.querySelector('.sort-container');
+        if (sortContainer && !sortContainer.contains(target)) {
+            this.isSortMenuOpen.set(false);
+        }
+
+        // Close dependency type popup when clicking outside
+        const depPopup = document.querySelector('.dependency-type-popup');
+        if (depPopup && !depPopup.contains(target)) {
+            this.showDependencyTypePopup.set(null);
+        }
+    }
+
+    // ===== Dependency Linking Methods =====
+
+    /** Load dependencies from backend */
+    loadDependencies(projectId: number) {
+        this.timelineService.getDependencies(projectId).subscribe({
+            next: (deps) => this.dependencies.set(deps),
+            error: (err) => console.error('Error loading dependencies:', err)
+        });
+    }
+
+    /** Calculate Y center position for a phase row */
+    getPhaseRowCenterY(phaseId: number): number | null {
+        const phasesData = this.sortedPhases();
+        const expanded = this.expandedPhases();
+        let y = 0;
+
+        for (const phase of phasesData) {
+            if (phase.phaseId === phaseId) {
+                return y + 32; // Half of 64px phase row height
+            }
+            y += 64; // Phase row height
+            if (phase.phaseId && expanded.has(phase.phaseId) && phase.tasks) {
+                y += phase.tasks.length * 48; // Expanded task rows
+            }
+        }
+        return null;
+    }
+
+    /** Enter dependency linking mode */
+    enterLinkMode() {
+        this.isLinkMode.set(true);
+        this.linkPredecessorId.set(null);
+        this.previewLineEnd.set(null);
+        this.showDependencyTypePopup.set(null);
+        this.selectedDependencyId.set(null);
+    }
+
+    /** Cancel dependency linking mode */
+    cancelLinkMode() {
+        this.isLinkMode.set(false);
+        this.linkPredecessorId.set(null);
+        this.previewLineEnd.set(null);
+        this.showDependencyTypePopup.set(null);
+    }
+
+    /** Handle click on a phase bar's link circle */
+    onLinkCircleClick(event: MouseEvent, phaseId: number) {
+        event.stopPropagation();
+        event.preventDefault();
+
+        const predecessorId = this.linkPredecessorId();
+
+        if (predecessorId === null) {
+            // First click — select predecessor
+            this.linkPredecessorId.set(phaseId);
+        } else {
+            // Second click — select successor
+            if (predecessorId === phaseId) {
+                this.showToast('Cannot link a phase to itself');
+                return;
+            }
+
+            // Check for duplicate
+            const exists = this.dependencies().some(
+                d => d.predecessorId === predecessorId && d.successorId === phaseId
+            );
+            if (exists) {
+                this.showToast('This dependency already exists');
+                return;
+            }
+
+            // Show dependency type popup
+            const rect = (event.target as HTMLElement).getBoundingClientRect();
+            this.showDependencyTypePopup.set({
+                predecessorId,
+                successorId: phaseId,
+                x: rect.left,
+                y: rect.bottom + 8
+            });
+        }
+    }
+
+    /** Handle mouse move during link mode for preview line */
+    onPreviewMouseMove(event: MouseEvent) {
+        if (!this.isLinkMode() || this.linkPredecessorId() === null) return;
+
+        const wrapper = (event.currentTarget as HTMLElement);
+        const rect = wrapper.getBoundingClientRect();
+        this.previewLineEnd.set({
+            x: event.clientX - rect.left + wrapper.scrollLeft,
+            y: event.clientY - rect.top + wrapper.scrollTop
+        });
+    }
+
+    /** Get preview line path from predecessor to mouse */
+    getPreviewLinePath(): string {
+        const predId = this.linkPredecessorId();
+        const mousePos = this.previewLineEnd();
+        if (predId === null || !mousePos) return '';
+
+        const predPhase = this.phases().find(p => p.phaseId === predId);
+        if (!predPhase) return '';
+
+        const predBar = this.calculateBarPosition(predPhase.startDate, predPhase.endDate);
+        const predY = this.getPhaseRowCenterY(predId);
+        if (predY === null) return '';
+
+        const x1 = predBar.left + predBar.width - 8; // Right edge of bar
+        return `M ${x1} ${predY} L ${mousePos.x} ${mousePos.y}`;
+    }
+
+    /** Select dependency type and create the dependency */
+    selectDependencyType(type: 'FS' | 'SS' | 'FF' | 'SF') {
+        const popup = this.showDependencyTypePopup();
+        if (!popup) return;
+
+        const dep: PhaseDependency = {
+            predecessorId: popup.predecessorId,
+            successorId: popup.successorId,
+            dependencyType: type
+        };
+
+        // Optimistically add to local state
+        this.dependencies.update(deps => [...deps, dep]);
+
+        // Reset link mode
+        this.showDependencyTypePopup.set(null);
+        this.linkPredecessorId.set(null);
+        this.previewLineEnd.set(null);
+
+        this.showToast('Dependency created');
+
+        // Call backend
+        const projectId = this.selectedProject()?.projectId;
+        if (projectId) {
+            this.timelineService.createDependency(projectId, {
+                predecessorId: dep.predecessorId,
+                successorId: dep.successorId,
+                dependencyType: dep.dependencyType
+            }).subscribe({
+                next: (created) => {
+                    // Force a reload of phases and dependencies to show updated dates silently without remounting
+                    this.loadPhases(projectId, true);
+                },
+                error: (err) => {
+                    console.error('Error creating dependency:', err);
+                    
+                    // Show exact error message from backend if available
+                    let errorMessage = 'Failed to save dependency';
+                    if (err?.error?.message) {
+                        errorMessage = err.error.message;
+                    } else if (typeof err?.error === 'string') {
+                        errorMessage = err.error;
+                    } else if (err?.message) {
+                        errorMessage = err.message;
+                    }
+                    
+                    this.showToast(errorMessage);
+
+                    // Revert the optimistic UI update
+                    this.dependencies.update(deps =>
+                        deps.filter(d => !(
+                            d.predecessorId === dep.predecessorId && 
+                            d.successorId === dep.successorId && 
+                            d.dependencyType === dep.dependencyType
+                        ))
+                    );
+                }
+            });
+        }
+    }
+
+    /** Handle click on a dependency line */
+    onDependencyLineClick(event: MouseEvent, dep: PhaseDependency) {
+        event.stopPropagation();
+        const currentSelected = this.selectedDependencyId();
+        if (currentSelected === dep.id) {
+            // Already selected — delete it
+            this.deleteDependency(dep);
+        } else {
+            this.selectedDependencyId.set(dep.id ?? null);
+        }
+    }
+
+    /** Delete a dependency */
+    deleteDependency(dep: PhaseDependency) {
+        // Optimistically remove from local state
+        this.dependencies.update(deps =>
+            deps.filter(d => !(d.predecessorId === dep.predecessorId && d.successorId === dep.successorId && d.dependencyType === dep.dependencyType))
+        );
+        this.selectedDependencyId.set(null);
+        this.showToast('Dependency deleted');
+
+        // Call backend
+        const projectId = this.selectedProject()?.projectId;
+        if (projectId && dep.id) {
+            this.timelineService.deleteDependency(projectId, dep.id).subscribe({
+                error: (err) => {
+                    console.error('Error deleting dependency:', err);
+                    this.showToast('Failed to delete dependency');
+                    // Re-add on failure
+                    this.dependencies.update(deps => [...deps, dep]);
+                }
+            });
+        }
+    }
+
+    /** Show a temporary toast message */
+    showToast(message: string) {
+        if (this.toastTimeout) {
+            clearTimeout(this.toastTimeout);
+        }
+        this.toastMessage.set(message);
+        this.toastTimeout = setTimeout(() => {
+            this.toastMessage.set(null);
+            this.toastTimeout = null;
+        }, 3000);
+    }
+
+    /** Get link mode status text */
+    getLinkModeStatus(): string {
+        if (this.linkPredecessorId() !== null) {
+            return 'Now select a successor phase';
+        }
+        return 'Select a predecessor phase';
     }
 }

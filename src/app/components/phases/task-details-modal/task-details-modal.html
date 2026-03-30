@@ -23,9 +23,19 @@
                     <!-- More Menu Dropdown -->
                     @if (showMoreMenu()) {
                     <div class="absolute right-0 mt-2 w-48 bg-white rounded-lg shadow-lg border border-gray-200 z-10">
+                        @if (canUpdateTask()) {
+                        <button (click)="onAddToDelayTracker()"
+                            class="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 transition-colors flex items-center gap-2">
+                            <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                    d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                            </svg>
+                            Add to Delay Tracker
+                        </button>
+                        }
                         @if (canDeleteTask()) {
                         <button (click)="openDeleteConfirmation()"
-                            class="w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-red-50 rounded-lg transition-colors flex items-center gap-2">
+                            class="w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-red-50 rounded-b-lg transition-colors flex items-center gap-2 border-t border-gray-100">
                             <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                                     d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16">
@@ -154,6 +164,7 @@
                                 <option value="ONGOING">Ongoing</option>
                                 <option value="ON_HOLD">On Hold</option>
                                 <option value="COMPLETED">Completed</option>
+                                <option value="CANCELLED">Cancelled</option>
                             </select>
                             <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center pr-3">
                                 <svg class="h-5 w-5 text-gray-600" fill="none" stroke="currentColor"
@@ -605,5 +616,12 @@
 <app-subtask-form [isOpen]="showSubtaskFormModal()" [projectId]="projectId()" [phaseId]="phaseId()" [taskId]="taskId()"
     [projectMembers]="projectMembers()" (close)="closeSubtaskFormModal()" (subtaskCreated)="onSubtaskCreated()">
 </app-subtask-form>
+}
+
+<!-- Delay Entry Modal -->
+@if (showDelayEntryModal()) {
+<app-delay-entry-modal [isOpen]="showDelayEntryModal()" [projectId]="projectId()"
+    [projectItems]="delayProjectItem()" (close)="closeDelayEntryModal()" (saved)="onDelayEntrySaved()">
+</app-delay-entry-modal>
 }
 }

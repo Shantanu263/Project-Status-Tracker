@@ -1,0 +1,263 @@
+@if (isOpen()) {
+<div class="modal-backdrop" (click)="onBackdropClick($event)">
+    <div class="modal-container" (click)="$event.stopPropagation()">
+        <!-- Modal Header -->
+        <div class="modal-header">
+            <h2 class="modal-title">{{ entry() ? 'Edit Delay Entry' : 'Add Delay Entry' }}</h2>
+            <button type="button" class="close-button" (click)="onClose()" aria-label="Close modal">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12">
+                    </path>
+                </svg>
+            </button>
+        </div>
+
+        <!-- Modal Content -->
+        <div class="modal-content">
+            <form [formGroup]="entryForm" (ngSubmit)="onSubmit()" class="entry-form">
+
+                <!-- Select from Project (only for new entries) -->
+                @if (!entry()) {
+                <div class="form-group">
+                    <label class="form-label">Select from Project</label>
+                    <div class="item-picker-wrapper">
+                        <!-- Toggle button / Selected item display -->
+                        <div class="item-picker-trigger" (click)="toggleItemPicker()">
+                            @if (selectedItem()) {
+                            <div class="selected-item-display">
+                                <span
+                                    [class]="'inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ' + getItemTypeClass(selectedItem()!.type)">
+                                    {{ selectedItem()!.type === 'PHASE' ? 'Phase' : 'Task' }}
+                                </span>
+                                <span class="selected-item-name">{{ selectedItem()!.name }}</span>
+                                <button type="button" class="clear-selection-btn"
+                                    (click)="clearSelection(); $event.stopPropagation()" title="Clear selection">
+                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                            d="M6 18L18 6M6 6l12 12" />
+                                    </svg>
+                                </button>
+                            </div>
+                            } @else {
+                            <div class="picker-placeholder">
+                                <svg class="w-4 h-4 text-gray-400" fill="none" stroke="currentColor"
+                                    viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                        d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                                </svg>
+                                <span>Select an existing phase or task...</span>
+                            </div>
+                            }
+                        </div>
+
+                        <!-- Item Picker Dropdown -->
+                        @if (showItemPicker()) {
+                        <div class="item-picker-dropdown">
+                            <!-- Search -->
+                            <div class="picker-search">
+                                <svg class="w-4 h-4 text-gray-400" fill="none" stroke="currentColor"
+                                    viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                        d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                                </svg>
+                                <input type="text" placeholder="Search phases and tasks..." [value]="itemSearchQuery()"
+                                    (input)="onItemSearch($event)" class="picker-search-input"
+                                    (click)="$event.stopPropagation()" />
+                            </div>
+
+                            <!-- Items list -->
+                            <div class="picker-items-list">
+                                @if (filteredProjectItems().length === 0) {
+                                <div class="picker-empty">No items found</div>
+                                } @else {
+                                @for (item of filteredProjectItems(); track item.type + item.id) {
+                                <div class="picker-item" (click)="selectProjectItem(item)">
+                                    <div class="picker-item-header">
+                                        <span
+                                            [class]="'inline-flex items-center px-1.5 py-0.5 rounded text-xs font-medium ' + getItemTypeClass(item.type)">
+                                            {{ item.type === 'PHASE' ? 'Phase' : 'Task' }}
+                                        </span>
+                                        <span class="picker-item-name">{{ item.name }}</span>
+                                    </div>
+                                    <div class="picker-item-meta">
+                                        @if (item.phaseName) {
+                                        <span class="picker-item-phase">{{ item.phaseName }}</span>
+                                        <span class="picker-item-separator">·</span>
+                                        }
+                                        @if (item.assigneeName) {
+                                        <span class="picker-item-assignee">{{ item.assigneeName }}</span>
+                                        <span class="picker-item-separator">·</span>
+                                        }
+                                        <span
+                                            [class]="'inline-flex items-center px-1.5 py-0.5 rounded-full text-xs font-medium ' + getItemStatusClass(item.status)">
+                                            {{ getStatusLabel(item.status) }}
+                                        </span>
+                                    </div>
+                                </div>
+                                }
+                                }
+                            </div>
+                        </div>
+                        }
+                    </div>
+                    <p class="helper-text">Or fill in the details manually below</p>
+                </div>
+
+                <!-- Divider -->
+                <div class="section-divider">
+                    <span>Details</span>
+                </div>
+                }
+
+                <!-- Entity Type and Status -->
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="entityType" class="form-label">
+                            Type <span class="required">*</span>
+                        </label>
+                        <select id="entityType" formControlName="entityType" class="form-input">
+                            <option value="PHASE">Phase</option>
+                            <option value="TASK">Task</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="status" class="form-label">
+                            Status <span class="required">*</span>
+                        </label>
+                        <select id="status" formControlName="status" class="form-input">
+                            <option value="OPEN">Open</option>
+                            <option value="ONGOING">Ongoing</option>
+                            <option value="COMPLETED">Completed</option>
+                            <option value="ON_HOLD">On Hold</option>
+                            <option value="CANCELLED">Cancelled</option>
+                        </select>
+                    </div>
+                </div>
+
+                <!-- Dates -->
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="originalEndDate" class="form-label">
+                            Original End Date <span class="required">*</span>
+                        </label>
+                        <input type="date" id="originalEndDate" formControlName="originalEndDate" class="form-input"
+                            [class.error]="isFieldInvalid('originalEndDate')" />
+                        @if (isFieldInvalid('originalEndDate')) {
+                        <p class="error-message">{{ getErrorMessage('originalEndDate') }}</p>
+                        }
+                    </div>
+
+                    <div class="form-group">
+                        <label for="revisedEndDate" class="form-label">
+                            Revised End Date <span class="required">*</span>
+                        </label>
+                        <input type="date" id="revisedEndDate" formControlName="revisedEndDate" class="form-input"
+                            [class.error]="isFieldInvalid('revisedEndDate')" />
+                        @if (isFieldInvalid('revisedEndDate')) {
+                        <p class="error-message">{{ getErrorMessage('revisedEndDate') }}</p>
+                        }
+                    </div>
+                </div>
+
+                <!-- Delay Duration (Auto-calculated) -->
+                @if (calculatedDelay()) {
+                <div class="delay-preview">
+                    <svg class="w-4 h-4 text-orange-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    </svg>
+                    <span class="delay-label">Delay Duration:</span>
+                    <span class="delay-value">{{ calculatedDelay() }}</span>
+                </div>
+                }
+
+                <!-- Assigned To -->
+                <div class="form-group">
+                    <label class="form-label">Assigned To</label>
+                    <div class="member-selector">
+                        <!-- Selected display / trigger -->
+                        <div class="selected-member" (click)="toggleMemberDropdown()">
+                            @if (selectedMemberForEntry(); as member) {
+                            <div class="member-display">
+                                <div [class]="'avatar ' + getMemberAvatarColor(member)">
+                                    {{ getMemberInitials(member) }}
+                                </div>
+                                <span class="member-name">{{ member.user }}</span>
+                            </div>
+                            <svg class="h-5 w-5 text-gray-600 ml-auto" fill="none" stroke="currentColor"
+                                viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                    d="M19 9l-7 7-7-7"></path>
+                            </svg>
+                            } @else {
+                            <span class="placeholder">Select a project member (optional)</span>
+                            <svg class="h-5 w-5 text-gray-600 ml-auto" fill="none" stroke="currentColor"
+                                viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                    d="M19 9l-7 7-7-7"></path>
+                            </svg>
+                            }
+                        </div>
+
+                        @if (showMemberDropdown()) {
+                        <div class="member-list">
+                            <div class="member-list-item" (click)="clearMemberSelection()">
+                                <span class="placeholder">No Member</span>
+                            </div>
+                            @for (member of projectMembers(); track member.memberId) {
+                            @if (member.isActive) {
+                            <div class="member-list-item" (click)="selectMemberForEntry(member)">
+                                <div class="member-display">
+                                    <div [class]="'avatar ' + getMemberAvatarColor(member)">
+                                        {{ getMemberInitials(member) }}
+                                    </div>
+                                    <div>
+                                        <div class="member-name">{{ member.user }}</div>
+                                        <div class="member-role">{{ member.role }}</div>
+                                    </div>
+                                </div>
+                            </div>
+                            }
+                            }
+                        </div>
+                        }
+                    </div>
+                </div>
+
+                <!-- Reason for Delay -->
+                <div class="form-group">
+                    <label for="reason" class="form-label">
+                        Reason for Delay <span class="required">*</span>
+                    </label>
+                    <textarea id="reason" formControlName="reason" class="form-input" rows="3"
+                        [class.error]="isFieldInvalid('reason')"
+                        placeholder="Describe the reason for delay"></textarea>
+                    @if (isFieldInvalid('reason')) {
+                    <p class="error-message">{{ getErrorMessage('reason') }}</p>
+                    }
+                </div>
+            </form>
+        </div>
+
+        <!-- Modal Footer -->
+        <div class="modal-footer">
+            <button type="button" class="btn btn-cancel" (click)="onClose()">
+                Cancel
+            </button>
+            <button type="submit" class="btn btn-primary" (click)="onSubmit()"
+                [disabled]="entryForm.invalid || isSubmitting()">
+                @if (isSubmitting()) {
+                <svg class="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24">
+                    <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                    <path class="opacity-75" fill="currentColor"
+                        d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"></path>
+                </svg>
+                } @else {
+                {{ entry() ? 'Update Entry' : 'Add Entry' }}
+                }
+            </button>
+        </div>
+    </div>
+</div>
+}

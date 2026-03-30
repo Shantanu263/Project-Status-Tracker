@@ -14,7 +14,7 @@ import { DataSyncService } from '../../services/data-sync.service';
 import { PermissionService } from '../../services/permission.service';
 import { AuthService } from '../../services/auth.service';
 
-type TaskStatus = 'OPEN' | 'ONGOING' | 'ON_HOLD' | 'COMPLETED';
+type TaskStatus = 'OPEN' | 'ONGOING' | 'ON_HOLD' | 'COMPLETED' | 'CANCELLED';
 
 interface TaskResponse {
   taskId: number;
@@ -32,7 +32,7 @@ interface TaskResponse {
 interface SubTask {
   subTaskId: number;
   subTaskName: string;
-  status: 'OPEN' | 'ONGOING' | 'COMPLETED' | 'ON_HOLD';
+  status: 'OPEN' | 'ONGOING' | 'COMPLETED' | 'ON_HOLD' | 'CANCELLED';
 }
 
 interface PhaseResponse {
@@ -58,7 +58,7 @@ interface Column {
   id: string;
   title: string;
   statusValue: TaskStatus;
-  colorDot: 'gray' | 'blue' | 'yellow' | 'green';
+  colorDot: 'gray' | 'blue' | 'yellow' | 'green' | 'purple';
   tasks: TaskCard[];
 }
 
@@ -108,6 +108,13 @@ export class BoardComponent {
       title: 'Completed',
       statusValue: 'COMPLETED',
       colorDot: 'green',
+      tasks: []
+    },
+    {
+      id: 'cancelled',
+      title: 'Cancelled',
+      statusValue: 'CANCELLED',
+      colorDot: 'purple',
       tasks: []
     }
   ]);
@@ -217,7 +224,8 @@ export class BoardComponent {
     gray: 'bg-gray-400',
     blue: 'bg-blue-500',
     yellow: 'bg-yellow-500',
-    green: 'bg-green-500'
+    green: 'bg-green-500',
+    purple: 'bg-purple-500'
   };
 
   priorityColorMap: Record<string, string> = {
@@ -365,8 +373,9 @@ export class BoardComponent {
     const colorMap: Record<string, string> = {
       todo: 'bg-gray-100 text-gray-600',
       ongoing: 'bg-blue-100 text-blue-600',
-      review: 'bg-yellow-100 text-yellow-600',
-      completed: 'bg-green-100 text-green-600'
+      onhold: 'bg-yellow-100 text-yellow-600',
+      completed: 'bg-green-100 text-green-600',
+      cancelled: 'bg-purple-100 text-purple-600'
     };
     return colorMap[columnId];
   }

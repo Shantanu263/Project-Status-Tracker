@@ -10,7 +10,7 @@ interface SubTaskForm {
     subTaskName: string;
     startDate: string;
     endDate: string;
-    status: 'OPEN' | 'ONGOING' | 'ON_HOLD' | 'COMPLETED';
+    status: 'OPEN' | 'ONGOING' | 'ON_HOLD' | 'COMPLETED' | 'CANCELLED';
     priority: 'Low' | 'Medium' | 'High';
     assignedTo: number | null;
 }

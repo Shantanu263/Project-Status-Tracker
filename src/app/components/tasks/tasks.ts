@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, OnInit, computed, inject, input, signal } from '@angular/core';
+import { ChangeDetectionStrategy, ChangeDetectorRef, Component, OnInit, computed, inject, input, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute } from '@angular/router';
@@ -14,6 +14,17 @@ import { SubtaskDetailsModalComponent } from '../phases/subtask-details-modal/su
 import { HttpClient } from '@angular/common/http';
 import { environment } from '../../environments/environment';
 import { DataSyncService } from '../../services/data-sync.service';
+import { DelayTrackerService } from '../../services/delay-tracker.service';
+
+interface BulkUpdateResponse {
+    successIds: number[];
+    failedItems: { id: number; reason: string }[];
+}
+
+interface SnackbarMessage {
+    message: string;
+    type: 'success' | 'error' | 'info';
+}
 
 interface TaskWithPhase extends Task {
     phaseName: string;
@@ -33,7 +44,9 @@ export class TasksComponent implements OnInit {
     private permissionService = inject(PermissionService);
     private http = inject(HttpClient);
     private dataSyncService = inject(DataSyncService);
+    private delayTrackerService = inject(DelayTrackerService);
     private route = inject(ActivatedRoute);
+    private cdr = inject(ChangeDetectorRef);
 
     // Inputs
     projectId = input.required<number>();
@@ -52,6 +65,7 @@ export class TasksComponent implements OnInit {
     assignedToMe = signal<boolean>(false);
     dueThisWeek = signal<boolean>(false);
     showDoneItems = signal<boolean>(false);
+    overdueOnly = signal<boolean>(false);
     startDateFilter = signal<string>('');
     endDateFilter = signal<string>('');
     showTaskDetailsModal = signal<boolean>(false);
@@ -62,6 +76,92 @@ export class TasksComponent implements OnInit {
     selectedSubtask = signal<{ taskId: number; phaseId: number; subTaskId: number } | null>(null);
     sortColumn = signal<string | null>(null);
     sortDirection = signal<'asc' | 'desc'>('asc');
+
+    // Bulk selection state
+    selectedTaskIds = signal<Set<number>>(new Set());
+    showBulkEditModal = signal<boolean>(false);
+    showBulkDeleteModal = signal<boolean>(false);
+    isBulkOperating = signal<boolean>(false);
+    snackbar = signal<SnackbarMessage | null>(null);
+    private snackbarTimer: any = null;
+
+    // Bulk edit form values
+    bulkEditStatus = signal<string>('');
+    bulkEditAssignee = signal<string>('');
+    bulkEditPriority = signal<string>('');
+    bulkEditStartDate = signal<string>('');
+    bulkEditEndDate = signal<string>('');
+
+    // Bulk Add to Delay Tracker
+    showBulkDelayModal = signal(false);
+    showInvalidItemsModal = signal(false);
+    bulkDelayRevisedEndDate = signal<string>('');
+    bulkDelayReason = signal<string>('');
+
+    private bulkDelayEligibility = computed(() => {
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+
+        const eligible: TaskWithPhase[] = [];
+        const invalid: { item: TaskWithPhase; reason: string }[] = [];
+
+        const allTasks = this.sortedAndFilteredTasks();
+        for (const id of this.selectedTaskIds()) {
+            const task = allTasks.find(t => t.taskId === id);
+            if (!task) continue;
+
+            const endDate = task.endDate ? this.parseDateFromBackend(task.endDate) : null;
+
+            if (task.completedOn && endDate) {
+                const completedDate = this.parseDateFromBackend(task.completedOn);
+                if (completedDate) {
+                    completedDate.setHours(0, 0, 0, 0);
+                    const endDateCopy = new Date(endDate);
+                    endDateCopy.setHours(0, 0, 0, 0);
+                    if (completedDate > endDateCopy) {
+                        eligible.push(task);
+                        continue;
+                    } else {
+                        invalid.push({ item: task, reason: 'Completed on time' });
+                        continue;
+                    }
+                }
+            }
+
+            if (!task.completedOn && endDate) {
+                const endDateCopy = new Date(endDate);
+                endDateCopy.setHours(0, 0, 0, 0);
+                if (today > endDateCopy) {
+                    eligible.push(task);
+                } else {
+                    invalid.push({ item: task, reason: 'Not overdue' });
+                }
+            } else if (!task.completedOn && !endDate) {
+                invalid.push({ item: task, reason: 'Not overdue' });
+            }
+        }
+        return { eligible, invalid };
+    });
+
+    bulkDelayEligibleTasks = computed(() => this.bulkDelayEligibility().eligible);
+    bulkDelayInvalidTasks = computed(() => this.bulkDelayEligibility().invalid);
+
+    // Bulk selection computed
+    selectedCount = computed(() => this.selectedTaskIds().size);
+
+    allVisibleSelected = computed(() => {
+        const tasks = this.sortedAndFilteredTasks();
+        if (tasks.length === 0) return false;
+        const selected = this.selectedTaskIds();
+        return tasks.every(t => t.taskId !== undefined && selected.has(t.taskId));
+    });
+
+    someButNotAllSelected = computed(() => {
+        const tasks = this.sortedAndFilteredTasks();
+        const selected = this.selectedTaskIds();
+        const count = tasks.filter(t => t.taskId !== undefined && selected.has(t.taskId)).length;
+        return count > 0 && count < tasks.length;
+    });
 
     // Computed
     phaseNames = computed(() => {
@@ -135,6 +235,20 @@ export class TasksComponent implements OnInit {
         // Show only done items if filter is active
         if (this.showDoneItems()) {
             tasks = tasks.filter(task => task.status === 'COMPLETED');
+        }
+
+        // Filter by overdue only (non-completed, non-cancelled tasks past their end date)
+        if (this.overdueOnly()) {
+            const today = new Date();
+            today.setHours(0, 0, 0, 0);
+            tasks = tasks.filter(task => {
+                if (task.status === 'COMPLETED' || task.status === 'CANCELLED') return false;
+                if (!task.endDate) return false;
+                const endDate = this.parseDateFromBackend(task.endDate);
+                if (!endDate) return false;
+                endDate.setHours(0, 0, 0, 0);
+                return endDate < today;
+            });
         }
 
         // Filter by start date
@@ -372,6 +486,10 @@ export class TasksComponent implements OnInit {
         this.showDoneItems.set(!this.showDoneItems());
     }
 
+    toggleOverdueOnly(): void {
+        this.overdueOnly.set(!this.overdueOnly());
+    }
+
     onStartDateChange(event: Event): void {
         const value = (event.target as HTMLInputElement).value;
         this.startDateFilter.set(value);
@@ -389,6 +507,7 @@ export class TasksComponent implements OnInit {
         this.assignedToMe.set(false);
         this.dueThisWeek.set(false);
         this.showDoneItems.set(false);
+        this.overdueOnly.set(false);
         this.startDateFilter.set('');
         this.endDateFilter.set('');
     }
@@ -400,6 +519,8 @@ export class TasksComponent implements OnInit {
             case 'COMPLETED':
                 return 'bg-green-100 text-green-800';
             case 'ON_HOLD':
+                return 'bg-yellow-100 text-yellow-800';
+            case 'CANCELLED':
                 return 'bg-purple-100 text-purple-800';
             case 'OPEN':
             default:
@@ -415,6 +536,8 @@ export class TasksComponent implements OnInit {
                 return 'Completed';
             case 'ON_HOLD':
                 return 'On Hold';
+            case 'CANCELLED':
+                return 'Cancelled';
             case 'OPEN':
             default:
                 return 'Open';
@@ -823,4 +946,241 @@ export class TasksComponent implements OnInit {
         const member = this.projectMembers().find(m => m.memberId === memberId);
         return member ? !member.isActive : false;
     }
+
+    // ─── Bulk Selection ───────────────────────────────────────────────────────
+
+    toggleTaskSelection(taskId: number, event: Event): void {
+        event.stopPropagation();
+        const current = new Set(this.selectedTaskIds());
+        if (current.has(taskId)) {
+            current.delete(taskId);
+        } else {
+            current.add(taskId);
+        }
+        this.selectedTaskIds.set(current);
+    }
+
+    toggleAllTasks(event: Event): void {
+        event.stopPropagation();
+        const tasks = this.sortedAndFilteredTasks();
+        if (this.allVisibleSelected()) {
+            this.selectedTaskIds.set(new Set());
+        } else {
+            const ids = new Set(tasks.map(t => t.taskId!).filter(id => id !== undefined));
+            this.selectedTaskIds.set(ids);
+        }
+    }
+
+    clearSelection(): void {
+        this.selectedTaskIds.set(new Set());
+    }
+
+    isTaskSelected(taskId: number): boolean {
+        return this.selectedTaskIds().has(taskId);
+    }
+
+    // ─── Bulk Edit Modal ──────────────────────────────────────────────────────
+
+    openBulkEditModal(): void {
+        this.bulkEditStatus.set('');
+        this.bulkEditAssignee.set('');
+        this.bulkEditPriority.set('');
+        this.bulkEditStartDate.set('');
+        this.bulkEditEndDate.set('');
+        this.showBulkEditModal.set(true);
+    }
+
+    closeBulkEditModal(): void {
+        this.showBulkEditModal.set(false);
+    }
+
+    onBulkEditStatusChange(event: Event): void {
+        this.bulkEditStatus.set((event.target as HTMLSelectElement).value);
+    }
+
+    onBulkEditAssigneeChange(event: Event): void {
+        this.bulkEditAssignee.set((event.target as HTMLSelectElement).value);
+    }
+
+    onBulkEditPriorityChange(event: Event): void {
+        this.bulkEditPriority.set((event.target as HTMLSelectElement).value);
+    }
+
+    onBulkEditStartDateChange(event: Event): void {
+        this.bulkEditStartDate.set((event.target as HTMLInputElement).value);
+    }
+
+    onBulkEditEndDateChange(event: Event): void {
+        this.bulkEditEndDate.set((event.target as HTMLInputElement).value);
+    }
+
+    executeBulkEdit(): void {
+        const ids = Array.from(this.selectedTaskIds());
+        if (ids.length === 0) return;
+
+        const updates: Record<string, any> = {};
+        if (this.bulkEditStatus()) updates['status'] = this.bulkEditStatus();
+        if (this.bulkEditAssignee()) updates['assignedToProjectMemberId'] = Number(this.bulkEditAssignee());
+        if (this.bulkEditPriority()) updates['priority'] = this.bulkEditPriority();
+        if (this.bulkEditStartDate()) {
+            updates['startDate'] = this.bulkEditStartDate(); // Already yyyy-MM-dd from input
+        }
+        if (this.bulkEditEndDate()) {
+            updates['endDate'] = this.bulkEditEndDate(); // Already yyyy-MM-dd from input
+        }
+
+        if (Object.keys(updates).length === 0) {
+            this.closeBulkEditModal();
+            return;
+        }
+
+        this.isBulkOperating.set(true);
+        const url = `${environment.apiUrl}/project/${this.projectId()}/tasks/bulk-update`;
+        this.http.put<BulkUpdateResponse>(url, { ids, updates }).subscribe({
+            next: (res) => {
+                this.isBulkOperating.set(false);
+                this.closeBulkEditModal();
+                this.clearSelection();
+                this.loadTasks();
+                this.dataSyncService.notifyTasksUpdated(this.projectId(), -1);
+                const successCount = res.successIds?.length ?? ids.length;
+                const failCount = res.failedItems?.length ?? 0;
+                if (failCount === 0) {
+                    this.showSnackbar(`${successCount} task${successCount !== 1 ? 's' : ''} updated successfully.`, 'success');
+                } else {
+                    this.showSnackbar(`${successCount} updated, ${failCount} failed.`, 'error');
+                }
+            },
+            error: (err) => {
+                console.error('Bulk update tasks error:', err);
+                this.isBulkOperating.set(false);
+                this.showSnackbar('Bulk update failed. Please try again.', 'error');
+            }
+        });
+    }
+
+    // ─── Bulk Delete Modal ────────────────────────────────────────────────────
+
+    openBulkDeleteModal(): void {
+        this.showBulkDeleteModal.set(true);
+    }
+
+    closeBulkDeleteModal(): void {
+        this.showBulkDeleteModal.set(false);
+    }
+
+    executeBulkDelete(): void {
+        const ids = Array.from(this.selectedTaskIds());
+        if (ids.length === 0) return;
+
+        this.isBulkOperating.set(true);
+        const url = `${environment.apiUrl}/project/${this.projectId()}/tasks/bulk-delete`;
+        this.http.delete<void>(url, { body: { ids } }).subscribe({
+            next: () => {
+                this.isBulkOperating.set(false);
+                this.closeBulkDeleteModal();
+                const count = ids.length;
+                this.clearSelection();
+                this.loadTasks();
+                this.dataSyncService.notifyTasksUpdated(this.projectId(), -1);
+                this.showSnackbar(`${count} task${count !== 1 ? 's' : ''} deleted successfully.`, 'success');
+            },
+            error: (err) => {
+                console.error('Bulk delete tasks error:', err);
+                this.isBulkOperating.set(false);
+                this.showSnackbar('Bulk delete failed. Please try again.', 'error');
+            }
+        });
+    }
+
+    // ─── Snackbar ─────────────────────────────────────────────────────────────
+
+    showSnackbar(message: string, type: 'success' | 'error' | 'info'): void {
+        if (this.snackbarTimer) clearTimeout(this.snackbarTimer);
+        this.snackbar.set({ message, type });
+        this.snackbarTimer = setTimeout(() => {
+            this.snackbar.set(null);
+        }, 4000);
+    }
+
+    dismissSnackbar(): void {
+        if (this.snackbarTimer) clearTimeout(this.snackbarTimer);
+        this.snackbar.set(null);
+    }
+
+    // ─── Bulk Add to Delay Tracker ────────────────────────────────────────────
+
+    openBulkDelayModal(): void {
+        this.bulkDelayRevisedEndDate.set('');
+        this.bulkDelayReason.set('');
+        this.showBulkDelayModal.set(true);
+        this.cdr.markForCheck();
+    }
+
+    closeBulkDelayModal(): void {
+        this.showBulkDelayModal.set(false);
+    }
+
+    openInvalidItemsModal(): void {
+        this.showInvalidItemsModal.set(true);
+    }
+
+    closeInvalidItemsModal(): void {
+        this.showInvalidItemsModal.set(false);
+    }
+
+    executeBulkAddDelay(): void {
+        const eligible = this.bulkDelayEligibleTasks();
+        if (eligible.length === 0) return;
+
+        const revisedEndDate = this.bulkDelayRevisedEndDate();
+        const reason = this.bulkDelayReason();
+        if (!revisedEndDate || !reason.trim()) return;
+
+        const delayLogs = eligible.map(task => ({
+            projectId: this.projectId(),
+            phaseId: task.phaseId!,
+            taskId: task.taskId!,
+            entityType: 'TASK' as const,
+            originalEndDate: this.formatDateToIso(task.endDate),
+            revisedEndDate,
+            status: (task.status === 'COMPLETED' ? 'COMPLETED' : 'ONGOING') as any,
+            assigneeId: task.assignedToProjectMemberId ? Number(task.assignedToProjectMemberId) : undefined,
+            reason
+        }));
+
+        this.isBulkOperating.set(true);
+        this.cdr.markForCheck();
+        this.delayTrackerService.bulkAddDelayLogs(this.projectId(), { delayLogs }).subscribe({
+            next: (res) => {
+                this.isBulkOperating.set(false);
+                this.closeBulkDelayModal();
+                const failCount = res.failedEntries?.length ?? 0;
+                const successCount = eligible.length - failCount;
+                if (failCount === 0) {
+                    this.showSnackbar(`${successCount} item${successCount !== 1 ? 's' : ''} added to delay tracker.`, 'success');
+                } else {
+                    this.showSnackbar(`${successCount} added, ${failCount} failed.`, 'error');
+                }
+                this.cdr.markForCheck();
+            },
+            error: (err) => {
+                console.error('Bulk add delay error:', err);
+                this.isBulkOperating.set(false);
+                this.showSnackbar('Failed to add delay entries. Please try again.', 'error');
+                this.cdr.markForCheck();
+            }
+        });
+    }
+
+    /** Convert backend date (dd-MM-yyyy or yyyy-MM-dd) to ISO yyyy-MM-dd for API */
+    private formatDateToIso(dateStr: string | undefined): string {
+        if (!dateStr) return '';
+        const parts = dateStr.split('-');
+        if (parts.length === 3 && parts[0].length === 2) {
+            return `${parts[2]}-${parts[1]}-${parts[0]}`;
+        }
+        return dateStr.substring(0, 10);
+    }
 }
+

@@ -46,8 +46,64 @@
       <div class="timeline-header-row flex border-b border-gray-200 bg-gray-50 flex-shrink-0">
         <!-- Left Column Header (Sticky - Highest z-index) -->
         <div
-          class="timeline-left-header w-80 flex-shrink-0 px-6 py-4 border-r border-gray-200 font-semibold text-gray-700 flex items-center bg-gray-50">
+          class="timeline-left-header w-80 flex-shrink-0 px-6 py-4 border-r border-gray-200 font-semibold text-gray-700 flex items-center justify-between bg-gray-50 group" style="padding-bottom: 7px;">
           <span>Phases / Tasks</span>
+          <!-- Sort Dropdown Container -->
+          <div class="sort-container relative flex items-center gap-1">
+            <button (click)="toggleSortDirection()"
+              class="p-1 rounded text-gray-400 hover:text-gray-700 hover:bg-gray-200 transition-colors opacity-0 group-hover:opacity-100 focus:opacity-100 focus:outline-none"
+              [title]="sortDirection() === 'asc' ? 'Sort descending' : 'Sort ascending'">
+              @if (sortDirection() === 'asc') {
+              <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 4h13M3 8h9m-9 4h6m4 0l4-4m0 0l4 4m-4-4v12"></path>
+              </svg>
+              } @else {
+              <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 4h13M3 8h9m-9 4h6m4 4l4-4m0 0l4 4m-4 4v-12"></path>
+              </svg>
+              }
+            </button>
+            <button (click)="toggleSortMenu($event)"
+              class="p-1 rounded text-gray-400 hover:text-gray-700 hover:bg-gray-200 transition-colors opacity-0 group-hover:opacity-100 focus:opacity-100 focus:outline-none"
+              title="Sort options">
+              <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 5v.01M12 12v.01M12 19v.01M12 6a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2z"></path>
+              </svg>
+            </button>
+            
+            <!-- Sort Menu -->
+            @if (isSortMenuOpen()) {
+            <div class="absolute top-full right-0 mt-1 w-40 bg-white rounded-md shadow-lg border border-gray-200 z-50 py-1">
+              <div class="px-3 py-2 text-xs font-semibold text-gray-500 uppercase tracking-wider border-b border-gray-100">
+                Sort by
+              </div>
+              <button (click)="setSortOption('id')" class="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 hover:text-gray-900 flex items-center justify-between">
+                <span>Default (ID)</span>
+                @if (sortOption() === 'id') {
+                <svg class="w-4 h-4 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>
+                }
+              </button>
+              <button (click)="setSortOption('name')" class="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 hover:text-gray-900 flex items-center justify-between">
+                <span>Name</span>
+                @if (sortOption() === 'name') {
+                <svg class="w-4 h-4 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>
+                }
+              </button>
+              <button (click)="setSortOption('startDate')" class="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 hover:text-gray-900 flex items-center justify-between">
+                <span>Start Date</span>
+                @if (sortOption() === 'startDate') {
+                <svg class="w-4 h-4 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>
+                }
+              </button>
+              <button (click)="setSortOption('endDate')" class="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 hover:text-gray-900 flex items-center justify-between">
+                <span>End Date</span>
+                @if (sortOption() === 'endDate') {
+                <svg class="w-4 h-4 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>
+                }
+              </button>
+            </div>
+            }
+          </div>
         </div>
 
         <!-- Right Column Header (Timeline Axis) - Scrollable with hidden scrollbar -->
@@ -94,7 +150,7 @@
           <div class="flex">
             <!-- Left Column (Sticky - Always Visible) -->
             <div class="timeline-left-column w-80 flex-shrink-0 bg-white border-r border-gray-200 pb-4">
-              @for (phase of phases(); track phase.phaseId) {
+              @for (phase of sortedPhases(); track phase.phaseId) {
               <!-- Phase Row -->
               <div class="border-b border-gray-100 hover:bg-gray-50 transition-colors" [style.height.px]="64">
                 <div class="h-full px-6 py-3 flex items-center gap-3">
@@ -113,10 +169,17 @@
                   <!-- Phase Info -->
                   <div class="flex-1 min-w-0">
                     <div class="font-semibold text-gray-900 truncate">{{ phase.phaseName }}</div>
-                    <div class="text-xs text-gray-500 mt-1 flex items-center gap-2">
+                    <div class="text-xs text-gray-500 mt-0.5 flex items-center gap-2 flex-wrap">
                       <span>{{ formatDate(phase.startDate) }} - {{ formatDate(phase.endDate) }}</span>
                       <span class="text-gray-400">•</span>
                       <span>{{ phase.completionPercentage }}%</span>
+                      @let phaseStatus = getCompletionStatus(phase);
+                      @if (phaseStatus) {
+                      <span
+                        [class]="'inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-semibold leading-none ' + phaseStatus.colorClass">
+                        {{ phaseStatus.label }}
+                      </span>
+                      }
                     </div>
                   </div>
                 </div>
@@ -139,6 +202,13 @@
                       {{ task.assignedToName }}
                     </span>
                     }
+                    @let taskStatus = getCompletionStatus(task);
+                    @if (taskStatus) {
+                    <span
+                      [class]="'inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-semibold leading-none flex-shrink-0 ' + taskStatus.colorClass">
+                      {{ taskStatus.label }}
+                    </span>
+                    }
                   </div>
                 </div>
               </div>
@@ -149,7 +219,8 @@
             <!-- Right Timeline Area (No Scroll - Controlled by separate scrollbar) -->
             <div class="timeline-body-content flex-1 overflow-hidden pb-4">
               <div class="timeline-body-inner overflow-x-auto overflow-y-hidden" #timelineBody
-                style="scrollbar-width: none; -ms-overflow-style: none;">
+                style="scrollbar-width: none; -ms-overflow-style: none;" [class.link-mode-active]="isLinkMode()"
+                (mousemove)="onPreviewMouseMove($event)">
                 <style>
                   .timeline-body-inner::-webkit-scrollbar {
                     display: none;
@@ -181,7 +252,7 @@
                   </div>
 
                   <!-- Timeline Rows (Grid + Bars) -->
-                  @for (phase of phases(); track phase.phaseId; let phaseIndex = $index) {
+                  @for (phase of sortedPhases(); track phase.phaseId; let phaseIndex = $index) {
                   <!-- Phase Row -->
                   <div class="border-b border-gray-100 relative timeline-row hover:bg-gray-50" [style.height.px]="64">
                     <!-- Grid Cells Background -->
@@ -216,27 +287,35 @@
                       [style.left.px]="barPosition.left + 8" [style.width.px]="barPosition.width - 16"
                       (mousedown)="canUpdatePhaseTimeline() && onBarDragStart($event, createTimelineRow(phase, 'phase'))"
                       (mouseenter)="onPhaseMouseEnter($event, phase, phaseIndex)" (mouseleave)="onPhaseMouseLeave()"
-                      [attr.data-bar-id]="barId">
+                      [attr.data-bar-id]="barId" [attr.data-phase-id]="phase.phaseId">
 
                       <div class="rounded-lg shadow-md hover:shadow-lg transition-all relative overflow-hidden"
                         [style.height.px]="36" [ngClass]="getPhaseColor(phaseIndex)"
-                        [class.cursor-move]="!dragState() && canUpdatePhaseTimeline()"
-                        [class.cursor-not-allowed]="!canUpdatePhaseTimeline()">
+                        [class.cursor-move]="!dragState() && canUpdatePhaseTimeline() && !isLinkMode()"
+                        [class.cursor-not-allowed]="!canUpdatePhaseTimeline() && !isLinkMode()"
+                        [class.ring-2]="isLinkMode() && linkPredecessorId() === phase.phaseId"
+                        [class.ring-green-400]="isLinkMode() && linkPredecessorId() === phase.phaseId">
 
                         <div
                           class="absolute left-0 top-0 bottom-0 w-2 hover:bg-white hover:bg-opacity-30 transition-colors z-20"
-                          [class.cursor-ew-resize]="canUpdatePhaseTimeline()"
-                          [class.cursor-not-allowed]="!canUpdatePhaseTimeline()"
-                          (mousedown)="canUpdatePhaseTimeline() && onBarResizeStart($event, createTimelineRow(phase, 'phase'), 'left')"
+                          [class.cursor-ew-resize]="canUpdatePhaseTimeline() && !isLinkMode()"
+                          [class.cursor-not-allowed]="!canUpdatePhaseTimeline() && !isLinkMode()"
+                          (mousedown)="canUpdatePhaseTimeline() && !isLinkMode() && onBarResizeStart($event, createTimelineRow(phase, 'phase'), 'left')"
                           (click)="$event.stopPropagation()">
                         </div>
                         <div
                           class="absolute right-0 top-0 bottom-0 w-2 hover:bg-white hover:bg-opacity-30 transition-colors z-20"
-                          [class.cursor-ew-resize]="canUpdatePhaseTimeline()"
-                          [class.cursor-not-allowed]="!canUpdatePhaseTimeline()"
-                          (mousedown)="canUpdatePhaseTimeline() && onBarResizeStart($event, createTimelineRow(phase, 'phase'), 'right')"
+                          [class.cursor-ew-resize]="canUpdatePhaseTimeline() && !isLinkMode()"
+                          [class.cursor-not-allowed]="!canUpdatePhaseTimeline() && !isLinkMode()"
+                          (mousedown)="canUpdatePhaseTimeline() && !isLinkMode() && onBarResizeStart($event, createTimelineRow(phase, 'phase'), 'right')"
                           (click)="$event.stopPropagation()">
                         </div>
+                      </div>
+
+                      <!-- Link Circle (right end of phase bar) -->
+                      <div class="link-circle" [class.link-circle-visible]="isLinkMode()"
+                        [class.link-circle-selected]="linkPredecessorId() === phase.phaseId"
+                        (click)="onLinkCircleClick($event, phase.phaseId!)">
                       </div>
                     </div>
                     }
@@ -320,6 +399,40 @@
                     </div>
                   </div>
                   }
+
+                  <!-- Dependency SVG Overlay -->
+                  <svg class="dependency-svg absolute inset-0 w-full h-full"
+                    [style.height.px]="getTotalTimelineHeight()">
+                    <defs>
+                      <marker id="dep-arrowhead" markerWidth="10" markerHeight="8" refX="9" refY="4" orient="auto"
+                        markerUnits="strokeWidth">
+                        <polygon points="0 0, 10 4, 0 8, 2.5 4" fill="#6b7280" />
+                      </marker>
+                      <marker id="dep-arrowhead-hover" markerWidth="10" markerHeight="8" refX="9" refY="4"
+                        orient="auto" markerUnits="strokeWidth">
+                        <polygon points="0 0, 10 4, 0 8, 2.5 4" fill="#3b82f6" />
+                      </marker>
+                      <marker id="dep-arrowhead-selected" markerWidth="10" markerHeight="8" refX="9" refY="4"
+                        orient="auto" markerUnits="strokeWidth">
+                        <polygon points="0 0, 10 4, 0 8, 2.5 4" fill="#ef4444" />
+                      </marker>
+                    </defs>
+
+                    <!-- Dependency lines -->
+                    @for (line of dependencyLines(); track line.dep.predecessorId + '-' + line.dep.successorId) {
+                    <path class="dependency-line" [attr.d]="line.path"
+                      [class.dependency-line-selected]="selectedDependencyId() === line.dep.id"
+                      (click)="onDependencyLineClick($event, line.dep)" />
+                    <!-- Dependency type label -->
+                    <text class="dependency-label" [attr.x]="line.labelX" [attr.y]="line.labelY - 6"
+                      text-anchor="middle">{{ line.dep.dependencyType }}</text>
+                    }
+
+                    <!-- Preview line while linking -->
+                    @if (isLinkMode() && linkPredecessorId() !== null && previewLineEnd()) {
+                    <path class="dependency-preview-line" [attr.d]="getPreviewLinePath()" />
+                    }
+                  </svg>
                 </div>
               </div>
             </div>
@@ -345,6 +458,30 @@
   <!-- Time Scale Selector (Floating Bottom-Right) -->
   <div
     class="fixed bottom-8 right-8 bg-white rounded-lg shadow-lg border border-gray-200 p-2 flex items-center gap-2 z-40">
+
+    <!-- Link Mode Toggle -->
+    @if (!isLinkMode()) {
+    <button (click)="enterLinkMode()"
+      class="px-3 py-2 rounded text-sm font-medium text-gray-700 hover:bg-gray-100 transition-colors focus:outline-none focus:ring-2 focus:ring-[#8c2d1b] focus:ring-opacity-50 cursor-pointer"
+      title="Link Phases">
+      <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+          d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1">
+        </path>
+      </svg>
+    </button>
+    } @else {
+    <div class="flex items-center gap-2 px-2">
+      <span class="text-xs font-medium text-blue-600">{{ getLinkModeStatus() }}</span>
+      <button (click)="cancelLinkMode()"
+        class="px-2 py-1 rounded text-xs font-medium text-red-600 bg-red-50 hover:bg-red-100 transition-colors cursor-pointer">
+        Cancel
+      </button>
+    </div>
+    }
+
+    <div class="w-px h-6 bg-gray-200"></div>
+
     <button (click)="setTimeScale(TimeScale.WEEK)"
       class="px-3 py-2 rounded text-sm font-medium transition-colors focus:outline-none focus:ring-2 focus:ring-[#8c2d1b] focus:ring-opacity-50 cursor-pointer"
       [class.bg-[#8c2d1b]]="timeScale() === TimeScale.WEEK" [class.text-white]="timeScale() === TimeScale.WEEK"
@@ -406,6 +543,36 @@
       }
     </div>
   </div>
+
+  <!-- Dependency Type Popup -->
+  @if (showDependencyTypePopup(); as popup) {
+  <div class="dependency-type-popup fixed bg-white rounded-lg shadow-xl border border-gray-200 p-3 z-[100]"
+    [style.left.px]="popup.x" [style.top.px]="popup.y">
+    <div class="text-xs font-semibold text-gray-500 mb-2">Dependency Type</div>
+    <div class="flex gap-1">
+      <button (click)="selectDependencyType('FS')"
+        class="px-3 py-1.5 rounded text-xs font-semibold bg-blue-50 text-blue-700 hover:bg-blue-100 transition-colors cursor-pointer"
+        title="Finish to Start">FS</button>
+      <button (click)="selectDependencyType('SS')"
+        class="px-3 py-1.5 rounded text-xs font-semibold bg-green-50 text-green-700 hover:bg-green-100 transition-colors cursor-pointer"
+        title="Start to Start">SS</button>
+      <button (click)="selectDependencyType('FF')"
+        class="px-3 py-1.5 rounded text-xs font-semibold bg-purple-50 text-purple-700 hover:bg-purple-100 transition-colors cursor-pointer"
+        title="Finish to Finish">FF</button>
+      <button (click)="selectDependencyType('SF')"
+        class="px-3 py-1.5 rounded text-xs font-semibold bg-orange-50 text-orange-700 hover:bg-orange-100 transition-colors cursor-pointer"
+        title="Start to Finish">SF</button>
+    </div>
+  </div>
+  }
+
+  <!-- Inline Toast -->
+  @if (toastMessage(); as msg) {
+  <div
+    class="dependency-toast fixed top-6 left-1/2 -translate-x-1/2 bg-gray-900 text-white text-sm px-4 py-2 rounded-lg shadow-xl z-[200]">
+    {{ msg }}
+  </div>
+  }
 
   <!-- Floating Phase Tooltip -->
   @if (hoveredPhase(); as tooltip) {

@@ -11,9 +11,11 @@
                 <select (change)="onPhaseChange(+$any($event.target).value)"
                     [value]="selectedPhase()?.phaseId?.toString() || ''"
                     class="w-full cursor-pointer appearance-none rounded-lg border border-gray-300 bg-white px-4 py-2 pr-10 font-medium text-gray-900 transition-all outline-none hover:bg-gray-50 focus:border-transparent focus:ring-2 focus:ring-[#8c2d1b]">
-                    <option value="" disabled selected>Select Phase</option>
+                    <option value="" disabled [selected]="!selectedPhase()">Select Phase</option>
                     @for (phase of phases(); track phase.phaseId) {
-                    <option [value]="phase.phaseId">{{ phase.phaseName }}</option>
+                    <option [value]="phase.phaseId" [selected]="phase.phaseId === selectedPhase()?.phaseId">
+                        {{ phase.phaseName }}
+                    </option>
                     }
                 </select>
                 <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center pr-3">
@@ -45,192 +47,183 @@
 
     <!-- Kanban Board -->
     @if (!loading()) {
-    <div>
-        <!-- Scrollable Container with both headers and content -->
-        <div class="board-scrollable-area" style="padding-bottom: 45px;">
-            <div class="flex flex-col">
-                <!-- Column Headers (Sticky) -->
-                <div class="sticky top-0 z-10 grid grid-cols-4 gap-4 mb-0">
-                    @for (column of columns(); track column.id) {
-                    <div class="bg-white rounded-t-xl shadow-sm border border-gray-200 border-b-0">
-                        <div class="p-3">
-                            <div class="flex items-center justify-between">
-                                <div class="flex items-center">
-                                    <div class="w-3 h-3 rounded-full mr-2" [ngClass]="colorDotMap[column.colorDot]">
-                                    </div>
-                                    <h3 class="font-semibold text-gray-800 text-sm">{{ column.title }}</h3>
-                                </div>
-                                <span [ngClass]="getTaskCountBadgeColor(column.id)"
-                                    class="text-xs font-semibold px-2 py-0.5 rounded-full">
-                                    {{ column.tasks.length }}
-                                </span>
+    <div class="flex-1 min-h-[0] w-full overflow-auto custom-board-scrollbar relative" style="margin-bottom: 45px;">
+        <!-- Columns Flex Container (Determines total width and stretches children to equal height) -->
+        <div class="flex gap-4 min-w-max px-2 pb-6 items-stretch h-max w-max">
+            @for (column of columns(); track column.id) {
+            <!-- Entire Column -->
+            <div class="w-[300px] flex-shrink-0 flex flex-col relative">
+
+                <!-- Sticky Header Container (bg-white completely obscures tasks scrolling under it) -->
+                <div class="sticky top-0 z-20 bg-white pt-2">
+                    <div class="bg-white rounded-t-xl shadow-sm border border-gray-200 border-b-0 p-3">
+                        <div class="flex items-center justify-between">
+                            <div class="flex items-center">
+                                <div class="w-3 h-3 rounded-full mr-2" [ngClass]="colorDotMap[column.colorDot]"></div>
+                                <h3 class="font-semibold text-gray-800 text-sm">{{ column.title }}</h3>
                             </div>
+                            <span [ngClass]="getTaskCountBadgeColor(column.id)"
+                                class="text-xs font-semibold px-2 py-0.5 rounded-full">
+                                {{ column.tasks.length }}
+                            </span>
                         </div>
                     </div>
-                    }
                 </div>
 
-                <!-- Columns Content Area -->
-                <div class="grid grid-cols-4 gap-4">
-                    @for (column of columns(); track column.id) {
-                    <div class="bg-white rounded-b-xl shadow-sm border border-gray-200 border-t-0 flex flex-col"
-                        (dragover)="onDragOver($event)" (drop)="onDrop(column.id, $event)"
-                        (mouseenter)="onColumnHover(column.id)" (mouseleave)="onColumnLeave()"
-                        [class.bg-gray-50]="draggingTask() !== null">
+                <!-- Column Content Background & Tasks -->
+                <!-- flex-1 ensures the body stretches to equal height across all columns -->
+                <div class="bg-white rounded-b-xl shadow-sm border border-gray-200 border-t-0 flex flex-col flex-1 transition-colors min-h-[150px]"
+                    (dragover)="onDragOver($event)" (drop)="onDrop(column.id, $event)"
+                    (mouseenter)="onColumnHover(column.id)" (mouseleave)="onColumnLeave()"
+                    [class.bg-gray-50]="draggingTask() !== null">
 
-                        <!-- Tasks Container -->
-                        <div class="p-3 space-y-2">
-                            <!-- Tasks List -->
-                            <div class="space-y-2">
-                                @for (task of column.tasks; track task.id) {
-                                <!--Task Card -->
-                                <div class="bg-white border border-gray-200 rounded-lg p-3 hover:shadow-lg hover:-translate-y-0.5 transition-all duration-200 cursor-pointer group"
-                                    (click)="onTaskCardClick(task)" [attr.draggable]="canUpdateTask()"
-                                    (dragstart)="canUpdateTask() && onDragStart(task, column.id)"
-                                    (dragend)="canUpdateTask() && onDragEnd()"
-                                    [class.opacity-50]="draggingTask()?.task?.id === task.id"
-                                    [class.ring-2]="draggingTask()?.task?.id === task.id">
+                    <!-- Tasks Container -->
+                    <div class="p-3 space-y-2 flex flex-col h-full">
+                        <!-- Tasks List -->
+                        <div class="space-y-2">
+                            @for (task of column.tasks; track task.id) {
+                            <!--Task Card -->
+                            <div class="bg-white border border-gray-200 rounded-lg p-3 hover:shadow-lg hover:-translate-y-0.5 transition-all duration-200 cursor-pointer group"
+                                (click)="onTaskCardClick(task)" [attr.draggable]="canUpdateTask()"
+                                (dragstart)="canUpdateTask() && onDragStart(task, column.id)"
+                                (dragend)="canUpdateTask() && onDragEnd()"
+                                [class.opacity-50]="draggingTask()?.task?.id === task.id"
+                                [class.ring-2]="draggingTask()?.task?.id === task.id">
 
-                                    <!-- Row 1: Title + Priority Badge -->
-                                    <div class="flex items-start justify-between gap-2 mb-2">
-                                        <h4 class="font-semibold text-gray-900 text-sm flex-1 truncate group-hover:text-[#8c2d1b] transition-colors"
-                                            [class.line-through]="task.status === 'COMPLETED'"
-                                            [class.text-gray-500]="task.status === 'COMPLETED'" [title]="task.title">
-                                            {{ task.title }}
-                                        </h4>
-                                        <!-- Priority Badge -->
-                                        <span [ngClass]="priorityColorMap[task.priority]"
-                                            class="text-xs font-medium px-2 py-0.5 rounded flex-shrink-0">
-                                            {{ task.priority }}
-                                        </span>
-                                    </div>
-
-                                    <!-- Row 2: Description -->
-                                    @if (task.description) {
-                                    <p class="text-xs text-gray-500 line-clamp-2 mb-3"
+                                <!-- Row 1: Title + Priority Badge -->
+                                <div class="flex items-start justify-between gap-2 mb-2">
+                                    <h4 class="font-semibold text-gray-900 text-sm flex-1 truncate group-hover:text-[#8c2d1b] transition-colors"
                                         [class.line-through]="task.status === 'COMPLETED'"
-                                        [class.text-gray-400]="task.status === 'COMPLETED'" [title]="task.description">
-                                        {{ task.description }}
-                                    </p>
-                                    }
+                                        [class.text-gray-500]="task.status === 'COMPLETED'" [title]="task.title">
+                                        {{ task.title }}
+                                    </h4>
+                                    <!-- Priority Badge -->
+                                    <span [ngClass]="priorityColorMap[task.priority]"
+                                        class="text-xs font-medium px-2 py-0.5 rounded flex-shrink-0">
+                                        {{ task.priority }}
+                                    </span>
+                                </div>
 
-                                    <!-- Row 3: Metadata Row -->
-                                    <div class="flex items-center justify-between gap-2">
-                                        <!-- Left: Assignee Avatar + Start Date -->
-                                        <div class="flex items-center gap-2">
-                                            <!-- Assignee Avatar (only if assigned) -->
-                                            @if (task.assignees.length > 0) {
-                                            <div class="flex items-center gap-1">
-                                                <div class="flex -space-x-1">
-                                                    @for (assignee of task.assignees.slice(0, 1); track assignee.name) {
-                                                    <div class="w-6 h-6 bg-gradient-to-br from-indigo-500 to-purple-600 rounded-full flex items-center justify-center text-white text-[10px] font-semibold"
-                                                        [title]="assignee.name">
-                                                        {{ assignee.initials }}
-                                                    </div>
-                                                    }
+                                <!-- Row 2: Description -->
+                                @if (task.description) {
+                                <p class="text-xs text-gray-500 line-clamp-2 mb-3"
+                                    [class.line-through]="task.status === 'COMPLETED'"
+                                    [class.text-gray-400]="task.status === 'COMPLETED'" [title]="task.description">
+                                    {{ task.description }}
+                                </p>
+                                }
+
+                                <!-- Row 3: Metadata Row -->
+                                <div class="flex items-center justify-between gap-2">
+                                    <!-- Left: Assignee Avatar + Start Date -->
+                                    <div class="flex items-center gap-2">
+                                        <!-- Assignee Avatar (only if assigned) -->
+                                        @if (task.assignees.length > 0) {
+                                        <div class="flex items-center gap-1">
+                                            <div class="flex -space-x-1">
+                                                @for (assignee of task.assignees.slice(0, 1); track
+                                                assignee.name) {
+                                                <div class="w-6 h-6 bg-gradient-to-br from-indigo-500 to-purple-600 rounded-full flex items-center justify-center text-white text-[10px] font-semibold"
+                                                    [title]="assignee.name">
+                                                    {{ assignee.initials }}
                                                 </div>
-                                                @if (isMemberRemoved(task.assignedToProjectMemberId)) {
-                                                <span class="flex items-center" role="img"
-                                                    aria-label="Member removed from project"
-                                                    title="Member removed from project"
-                                                    (click)="$event.stopPropagation()"
-                                                    (mousedown)="$event.stopPropagation()">
-                                                    <svg class="w-3.5 h-3.5 text-orange-500 flex-shrink-0" fill="none"
-                                                        stroke="currentColor" viewBox="0 0 24 24">
-                                                        <path stroke-linecap="round" stroke-linejoin="round"
-                                                            stroke-width="2"
-                                                            d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z">
-                                                        </path>
-                                                    </svg>
-                                                </span>
                                                 }
                                             </div>
-                                            }
-
-                                            <!-- Start Date -->
-                                            @if (task.startDate) {
-                                            <div class="flex items-center gap-1 text-gray-500 text-xs"
-                                                [title]="'Start: ' + formatDate(task.startDate)">
-                                                <!-- <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor"
-                                                    viewBox="0 0 24 24">
+                                            @if (isMemberRemoved(task.assignedToProjectMemberId)) {
+                                            <span class="flex items-center" role="img"
+                                                aria-label="Member removed from project"
+                                                title="Member removed from project" (click)="$event.stopPropagation()"
+                                                (mousedown)="$event.stopPropagation()">
+                                                <svg class="w-3.5 h-3.5 text-orange-500 flex-shrink-0" fill="none"
+                                                    stroke="currentColor" viewBox="0 0 24 24">
                                                     <path stroke-linecap="round" stroke-linejoin="round"
                                                         stroke-width="2"
-                                                        d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z">
-                                                    </path>
-                                                </svg> -->
-                                                <span class="whitespace-nowrap">{{ formatDate(task.startDate) }}</span>
-                                            </div>
-                                            }
-                                        </div>
-
-                                        <!-- Right: Subtasks Icon + Duration Circle -->
-                                        <div class="flex items-center gap-2">
-                                            <!-- Subtasks Icon (only if task has subtasks) -->
-                                            @if (hasSubtasks(task)) {
-                                            <div class="flex items-center" [title]="getSubtaskTooltip(task.subTasks)">
-                                                <svg class="w-4 h-4 text-gray-500" fill="none" stroke="currentColor"
-                                                    viewBox="0 0 24 24">
-                                                    <path stroke-linecap="round" stroke-linejoin="round"
-                                                        stroke-width="2"
-                                                        d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4">
+                                                        d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z">
                                                     </path>
                                                 </svg>
-                                            </div>
-                                            }
-
-                                            <!-- Duration Circle + Text -->
-                                            @if (getDurationInfo(task.dueDate, task.startDate).show) {
-                                            <div class="flex items-center gap-1.5"
-                                                [title]="getDurationInfo(task.dueDate, task.startDate).tooltip">
-                                                <!-- SVG Pie Chart Circle Indicator -->
-                                                <svg class="w-4 h-4 transition-all" viewBox="0 0 32 32">
-                                                    <!-- Background circle (light gray) -->
-                                                    <circle cx="16" cy="16" r="14" fill="#e5e7eb"
-                                                        [attr.stroke]="getDurationInfo(task.dueDate, task.startDate).circleColor"
-                                                        stroke-width="1.5" />
-                                                    <!-- Filled circle segment (pie slice) using path -->
-                                                    @if (getDurationInfo(task.dueDate, task.startDate).fillPercentage >
-                                                    0) {
-                                                    <path
-                                                        [attr.d]="getPieSlicePath(getDurationInfo(task.dueDate, task.startDate).fillPercentage)"
-                                                        [attr.fill]="getDurationInfo(task.dueDate, task.startDate).circleColor" />
-                                                    }
-                                                </svg>
-                                                <!-- Duration Text (consistent gray color) -->
-                                                <span class="text-xs font-medium text-gray-500">
-                                                    {{ getDurationInfo(task.dueDate, task.startDate).text }}
-                                                </span>
-                                            </div>
+                                            </span>
                                             }
                                         </div>
+                                        }
+
+                                        <!-- Start Date -->
+                                        @if (task.startDate) {
+                                        <div class="flex items-center gap-1 text-gray-500 text-xs"
+                                            [title]="'Start: ' + formatDate(task.startDate)">
+                                            <span class="whitespace-nowrap">{{ formatDate(task.startDate) }}</span>
+                                        </div>
+                                        }
+                                    </div>
+
+                                    <!-- Right: Subtasks Icon + Duration Circle -->
+                                    <div class="flex items-center gap-2">
+                                        <!-- Subtasks Icon (only if task has subtasks) -->
+                                        @if (hasSubtasks(task)) {
+                                        <div class="flex items-center" [title]="getSubtaskTooltip(task.subTasks)">
+                                            <svg class="w-4 h-4 text-gray-500" fill="none" stroke="currentColor"
+                                                viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                                    d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4">
+                                                </path>
+                                            </svg>
+                                        </div>
+                                        }
+
+                                        <!-- Duration Circle + Text -->
+                                        @if (getDurationInfo(task.dueDate, task.startDate).show) {
+                                        <div class="flex items-center gap-1.5"
+                                            [title]="getDurationInfo(task.dueDate, task.startDate).tooltip">
+                                            <!-- SVG Pie Chart Circle Indicator -->
+                                            <svg class="w-4 h-4 transition-all" viewBox="0 0 32 32">
+                                                <!-- Background circle (light gray) -->
+                                                <circle cx="16" cy="16" r="14" fill="#e5e7eb"
+                                                    [attr.stroke]="getDurationInfo(task.dueDate, task.startDate).circleColor"
+                                                    stroke-width="1.5" />
+                                                <!-- Filled circle segment (pie slice) using path -->
+                                                @if (getDurationInfo(task.dueDate,
+                                                task.startDate).fillPercentage >
+                                                0) {
+                                                <path
+                                                    [attr.d]="getPieSlicePath(getDurationInfo(task.dueDate, task.startDate).fillPercentage)"
+                                                    [attr.fill]="getDurationInfo(task.dueDate, task.startDate).circleColor" />
+                                                }
+                                            </svg>
+                                            <!-- Duration Text (consistent gray color) -->
+                                            <span class="text-xs font-medium text-gray-500">
+                                                {{ getDurationInfo(task.dueDate, task.startDate).text }}
+                                            </span>
+                                        </div>
+                                        }
                                     </div>
                                 </div>
-                                }
-
-                                <!-- Empty State -->
-                                @if (column.tasks.length === 0) {
-                                <div class="text-center py-6 text-gray-400">
-                                    <p class="text-xs">No tasks</p>
-                                </div>
-                                }
                             </div>
+                            }
 
-                            <!-- Add Task Button (shown on hover) - Now at bottom -->
-                            @if (hoveredColumnId() === column.id) {
-                            <button (click)="openAddTaskModal(column)"
-                                class="w-full px-4 py-2 border-2 border-dashed border-gray-300 rounded-lg text-gray-600 hover:border-[#8c2d1b] hover:text-[#8c2d1b] hover:bg-red-50 transition-all duration-200 flex items-center justify-center gap-2 font-medium text-sm mt-2">
-                                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                        d="M12 5v14m7-7H5"></path>
-                                </svg>
-                                Add Task
-                            </button>
+                            <!-- Empty State -->
+                            @if (column.tasks.length === 0) {
+                            <div class="text-center py-6 text-gray-400">
+                                <p class="text-xs">No tasks</p>
+                            </div>
                             }
                         </div>
+
+                        <div class="flex-1"></div> <!-- Pushes Add Task button to bottom of equal-height column -->
+
+                        <!-- Add Task Button -->
+                        @if (hoveredColumnId() === column.id) {
+                        <button (click)="openAddTaskModal(column)"
+                            class="w-full px-4 py-2 border-2 border-dashed border-gray-300 rounded-lg text-gray-600 hover:border-[#8c2d1b] hover:text-[#8c2d1b] hover:bg-red-50 transition-all duration-200 flex items-center justify-center gap-2 font-medium text-sm mt-4 shrink-0">
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                    d="M12 5v14m7-7H5"></path>
+                            </svg>
+                            Add Task
+                        </button>
+                        }
                     </div>
-                    }
                 </div>
             </div>
+            }
         </div>
     </div>
     }

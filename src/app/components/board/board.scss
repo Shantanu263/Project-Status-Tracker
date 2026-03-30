@@ -1,15 +1,16 @@
+// ──── Scrollbar styling ──────────────────────────────────────────────────────
 ::-webkit-scrollbar {
-  width: 8px;
-  height: 8px;
+  width: 6px;
+  height: 6px;
 }
 
 ::-webkit-scrollbar-track {
-  background: rgba(0, 0, 0, 0.05);
+  background: rgba(0, 0, 0, 0.04);
   border-radius: 10px;
 }
 
 ::-webkit-scrollbar-thumb {
-  background: rgba(0, 0, 0, 0.2);
+  background: rgba(0, 0, 0, 0.18);
   border-radius: 10px;
 
   &:hover {
@@ -17,9 +18,31 @@
   }
 }
 
+// ──── Outer wrapper ───────────────────────────────────────────────────────────
+// Fixed height fills the remaining screen. overflow-x: scroll keeps the
+// horizontal scrollbar ALWAYS visible and anchored at the bottom of this
+// wrapper, which is at the bottom of the visible screen area.
+.board-scroll-wrapper {
+  height: calc(100vh - 230px);
+  overflow-x: scroll; // always show horizontal scrollbar at the bottom
+  overflow-y: hidden; // vertical scrolling handled inside columns
+  padding-bottom: 0;
+  // Add a little right-padding so the last column doesn't clip
+  padding-right: 8px;
+}
+
+// ──── Inner content container ─────────────────────────────────────────────────
+// Must NOT have overflow-x set — let the wrapper handle it.
+// Vertical scroll lives inside each column card.
 .board-scrollable-area {
-  height: calc(100vh - 250px);
+  height: 100%;
+  overflow: visible;
+}
+
+// ──── Per-column vertical scroll ──────────────────────────────────────────────
+// Each column body scrolls independently so vertical scroll doesn't
+// conflict with the horizontal scrollbar.
+.board-column-body {
   overflow-y: auto;
-  padding-bottom: 10px;
-  padding-right: 25px;
+  max-height: calc(100vh - 310px); // same reference minus header/tab height
 }

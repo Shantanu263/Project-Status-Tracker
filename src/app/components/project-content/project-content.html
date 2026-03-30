@@ -190,6 +190,11 @@
       <div class="h-full px-8 py-6" style="height: 100%;  overflow-y: auto;" [hidden]="activeTab() !== 'timeline'">
         <app-timeline />
       </div>
+
+      <!-- Delay Tracker Tab -->
+      <div class="overflow-y-auto px-8 py-6 h-full" [hidden]="activeTab() !== 'delay-tracker'">
+        <app-delay-tracker [projectId]="selectedProject().projectId" />
+      </div>
     </div>
     }
     }

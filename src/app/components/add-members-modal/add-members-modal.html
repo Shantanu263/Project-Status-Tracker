@@ -3,137 +3,231 @@
 <div class="fixed inset-0 z-50 flex items-center justify-center p-4 modal-backdrop" (click)="onClose()">
     <!-- Modal Container -->
     <div class="modal-content-wrapper bg-white rounded-xl shadow-2xl w-full flex flex-col"
-        style="max-width: 900px; height: 596px;" (click)="$event.stopPropagation()">
+        style="max-width: 900px; max-height: 90vh;" (click)="$event.stopPropagation()">
 
-        <!-- Fixed Header -->
+        <!-- Header -->
         <div
-            class="modal-header bg-gradient-to-r from-[#8c2d1b] to-[#6b2115] text-white px-8 py-6 rounded-t-xl flex items-center justify-between">
+            class="bg-gradient-to-r from-[#8c2d1b] to-[#6b2115] text-white px-8 py-6 rounded-t-xl flex items-center justify-between flex-shrink-0">
             <div>
                 <h2 class="text-3xl font-bold">Add Team Members</h2>
-                <p class="text-white mt-1 opacity-90">Add members to your project</p>
+                <p class="text-white mt-1 opacity-90">Search by name or email, then set a role and add</p>
             </div>
             <button type="button" (click)="onClose()"
                 class="text-white hover:text-gray-200 transition-colors duration-200" aria-label="Close modal">
                 <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12">
-                    </path>
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
                 </svg>
             </button>
         </div>
 
         <!-- Scrollable Content -->
-        <div class="flex-1 px-8 py-6">
+        <div class="flex-1 px-8 py-6 overflow-y-auto">
+
             @if (errorMessage()) {
-            <div class="mb-4 p-4 bg-red-50 border border-red-200 rounded-lg text-red-700">
+            <div class="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg text-red-700 text-sm">
                 {{ errorMessage() }}
             </div>
             }
 
-            <form [formGroup]="memberForm" class="space-y-6">
-                <div>
-                    <!-- Add Member Form -->
-                    <div class="bg-gray-50 p-5 rounded-lg border border-gray-200">
-                        <div class="flex flex-col sm:flex-row gap-3">
-                            <input type="email" formControlName="memberEmail" placeholder="Enter email"
-                                class="flex-1 px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#8c2d1b] focus:border-transparent transition-all duration-200 outline-none" />
+            <form [formGroup]="memberForm" (ngSubmit)="addMember()">
 
-                            <select formControlName="memberRole"
-                                class="px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#8c2d1b] focus:border-transparent transition-all duration-200 outline-none bg-white sm:w-48">
-                                @for (role of allowedRoles(); track role) {
-                                <option [value]="role">
-                                    @if (role === 'SUPER_ADMIN') { Project Admin }
-                                    @else if (role === 'PROJECT_HEAD') { Project Head }
-                                    @else if (role === 'PROJECT_HANDLER') { Project Handler }
-                                    @else if (role === 'PROJECT_VIEWER') { Project Viewer }
-                                </option>
+                <!-- ── Email + Role + Add Row ── -->
+                <div class="bg-gray-50 p-5 rounded-lg border border-gray-200">
+                    <div class="flex flex-col sm:flex-row gap-3 items-start">
+
+                        <!-- Email with autocomplete dropdown -->
+                        <div class="relative flex-1" (click)="$event.stopPropagation()">
+
+                            <!-- Email Input -->
+                            <div class="relative">
+                                <!-- User icon prefix -->
+                                <span
+                                    class="absolute inset-y-0 left-3 flex items-center pointer-events-none text-gray-400">
+                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                            d="M16 12a4 4 0 10-8 0 4 4 0 008 0zm0 0v1.5a2.5 2.5 0 005 0V12a9 9 0 10-9 9m4.5-1.206a8.959 8.959 0 01-4.5 1.207" />
+                                    </svg>
+                                </span>
+                                <input type="text" formControlName="memberEmail"
+                                    placeholder="Search by name or enter email…" autocomplete="off"
+                                    (click)="onEmailFieldClick($event)"
+                                    class="w-full pl-9 pr-9 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#8c2d1b] focus:border-transparent transition-all duration-200 outline-none text-sm" />
+                                <!-- Spinner -->
+                                @if (isSearchingUsers()) {
+                                <span class="absolute inset-y-0 right-3 flex items-center pointer-events-none">
+                                    <svg class="animate-spin w-4 h-4 text-[#8c2d1b]" fill="none" viewBox="0 0 24 24">
+                                        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor"
+                                            stroke-width="4"></circle>
+                                        <path class="opacity-75" fill="currentColor"
+                                            d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z">
+                                        </path>
+                                    </svg>
+                                </span>
                                 }
-                            </select>
+                            </div>
 
-                            <button type="button" (click)="addMember()" [disabled]="isLoading()"
-                                class="px-6 py-3 bg-[#8c2d1b] text-white rounded-lg hover:bg-[#6b2115] transition-colors duration-200 font-medium flex items-center justify-center whitespace-nowrap disabled:opacity-50 disabled:cursor-not-allowed">
-                                <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                        d="M12 6v6m0 0v6m0-6h6m-6 0H6">
-                                    </path>
-                                </svg>
-                                Add Member
-                            </button>
+                            <!-- Autocomplete Dropdown -->
+                            @if (showDropdown() && (isSearchingUsers() || userSuggestions().length > 0)) {
+                            <div class="absolute z-50 left-0 right-0 top-full mt-1 bg-white border border-gray-200 rounded-lg shadow-xl overflow-hidden"
+                                style="max-height: 240px; overflow-y: auto;">
+
+                                @if (isSearchingUsers()) {
+                                <!-- Loading state -->
+                                <div class="flex items-center gap-2 px-4 py-4 text-sm text-gray-400">
+                                    <svg class="animate-spin w-4 h-4 flex-shrink-0" fill="none" viewBox="0 0 24 24">
+                                        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor"
+                                            stroke-width="4"></circle>
+                                        <path class="opacity-75" fill="currentColor"
+                                            d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"></path>
+                                    </svg>
+                                    Searching registered users…
+                                </div>
+                                } @else {
+                                @for (user of userSuggestions(); track user.userId; let i = $index) {
+                                <button type="button" (click)="selectSuggestion(user, $event)"
+                                    class="w-full flex items-center gap-3 px-4 py-3 hover:bg-[#fdf3f1] transition-colors duration-150 text-left border-b border-gray-100 last:border-b-0 group">
+                                    <!-- Avatar -->
+                                    <div
+                                        class="w-10 h-10 rounded-full bg-gradient-to-br {{ getUserAvatarGradient(i) }} flex items-center justify-center text-white font-semibold flex-shrink-0">
+                                        {{ getUserInitials(user) }}
+                                    </div>
+                                    <!-- Name + email -->
+                                    <div class="min-w-0 flex-1 ml-1">
+                                        <p class="text-sm font-medium text-gray-900 truncate">{{ user.name }}</p>
+                                        <p class="text-xs text-gray-500 truncate mt-0.5">{{ user.email }}</p>
+                                    </div>
+                                    <!-- Global role badge -->
+                                    <span
+                                        class="flex-shrink-0 px-3 py-1 inline-flex text-xs leading-5 font-semibold rounded-full {{ getGlobalRoleColorClass(user.role.roleName) }}">
+                                        {{ user.role.roleName }}
+                                    </span>
+                                </button>
+                                }
+                                }
+                            </div>
+                            }
                         </div>
+
+                        <!-- Role selector -->
+                        <select formControlName="memberRole"
+                            class="px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#8c2d1b] focus:border-transparent transition-all duration-200 outline-none bg-white sm:w-44 text-sm">
+                            @for (role of allowedRoles(); track role) {
+                            <option [value]="role">
+                                @if (role === 'SUPER_ADMIN') { Project Admin }
+                                @else if (role === 'PROJECT_HEAD') { Project Head }
+                                @else if (role === 'PROJECT_HANDLER') { Project Handler }
+                                @else if (role === 'PROJECT_VIEWER') { Project Viewer }
+                            </option>
+                            }
+                        </select>
+
+                        <!-- Add Member button -->
+                        <button type="submit" [disabled]="isLoading()"
+                            class="px-6 py-3 bg-[#8c2d1b] text-white rounded-lg hover:bg-[#6b2115] transition-colors duration-200 font-medium flex items-center justify-center whitespace-nowrap disabled:opacity-50 disabled:cursor-not-allowed text-sm">
+                            <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                    d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+                            </svg>
+                            Add Member
+                        </button>
                     </div>
 
-                    <!-- Members List -->
-                    <div class="mt-5 bg-white border border-gray-200 rounded-lg"
-                        style="height: 254px; overflow-y: auto;">
+                    <p class="mt-3 text-xs text-gray-400">
+                        Type a name or email to pick from registered users, or enter any email address directly.
+                    </p>
+                </div>
+
+                <!-- ── Staged Members List ── -->
+                <div class="mt-5">
+                    <p class="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-2">
+                        Members to Add
+                        @if (members().length > 0) {
+                        <span
+                            class="ml-2 inline-flex items-center justify-center w-5 h-5 text-xs font-bold bg-[#8c2d1b] text-white rounded-full">
+                            {{ members().length }}
+                        </span>
+                        }
+                    </p>
+
+                    <div class="bg-white border border-gray-200 rounded-lg"
+                        style="min-height: 160px; max-height: 260px; overflow-y: auto;">
                         @if (members().length > 0) {
                         <div class="p-2 space-y-2">
                             @for (member of members(); track member.email; let i = $index) {
                             <div
-                                class="flex items-center justify-between p-4 bg-white border border-gray-200 rounded-lg hover:border-[#8c2d1b] transition-colors duration-200">
-                                <div class="flex items-center space-x-3">
+                                class="flex items-center justify-between p-3 bg-white border border-gray-200 rounded-lg hover:border-[#8c2d1b] transition-colors duration-200">
+                                <div class="flex items-center gap-3">
                                     <div
-                                        [class]="'w-10 h-10 bg-gradient-to-br ' + member.color + ' rounded-full flex items-center justify-center text-white font-semibold'">
+                                        [class]="'w-9 h-9 bg-gradient-to-br ' + member.color + ' rounded-full flex items-center justify-center text-white font-semibold text-xs flex-shrink-0'">
                                         {{ member.initials }}
                                     </div>
                                     <div>
-                                        <p class="font-medium text-gray-800">{{ member.email }}</p>
-                                        <p class="text-sm text-gray-500">{{ member.role }}</p>
+                                        <p class="text-sm font-medium text-gray-800">{{ member.email }}</p>
+                                        <p class="text-xs text-gray-500">
+                                            @if (member.role === 'SUPER_ADMIN') { Project Admin }
+                                            @else if (member.role === 'PROJECT_HEAD') { Project Head }
+                                            @else if (member.role === 'PROJECT_HANDLER') { Project Handler }
+                                            @else if (member.role === 'PROJECT_VIEWER') { Project Viewer }
+                                            @else { {{ member.role }} }
+                                        </p>
                                     </div>
                                 </div>
                                 <button type="button" (click)="removeMember(i)" [disabled]="isLoading()"
-                                    class="text-red-500 hover:text-red-700 hover:bg-red-50 p-2 rounded-lg transition-colors duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
+                                    class="text-red-400 hover:text-red-600 hover:bg-red-50 p-1.5 rounded-lg transition-colors duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
                                     aria-label="Remove member">
-                                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                            d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16">
-                                        </path>
+                                            d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
                                     </svg>
                                 </button>
                             </div>
                             }
                         </div>
                         } @else {
-                        <div class="h-full flex items-center justify-center">
-                            <div class="text-center py-8">
-                                <svg class="w-12 h-12 mx-auto text-gray-400 mb-3" fill="none" stroke="currentColor"
+                        <div class="h-full flex items-center justify-center" style="min-height: 160px;">
+                            <div class="text-center py-6">
+                                <svg class="w-10 h-10 mx-auto text-gray-300 mb-2" fill="none" stroke="currentColor"
                                     viewBox="0 0 24 24">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                        d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z">
-                                    </path>
+                                        d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
                                 </svg>
-                                <p class="text-gray-500">No team members added yet</p>
-                                <p class="text-sm text-gray-400 mt-1">Add members using the form above</p>
+                                <p class="text-gray-400 text-sm">No members staged yet</p>
+                                <p class="text-xs text-gray-300 mt-1">Search or enter an email above, then click Add
+                                    Member</p>
                             </div>
                         </div>
                         }
                     </div>
+                </div>
 
-                    <!-- Progress Indicator for Adding Members -->
-                    @if (membersBeingAdded() > 0 && isLoading()) {
-                    <div class="mt-5 p-4 bg-blue-50 border border-blue-200 rounded-lg">
-                        <p class="text-sm text-blue-700">
-                            Adding members... {{ membersBeingAdded() }}/{{ members().length }} completed
-                        </p>
-                        <div class="mt-2 w-full bg-blue-200 rounded-full h-2">
-                            <div class="bg-blue-600 h-2 rounded-full transition-all duration-300"
-                                [style.width.%]="(membersBeingAdded() / members().length) * 100">
-                            </div>
+                <!-- Progress indicator -->
+                @if (membersBeingAdded() > 0 && isLoading()) {
+                <div class="mt-4 p-4 bg-blue-50 border border-blue-200 rounded-lg">
+                    <p class="text-sm text-blue-700">
+                        Adding members… {{ membersBeingAdded() }}/{{ members().length }} completed
+                    </p>
+                    <div class="mt-2 w-full bg-blue-200 rounded-full h-2">
+                        <div class="bg-blue-600 h-2 rounded-full transition-all duration-300"
+                            [style.width.%]="(membersBeingAdded() / members().length) * 100">
                         </div>
                     </div>
-                    }
                 </div>
+                }
+
             </form>
         </div>
 
-        <!-- Fixed Footer -->
-        <div class="border-t border-gray-200 px-8 py-4 bg-gray-50 rounded-b-xl flex items-center justify-end gap-3">
+        <!-- Footer -->
+        <div
+            class="border-t border-gray-200 px-8 py-4 bg-gray-50 rounded-b-xl flex items-center justify-end gap-3 flex-shrink-0">
             <button type="button" (click)="onClose()" [disabled]="isLoading()"
                 class="px-6 py-3 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors duration-200 font-medium disabled:opacity-50 disabled:cursor-not-allowed">
                 Cancel
             </button>
             <button type="button" (click)="finishAndAddMembers()" [disabled]="isLoading() || members().length === 0"
-                [class]="'px-8 py-3 rounded-lg transition-all duration-200 font-medium shadow-lg flex items-center gap-2 ' + 
-                         (members().length === 0 
-                           ? 'bg-gray-400 text-white cursor-not-allowed opacity-50' 
+                [class]="'px-8 py-3 rounded-lg transition-all duration-200 font-medium shadow-lg flex items-center gap-2 ' +
+                         (members().length === 0
+                           ? 'bg-gray-400 text-white cursor-not-allowed opacity-50'
                            : 'bg-gradient-to-r from-[#8c2d1b] to-[#6b2115] text-white hover:from-[#6b2115] hover:to-[#512110] shadow-[#8c2d1b]/30 disabled:from-gray-400 disabled:to-gray-400 disabled:cursor-not-allowed')">
                 @if (isLoading()) {
                 <svg class="animate-spin h-5 w-5" fill="none" viewBox="0 0 24 24">
@@ -142,7 +236,7 @@
                         d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z">
                     </path>
                 </svg>
-                <span>Adding Members...</span>
+                <span>Adding Members…</span>
                 } @else {
                 <span>@if (members().length > 0) { Add {{ members().length }} Member(s) } @else { Add Members }</span>
                 }

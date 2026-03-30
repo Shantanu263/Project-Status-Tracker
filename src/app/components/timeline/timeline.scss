@@ -221,3 +221,140 @@ button:focus-visible {
 .timeline-wrapper {
     position: relative;
 }
+
+/* ===== Dependency SVG Overlay ===== */
+.dependency-svg {
+    pointer-events: none;
+    z-index: 15;
+}
+
+.dependency-line {
+    stroke: #6b7280;
+    stroke-width: 2;
+    fill: none;
+    pointer-events: visibleStroke;
+    cursor: pointer;
+    marker-end: url(#dep-arrowhead);
+    transition: stroke 0.15s ease;
+
+    &:hover {
+        stroke: #3b82f6;
+        stroke-width: 3;
+        marker-end: url(#dep-arrowhead-hover);
+    }
+
+    &.dependency-line-selected {
+        stroke: #ef4444;
+        stroke-width: 3;
+        marker-end: url(#dep-arrowhead-selected);
+    }
+}
+
+.dependency-label {
+    font-size: 10px;
+    fill: #6b7280;
+    pointer-events: none;
+    font-weight: 600;
+    paint-order: stroke;
+    stroke: white;
+    stroke-width: 4px;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+}
+
+.dependency-preview-line {
+    stroke: #3b82f6;
+    stroke-width: 2;
+    stroke-dasharray: 6 4;
+    fill: none;
+    opacity: 0.5;
+    pointer-events: none;
+}
+
+/* ===== Link Circle ===== */
+.link-circle {
+    position: absolute;
+    right: -5px;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    background: #3b82f6;
+    border: 2px solid white;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
+    cursor: pointer;
+    opacity: 0;
+    transition: opacity 0.15s ease, transform 0.15s ease, background 0.15s ease;
+    z-index: 25;
+
+    &:hover {
+        transform: translateY(-50%) scale(1.3);
+        background: #2563eb;
+    }
+}
+
+/* Show link circle on phase bar hover */
+.timeline-bar:hover .link-circle {
+    opacity: 1;
+}
+
+/* Always show link circle in link mode */
+.link-circle-visible {
+    opacity: 1 !important;
+}
+
+/* Selected predecessor circle (green) */
+.link-circle-selected {
+    opacity: 1 !important;
+    background: #22c55e !important;
+    transform: translateY(-50%) scale(1.3);
+    box-shadow: 0 0 0 3px rgba(34, 197, 94, 0.3), 0 1px 3px rgba(0, 0, 0, 0.3);
+}
+
+/* ===== Link Mode Cursor ===== */
+.link-mode-active {
+    cursor: crosshair !important;
+
+    .timeline-bar {
+        cursor: crosshair !important;
+    }
+
+    .timeline-bar div {
+        cursor: crosshair !important;
+    }
+}
+
+/* ===== Dependency Type Popup ===== */
+.dependency-type-popup {
+    animation: depPopupIn 0.15s ease-out;
+}
+
+@keyframes depPopupIn {
+    from {
+        opacity: 0;
+        transform: translateY(-4px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* ===== Dependency Toast ===== */
+.dependency-toast {
+    animation: depToastIn 0.25s ease-out;
+}
+
+@keyframes depToastIn {
+    from {
+        opacity: 0;
+        transform: translate(-50%, -12px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translate(-50%, 0);
+    }
+}
