@@ -1,9 +1,10 @@
-import { ChangeDetectionStrategy, ChangeDetectorRef, Component, computed, effect, inject, input, signal } from '@angular/core';
+import { ChangeDetectionStrategy, ChangeDetectorRef, Component, computed, effect, inject, input, signal, OnInit, OnDestroy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormBuilder, FormGroup, ReactiveFormsModule } from '@angular/forms';
 import { FormsModule } from '@angular/forms';
-import { forkJoin } from 'rxjs';
+import { forkJoin, Subscription } from 'rxjs';
 import { DelayTrackerService } from '../../services/delay-tracker.service';
+import { DataSyncService } from '../../services/data-sync.service';
 import { DelayEntityType, DelayLog, DelayStatus } from '../../models/delay-tracker.model';
 import { ProjectService } from '../../services/project.service';
 import { DelayEntryModalComponent, ProjectItem } from './delay-entry-modal/delay-entry-modal';
@@ -16,9 +17,10 @@ import { ConfirmationDialogComponent } from '../shared/confirmation-dialog/confi
     styleUrl: './delay-tracker.scss',
     changeDetection: ChangeDetectionStrategy.OnPush
 })
-export class DelayTrackerComponent {
+export class DelayTrackerComponent implements OnInit, OnDestroy {
     private readonly delayTrackerService = inject(DelayTrackerService);
     private readonly projectService = inject(ProjectService);
+    private readonly dataSyncService = inject(DataSyncService);
     private readonly cdr = inject(ChangeDetectorRef);
     private readonly fb = inject(FormBuilder);
 
@@ -62,6 +64,8 @@ export class DelayTrackerComponent {
     // Sorting
     sortColumn = signal<string>('delayLogId');
     sortDirection = signal<'asc' | 'desc'>('desc');
+    
+    private syncSubscription?: Subscription;
 
     filteredEntries = computed(() => {
         const query = this.searchQuery().toLowerCase();
@@ -124,6 +128,20 @@ export class DelayTrackerComponent {
                 this.loadProjectItems();
             }
         }, { allowSignalWrites: true });
+    }
+
+    ngOnInit(): void {
+        this.syncSubscription = this.dataSyncService.delayTrackerUpdated$.subscribe(projectId => {
+            if (this.projectId() === projectId) {
+                this.loadEntries();
+            }
+        });
+    }
+
+    ngOnDestroy(): void {
+        if (this.syncSubscription) {
+            this.syncSubscription.unsubscribe();
+        }
     }
 
     loadEntries(): void {
@@ -223,12 +241,11 @@ export class DelayTrackerComponent {
 
     onEntrySaved(): void {
         this.closeModal();
-        this.loadEntries();
+        // loadEntries() handled by dataSyncService subscription
     }
 
     onEntryUpdated(): void {
-        // Reload entries in the background — modal stays open
-        this.loadEntries();
+        // loadEntries() handled by dataSyncService subscription
     }
 
     openDeleteConfirmation(entry: DelayLog, event: Event): void {
@@ -247,7 +264,8 @@ export class DelayTrackerComponent {
         if (entry) {
             this.delayTrackerService.deleteDelayLog(this.projectId(), entry.delayLogId).subscribe({
                 next: () => {
-                    this.loadEntries();
+                    this.dataSyncService.notifyDelayTrackerUpdated(this.projectId());
+                    // loadEntries() will be called by dataSyncService subscription
                     this.cdr.markForCheck();
                 },
                 error: (err) => console.error('Failed to delete delay log:', err)
@@ -342,7 +360,7 @@ export class DelayTrackerComponent {
             next: (res) => {
                 this.isBulkUpdating.set(false);
                 this.closeBulkEditModal();
-                this.loadEntries();
+                this.dataSyncService.notifyDelayTrackerUpdated(this.projectId());
                 const failed = res.failedItems?.length ?? 0;
                 const success = res.successIds?.length ?? 0;
                 const msg = failed > 0
@@ -380,7 +398,7 @@ export class DelayTrackerComponent {
             next: () => {
                 this.isBulkDeleting.set(false);
                 this.closeBulkDeleteModal();
-                this.loadEntries();
+                this.dataSyncService.notifyDelayTrackerUpdated(this.projectId());
                 this.showSnackbar(`${ids.length} delay log${ids.length !== 1 ? 's' : ''} deleted successfully.`, 'success');
                 this.clearBulkSelection();
                 this.cdr.markForCheck();

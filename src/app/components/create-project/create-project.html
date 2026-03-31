@@ -418,13 +418,73 @@
         <!-- Add Member Form -->
         <div class="bg-gray-50 p-5 rounded-lg border border-gray-200">
           <div class="flex flex-col sm:flex-row gap-3">
-            <input type="email" formControlName="memberEmail" placeholder="Enter email"
-              class="flex-1 px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#8c2d1b] focus:border-transparent transition-all duration-200 outline-none" />
+             <!-- Email with autocomplete dropdown -->
+             <div class="relative flex-1" (click)="$event.stopPropagation()">
+                <!-- Email Input -->
+                <div class="relative">
+                    <span class="absolute inset-y-0 left-3 flex items-center pointer-events-none text-gray-400">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                d="M16 12a4 4 0 10-8 0 4 4 0 008 0zm0 0v1.5a2.5 2.5 0 005 0V12a9 9 0 10-9 9m4.5-1.206a8.959 8.959 0 01-4.5 1.207" />
+                        </svg>
+                    </span>
+                    <input type="text" formControlName="memberEmail"
+                        placeholder="Search by name or enter email…" autocomplete="off"
+                        (click)="onEmailFieldClick($event)"
+                        class="w-full pl-9 pr-9 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#8c2d1b] focus:border-transparent transition-all duration-200 outline-none text-sm" />
+                    <!-- Spinner -->
+                    @if (isSearchingUsers()) {
+                    <span class="absolute inset-y-0 right-3 flex items-center pointer-events-none">
+                        <svg class="animate-spin w-4 h-4 text-[#8c2d1b]" fill="none" viewBox="0 0 24 24">
+                            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor"
+                                stroke-width="4"></circle>
+                            <path class="opacity-75" fill="currentColor"
+                                d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z">
+                            </path>
+                        </svg>
+                    </span>
+                    }
+                </div>
+
+                <!-- Autocomplete Dropdown -->
+                @if (showDropdown() && (isSearchingUsers() || userSuggestions().length > 0)) {
+                <div class="absolute z-50 left-0 right-0 top-full mt-1 bg-white border border-gray-200 rounded-lg shadow-xl overflow-hidden"
+                    style="max-height: 240px; overflow-y: auto;">
+                    @if (isSearchingUsers()) {
+                    <!-- Loading state -->
+                    <div class="px-4 py-4 text-sm text-gray-500 italic text-center">
+                        Searching registered users…
+                    </div>
+                    } @else {
+                    @for (user of userSuggestions(); track user.userId; let i = $index) {
+                    <button type="button" (click)="selectSuggestion(user, $event)"
+                        class="w-full flex items-center gap-3 px-4 py-3 hover:bg-[#fdf3f1] transition-colors duration-150 text-left border-b border-gray-100 last:border-b-0 group">
+                        <!-- Avatar -->
+                        <div
+                            class="w-10 h-10 rounded-full bg-gradient-to-br {{ getUserAvatarGradient(i) }} flex items-center justify-center text-white font-semibold flex-shrink-0">
+                            {{ getUserInitials(user) }}
+                        </div>
+                        <!-- Name + email -->
+                        <div class="min-w-0 flex-1 ml-1">
+                            <p class="text-sm font-medium text-gray-900 truncate">{{ user.name }}</p>
+                            <p class="text-xs text-gray-500 truncate mt-0.5">{{ user.email }}</p>
+                        </div>
+                        <!-- Global role badge -->
+                        <span
+                            class="flex-shrink-0 px-3 py-1 inline-flex text-xs leading-5 font-semibold rounded-full {{ getGlobalRoleColorClass(user.role.roleName) }}">
+                            {{ user.role.roleName }}
+                        </span>
+                    </button>
+                    }
+                    }
+                </div>
+                }
+            </div>
 
             <select formControlName="memberRole"
               class="px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#8c2d1b] focus:border-transparent transition-all duration-200 outline-none bg-white sm:w-48">
               <option value="SUPER_ADMIN">Project Admin</option>
-              <option value="PROJECT_HANDLER">Project Head</option>
+              <option value="PROJECT_HEAD">Project Head</option>
               <option value="PROJECT_HANDLER">Project Handler</option>
               <option value="PROJECT_VIEWER">Project Viewer</option>
             </select>

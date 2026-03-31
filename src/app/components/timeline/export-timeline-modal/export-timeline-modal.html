@@ -152,7 +152,24 @@
                     </div>
 
                     <!-- Preview Body with Phases and Tasks -->
-                    <div class="preview-body">
+                    <div class="preview-body" style="position: relative;">
+                        <!-- Dependency SVG Overlay (only for export and preview) -->
+                        <svg style="position: absolute; top: 0; left: 300px; height: 100%; pointer-events: none; z-index: 10;" [style.width.px]="getTotalColumnsWidth()">
+                            <defs>
+                                <marker id="export-dep-arrowhead" markerWidth="10" markerHeight="8" refX="9" refY="4" orient="auto" markerUnits="strokeWidth">
+                                    <polygon points="0 0, 10 4, 0 8, 2.5 4" fill="#6b7280" />
+                                </marker>
+                            </defs>
+                            @for (line of dependencyLines(); track line.dep.predecessorId + '-' + line.dep.successorId) {
+                            <path [attr.d]="line.path" fill="none" stroke="#6b7280" stroke-width="2" marker-end="url(#export-dep-arrowhead)" />
+                            <!-- Use paint-order equivalent approach: standard text drawn with white stroke, then normal text -->
+                            <text [attr.x]="line.labelX" [attr.y]="line.labelY - 6" fill="#6b7280" font-size="10" font-weight="600" text-anchor="middle"
+                                  stroke="white" stroke-width="4px" paint-order="stroke" stroke-linecap="round" stroke-linejoin="round">
+                                {{ line.dep.dependencyType }}
+                            </text>
+                            }
+                        </svg>
+
                         @for (phase of previewData().phases; track phase.phaseId; let phaseIndex = $index) {
                         <!-- Phase Row -->
                         <div style="display: flex; position: relative; height: 64px; border-bottom: 1px solid #e5e7eb;"

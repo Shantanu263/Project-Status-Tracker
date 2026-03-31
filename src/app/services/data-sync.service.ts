@@ -21,6 +21,10 @@ export class DataSyncService {
     private projectMembersUpdated = new Subject<number>();
     projectMembersUpdated$ = this.projectMembersUpdated.asObservable();
 
+    // Delay tracker updates
+    private delayTrackerUpdated = new Subject<number>();
+    delayTrackerUpdated$ = this.delayTrackerUpdated.asObservable();
+
     // Call this when phases are created, updated, or deleted
     notifyPhasesUpdated(projectId: number): void {
         this.phasesUpdated.next(projectId);
@@ -39,5 +43,10 @@ export class DataSyncService {
     // Call this when project members are added, updated, or removed
     notifyProjectMembersUpdated(projectId: number): void {
         this.projectMembersUpdated.next(projectId);
+    }
+
+    // Call this when delay logs are created, updated, or deleted
+    notifyDelayTrackerUpdated(projectId: number): void {
+        this.delayTrackerUpdated.next(projectId);
     }
 }

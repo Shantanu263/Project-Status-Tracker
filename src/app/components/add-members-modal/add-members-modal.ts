@@ -1,7 +1,4 @@
-import {
-    Component, input, output, signal, inject,
-    ChangeDetectionStrategy, computed, HostListener, OnDestroy, OnInit
-} from '@angular/core';
+import { Component, input, output, signal, inject, ChangeDetectionStrategy, computed, HostListener, OnDestroy, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormBuilder, FormGroup, Validators, ReactiveFormsModule } from '@angular/forms';
 import { ProjectService } from '../../services/project.service';
@@ -9,7 +6,7 @@ import { PermissionService } from '../../services/permission.service';
 import { AuthService } from '../../services/auth.service';
 import { ProjectMember } from '../../models/project.model';
 import { UserManagementService, User } from '../../services/user-management.service';
-import { Subject, debounceTime, distinctUntilChanged, takeUntil } from 'rxjs';
+import { Subject, debounceTime, distinctUntilChanged, takeUntil, switchMap, catchError, of } from 'rxjs';
 
 interface MemberToAdd {
     email: string;
@@ -73,9 +70,28 @@ export class AddMembersModalComponent implements OnInit, OnDestroy {
         // Debounce email field changes → search registered users
         this.emailSearch$.pipe(
             debounceTime(300),
-            distinctUntilChanged(),
+            // distinctUntilChanged() was causing the issue where re-typing the same character after backspace would not trigger a new search
+            switchMap(query => this.userManagementService.getUsers(0, 8, 'name', 'asc', query).pipe(
+                catchError(() => of(null))
+            )),
             takeUntil(this.destroy$)
-        ).subscribe(query => this.searchUsers(query));
+        ).subscribe(response => {
+            if (response) {
+                const existingEmails = new Set([
+                    ...this.projectMembers().map(m => m.email),
+                    ...this.members().map(m => m.email)
+                ]);
+                const filtered = response.content.filter(u => !existingEmails.has(u.email));
+                this.userSuggestions.set(filtered);
+                if (filtered.length === 0) {
+                    this.showDropdown.set(false);
+                }
+            } else {
+                this.userSuggestions.set([]);
+                this.showDropdown.set(false);
+            }
+            this.isSearchingUsers.set(false);
+        });
 
         // Hook into form control value changes
         this.memberForm.get('memberEmail')!.valueChanges
@@ -107,25 +123,7 @@ export class AddMembersModalComponent implements OnInit, OnDestroy {
     // ── Autocomplete ──────────────────────────────────────────────────────
 
     private searchUsers(query: string): void {
-        this.userManagementService.getUsers(0, 8, 'name', 'asc', query).subscribe({
-            next: (response) => {
-                const existingEmails = new Set([
-                    ...this.projectMembers().map(m => m.email),
-                    ...this.members().map(m => m.email)
-                ]);
-                const filtered = response.content.filter(u => !existingEmails.has(u.email));
-                this.userSuggestions.set(filtered);
-                this.isSearchingUsers.set(false);
-                if (filtered.length === 0) {
-                    this.showDropdown.set(false);
-                }
-            },
-            error: () => {
-                this.userSuggestions.set([]);
-                this.isSearchingUsers.set(false);
-                this.showDropdown.set(false);
-            }
-        });
+        // Method unused now, handled in switchMap directly
     }
 
     selectSuggestion(user: User, event: Event): void {

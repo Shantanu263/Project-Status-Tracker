@@ -381,10 +381,11 @@ export class DashboardComponent implements AfterViewInit {
   // Helper method to format task labels
   private formatTaskLabel(label: string): string {
     const labelMap: { [key: string]: string } = {
-      'TODO': 'To Do',
+      'OPEN': 'Open',
       'ONGOING': 'Ongoing',
       'ON_HOLD': 'On Hold',
-      'COMPLETED': 'Completed'
+      'COMPLETED': 'Completed',
+      'CANCELLED': 'Cancelled'
     };
     return labelMap[label] || label;
   }
@@ -398,20 +399,22 @@ export class DashboardComponent implements AfterViewInit {
   // Helper method to get task distribution colors
   private getTaskDistributionColors(count: number): string[] {
     const colors = [
-      'rgba(34, 197, 94, 0.8)',    // Green - TODO
-      'rgba(251, 191, 36, 0.8)',   // Yellow - IN_PROGRESS
-      'rgba(251, 146, 60, 0.8)',   // Orange - REVIEW
-      'rgba(59, 130, 246, 0.8)'    // Blue - DONE
+      'rgba(255, 59, 45, 0.8)',    
+      'rgba(34, 197, 94, 0.8)',   
+      'rgba(251, 146, 60, 0.8)',  
+      'rgba(59, 130, 246, 0.8)',    
+      'rgba(251, 191, 36, 0.8)'     
     ];
     return colors.slice(0, count);
   }
 
   private getTaskDistributionBorderColors(count: number): string[] {
     const colors = [
-      'rgb(34, 197, 94)',    // Green - TODO
-      'rgb(251, 191, 36)',   // Yellow - IN_PROGRESS
-      'rgb(251, 146, 60)',   // Orange - REVIEW
-      'rgb(59, 130, 246)'    // Blue - DONE
+      'rgb(255, 59, 45)',    
+      'rgb(34, 197, 94)',   
+      'rgb(251, 146, 60)',   
+      'rgb(59, 130, 246)',   
+      'rgb(251, 191, 36)'
     ];
     return colors.slice(0, count);
   }

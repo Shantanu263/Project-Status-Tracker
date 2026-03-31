@@ -603,8 +603,8 @@
 
   <!-- Export Timeline Modal -->
   <app-export-timeline-modal [isOpen]="showExportModal()" [projectStartDate]="selectedProject().startDate"
-    [projectEndDate]="selectedProject().endDate" [phases]="phases()" [currentTimeScale]="timeScale()"
-    [expandedPhases]="expandedPhases()" (close)="closeExportModal()">
+    [projectEndDate]="selectedProject().endDate" [phases]="sortedPhases()" [currentTimeScale]="timeScale()"
+    [expandedPhases]="expandedPhases()" [dependencies]="dependencies()" (close)="closeExportModal()">
   </app-export-timeline-modal>
 
 </div>

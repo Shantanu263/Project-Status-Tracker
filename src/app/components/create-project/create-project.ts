@@ -1,10 +1,12 @@
-import { ChangeDetectionStrategy, ChangeDetectorRef, Component, inject, signal } from '@angular/core';
+import { ChangeDetectionStrategy, ChangeDetectorRef, Component, inject, signal, OnInit, OnDestroy, HostListener } from '@angular/core';
 import { FormBuilder, FormGroup, Validators, ReactiveFormsModule } from '@angular/forms';
 import { CommonModule } from '@angular/common';
 import { MatDialogRef } from '@angular/material/dialog';
 import { ProjectService } from '../../services/project.service';
 import { MatSnackBar } from '@angular/material/snack-bar';
 import { Project } from '../../models/project.model';
+import { UserManagementService, User } from '../../services/user-management.service';
+import { Subject, debounceTime, distinctUntilChanged, takeUntil, switchMap, catchError, of } from 'rxjs';
 
 interface Template {
   id: number;
@@ -34,12 +36,13 @@ interface CustomPhase {
   styleUrl: './create-project.scss',
   changeDetection: ChangeDetectionStrategy.OnPush
 })
-export class CreateProjectModalComponent {
+export class CreateProjectModalComponent implements OnInit, OnDestroy {
   private readonly dialogRef = inject(MatDialogRef<CreateProjectModalComponent>);
   private readonly projectService = inject(ProjectService);
   private readonly fb = inject(FormBuilder);
   private readonly cdr = inject(ChangeDetectorRef);
   private snackBar = inject(MatSnackBar);
+  private userManagementService = inject(UserManagementService);
 
   projectForm: FormGroup;
   memberForm: FormGroup;
@@ -61,6 +64,14 @@ export class CreateProjectModalComponent {
   showCustomPhases = signal(false);
   customPhases = signal<CustomPhase[]>([]);
   isAddingPhase = signal(false);
+
+  // Autocomplete state
+  userSuggestions = signal<User[]>([]);
+  showDropdown = signal(false);
+  isSearchingUsers = signal(false);
+  
+  private destroy$ = new Subject<void>();
+  private emailSearch$ = new Subject<string>();
 
   templates: Template[] = [
     {
@@ -112,6 +123,62 @@ export class CreateProjectModalComponent {
     this.customPhaseForm = this.fb.group({
       phaseName: ['', Validators.required],
     });
+  }
+
+  ngOnInit(): void {
+    // Debounce email field changes → search registered users
+    this.emailSearch$.pipe(
+      debounceTime(300),
+      // distinctUntilChanged() removed to fix issue when re-typing the same character after pressing backspace
+      switchMap(query => this.userManagementService.getUsers(0, 8, 'name', 'asc', query).pipe(
+          catchError(() => of(null))
+      )),
+      takeUntil(this.destroy$)
+    ).subscribe(response => {
+      if (response) {
+          const existingEmails = new Set([
+              ...this.members().map(m => m.email)
+          ]);
+          const filtered = response.content.filter(u => !existingEmails.has(u.email));
+          this.userSuggestions.set(filtered);
+          if (filtered.length === 0) {
+              this.showDropdown.set(false);
+          }
+      } else {
+          this.userSuggestions.set([]);
+          this.showDropdown.set(false);
+      }
+      this.isSearchingUsers.set(false);
+      this.cdr.markForCheck();
+    });
+
+    // Hook into form control value changes
+    this.memberForm.get('memberEmail')!.valueChanges
+      .pipe(takeUntil(this.destroy$))
+      .subscribe((value: string) => {
+          const q = (value || '').trim();
+          if (q.length >= 1) {
+              this.isSearchingUsers.set(true);
+              this.showDropdown.set(true);
+              this.emailSearch$.next(q);
+          } else {
+              this.userSuggestions.set([]);
+              this.showDropdown.set(false);
+              this.isSearchingUsers.set(false);
+          }
+          this.cdr.markForCheck();
+      });
+  }
+
+  ngOnDestroy(): void {
+    this.destroy$.next();
+    this.destroy$.complete();
+  }
+
+  @HostListener('document:click')
+  onDocumentClick(): void {
+      this.showDropdown.set(false);
+      this.cdr.markForCheck();
   }
 
   close() {
@@ -361,6 +428,52 @@ export class CreateProjectModalComponent {
   }
 
   // Step 3: Add Members
+  selectSuggestion(user: User, event: Event): void {
+    event.stopPropagation();
+    // Patch without triggering another search by temporarily unsubscribing via distinct
+    this.memberForm.patchValue({ memberEmail: user.email });
+    this.userSuggestions.set([]);
+    this.showDropdown.set(false);
+    this.errorMessage.set('');
+    this.cdr.markForCheck();
+  }
+
+  onEmailFieldClick(event: Event): void {
+      event.stopPropagation();
+      if (this.userSuggestions().length > 0) {
+          this.showDropdown.set(true);
+          this.cdr.markForCheck();
+      }
+  }
+
+  getUserInitials(user: User): string {
+      const parts = user.name.trim().split(' ');
+      if (parts.length >= 2) {
+          return (parts[0].charAt(0) + parts[1].charAt(0)).toUpperCase();
+      }
+      return user.name.charAt(0).toUpperCase();
+  }
+
+  getUserAvatarGradient(index: number): string {
+      const gradients = [
+          'from-purple-500 to-pink-500',
+          'from-blue-500 to-cyan-500',
+          'from-green-500 to-teal-500',
+          'from-orange-500 to-red-500',
+          'from-pink-500 to-rose-500'
+      ];
+      return gradients[index % gradients.length];
+  }
+
+  getGlobalRoleColorClass(role: string): string {
+      const colorMap: Record<string, string> = {
+          'SUPER ADMIN': 'bg-purple-100 text-purple-800',
+          'ADMIN': 'bg-blue-100 text-blue-800',
+          'MEMBER': 'bg-gray-100 text-gray-800'
+      };
+      return colorMap[role] || 'bg-gray-100 text-gray-800';
+  }
+
   addMember() {
     console.log('addMember called');
     const email = this.memberForm.get('memberEmail')?.value?.trim();
@@ -384,6 +497,8 @@ export class CreateProjectModalComponent {
     console.log('Adding member:', newMember);
     this.members.update(m => [...m, newMember]);
     this.memberForm.patchValue({ memberEmail: '' });
+    this.userSuggestions.set([]);
+    this.showDropdown.set(false);
     this.cdr.markForCheck();
   }
 

@@ -2,7 +2,7 @@ import { Component, ChangeDetectionStrategy, signal, computed, inject, OnInit, i
 import { CommonModule } from '@angular/common';
 import { FormControl, FormGroup, ReactiveFormsModule, Validators, AbstractControl } from '@angular/forms';
 import { TimelineService } from '../../../services/timeline.service';
-import { TimeScale, TimelineGridCell } from '../../../models/timeline.model';
+import { TimeScale, TimelineGridCell, PhaseDependency } from '../../../models/timeline.model';
 import { Phase, Task } from '../../../models/phase.model';
 import { toPng } from 'html-to-image';
 // import html2canvas from 'html2canvas';
@@ -36,6 +36,7 @@ export class ExportTimelineModalComponent implements OnInit, AfterViewInit {
     phases = input.required<PhaseWithTasks[]>();
     currentTimeScale = input.required<TimeScale>();
     expandedPhases = input.required<Set<number>>();
+    dependencies = input<PhaseDependency[]>([]);
 
     // Outputs
     close = output<void>();
@@ -84,6 +85,145 @@ export class ExportTimelineModalComponent implements OnInit, AfterViewInit {
             hasData: filteredPhases.length > 0
         };
     });
+
+    dependencyLines = computed(() => {
+        const deps = this.dependencies() || [];
+        const { phases: phasesData, columns } = this.previewData();
+        
+        // This triggers reactivity on expand/collapse changes if we passed expanded phases or timelineView changed
+        this.expandedPhases(); 
+
+        if (deps.length === 0 || phasesData.length === 0 || columns.length === 0) return [];
+
+        return deps.map(dep => {
+            const predPhase = phasesData.find(p => p.phaseId === dep.predecessorId);
+            const succPhase = phasesData.find(p => p.phaseId === dep.successorId);
+
+            if (!predPhase || !succPhase) return null;
+
+            const predBar = this.calculateBarPosition(predPhase.startDate, predPhase.endDate);
+            const succBar = this.calculateBarPosition(succPhase.startDate, succPhase.endDate);
+
+            const predY = this.getPhaseRowCenterY(dep.predecessorId, phasesData);
+            const succY = this.getPhaseRowCenterY(dep.successorId, phasesData);
+
+            if (predY === null || succY === null) return null;
+
+            const predLeft = predBar.left + 8;
+            const predRight = predBar.left + predBar.width - 8;
+            const succLeft = succBar.left + 8;
+            const succRight = succBar.left + succBar.width - 8;
+
+            let points: { x: number; y: number }[] = [];
+            let labelX = 0, labelY = 0;
+            const margin = 16;
+            const yMid = predY + (succY - predY) / 2;
+
+            switch (dep.dependencyType) {
+                case 'FS':
+                    if (predRight + margin < succLeft - margin) {
+                        const midX = predRight + margin;
+                        points = [
+                            { x: predRight, y: predY },
+                            { x: midX, y: predY },
+                            { x: midX, y: succY },
+                            { x: succLeft, y: succY }
+                        ];
+                        labelX = midX;
+                        labelY = yMid;
+                    } else {
+                        const midX1 = predRight + margin;
+                        const midX2 = succLeft - margin;
+                        points = [
+                            { x: predRight, y: predY },
+                            { x: midX1, y: predY },
+                            { x: midX1, y: yMid },
+                            { x: midX2, y: yMid },
+                            { x: midX2, y: succY },
+                            { x: succLeft, y: succY }
+                        ];
+                        labelX = midX1 + (midX2 - midX1) / 2;
+                        labelY = yMid - 6;
+                    }
+                    break;
+                case 'SS':
+                    const leftX_SS = Math.min(predLeft, succLeft) - margin;
+                    points = [
+                        { x: predLeft, y: predY },
+                        { x: leftX_SS, y: predY },
+                        { x: leftX_SS, y: succY },
+                        { x: succLeft, y: succY }
+                    ];
+                    labelX = leftX_SS;
+                    labelY = yMid;
+                    break;
+                case 'FF':
+                    const rightX_FF = Math.max(predRight, succRight) + margin;
+                    points = [
+                        { x: predRight, y: predY },
+                        { x: rightX_FF, y: predY },
+                        { x: rightX_FF, y: succY },
+                        { x: succRight, y: succY }
+                    ];
+                    labelX = rightX_FF;
+                    labelY = yMid;
+                    break;
+                case 'SF':
+                    if (predLeft - margin > succRight + margin) {
+                        const midX_SF = succRight + margin;
+                        points = [
+                            { x: predLeft, y: predY },
+                            { x: midX_SF, y: predY },
+                            { x: midX_SF, y: succY },
+                            { x: succRight, y: succY }
+                        ];
+                        labelX = midX_SF;
+                        labelY = yMid;
+                    } else {
+                        const midX1_SF = predLeft - margin;
+                        const midX2_SF = succRight + margin;
+                        points = [
+                            { x: predLeft, y: predY },
+                            { x: midX1_SF, y: predY },
+                            { x: midX1_SF, y: yMid },
+                            { x: midX2_SF, y: yMid },
+                            { x: midX2_SF, y: succY },
+                            { x: succRight, y: succY }
+                        ];
+                        labelX = midX1_SF + (midX2_SF - midX1_SF) / 2;
+                        labelY = yMid - 6;
+                    }
+                    break;
+            }
+
+            const path = points.map((p, i) => (i === 0 ? `M ${p.x} ${p.y}` : `L ${p.x} ${p.y}`)).join(' ');
+
+            return {
+                dep,
+                path,
+                labelX,
+                labelY,
+                points
+            };
+        }).filter(line => line !== null);
+    });
+
+    /** Calculate Y center position for a phase row */
+    getPhaseRowCenterY(phaseId: number, phasesData: PhaseWithTasks[]): number | null {
+        let y = 0;
+        const expanded = this.expandedPhases();
+
+        for (const phase of phasesData) {
+            if (phase.phaseId === phaseId) {
+                return y + 32; // Half of 64px phase row height
+            }
+            y += 64; // Phase row height
+            if (phase.phaseId && expanded.has(phase.phaseId) && phase.tasks) {
+                y += phase.tasks.length * 48; // Expanded task rows
+            }
+        }
+        return null;
+    }
 
     ngOnInit() {
         // Get current date for default month view

@@ -5,6 +5,7 @@ import {
 import { CommonModule } from '@angular/common';
 import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { DelayTrackerService } from '../../../services/delay-tracker.service';
+import { DataSyncService } from '../../../services/data-sync.service';
 import {
     CreateDelayLogPayload,
     DelayEntityType,
@@ -36,6 +37,7 @@ export interface ProjectItem {
 export class DelayEntryModalComponent {
     private readonly fb = inject(FormBuilder);
     private readonly delayTrackerService = inject(DelayTrackerService);
+    private readonly dataSyncService = inject(DataSyncService);
     private readonly cdr = inject(ChangeDetectorRef);
 
     isOpen = input<boolean>(false);
@@ -239,7 +241,11 @@ export class DelayEntryModalComponent {
             }
 
             this.delayTrackerService.updateDelayLog(this.projectId(), existing.delayLogId, payload).subscribe({
-                next: () => { this.isSubmitting.set(false); this.updated.emit(); },
+                next: () => { 
+                    this.dataSyncService.notifyDelayTrackerUpdated(this.projectId());
+                    this.isSubmitting.set(false); 
+                    this.updated.emit(); 
+                },
                 error: (err) => { console.error('Failed to update delay log:', err); this.isSubmitting.set(false); }
             });
         } else {
@@ -271,7 +277,11 @@ export class DelayEntryModalComponent {
             }
 
             this.delayTrackerService.createDelayLog(this.projectId(), payload).subscribe({
-                next: () => { this.isSubmitting.set(false); this.saved.emit(); },
+                next: () => { 
+                    this.dataSyncService.notifyDelayTrackerUpdated(this.projectId());
+                    this.isSubmitting.set(false); 
+                    this.saved.emit(); 
+                },
                 error: (err) => { console.error('Failed to create delay log:', err); this.isSubmitting.set(false); }
             });
         }
