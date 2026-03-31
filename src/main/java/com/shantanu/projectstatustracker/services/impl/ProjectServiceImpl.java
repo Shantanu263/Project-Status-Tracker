@@ -48,6 +48,7 @@ public class ProjectServiceImpl implements ProjectService {
     private final ActivityLogRepo activityLogRepo;
     private final SubTaskRepo subTaskRepo;
     private final ProjectTemplatePhaseRepo projectTemplatePhaseRepo;
+    private final com.shantanu.projectstatustracker.repositories.NotificationRepo notificationRepo;
 
     SimpleDateFormat shortFormat = new SimpleDateFormat("dd/MM/yyyy", Locale.ENGLISH);
 
@@ -208,7 +209,9 @@ public class ProjectServiceImpl implements ProjectService {
     }
 
     @Override
+    @Transactional
     public ResponseEntity<Object> deleteProject(Long id) {
+        notificationRepo.deleteByProjectId(id);
         projectRepo.deleteById(id);
 
         return ResponseEntity.ok(Map.of("message","Project with Id:"+id+" Deleted"));

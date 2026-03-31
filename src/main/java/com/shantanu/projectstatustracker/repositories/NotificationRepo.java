@@ -24,4 +24,8 @@ public interface NotificationRepo extends JpaRepository<Notification, Long> {
 
     List<Notification> findByUser_UserIdAndIsRead(Long userId, boolean b);
     //List<Notification> findByUserOrderByTimestampDesc(User user);
+    
+    @Modifying
+    @Query("DELETE FROM Notification n WHERE n.projectId = :projectId")
+    void deleteByProjectId(Long projectId);
 }

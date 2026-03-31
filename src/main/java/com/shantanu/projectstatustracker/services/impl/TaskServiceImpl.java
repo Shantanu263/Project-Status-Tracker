@@ -111,7 +111,7 @@ public class TaskServiceImpl implements TaskService {
                     NotificationType.ASSIGNMENT,
                     task.getTaskId(),
                     EntityType.TASK,
-                    task.getAssignedTo().getUser().getUserId()
+                    projectId
             );
         }
 
@@ -682,7 +682,7 @@ public class TaskServiceImpl implements TaskService {
                     NotificationType.ASSIGNMENT,
                     existingTask.getTaskId(),
                     EntityType.TASK,
-                    existingTask.getAssignedTo().getUser().getUserId()
+                    projectId
             );
 
             notificationService.createNotification(
@@ -692,7 +692,7 @@ public class TaskServiceImpl implements TaskService {
                     NotificationType.ASSIGNMENT,
                     existingTask.getTaskId(),
                     EntityType.TASK,
-                    existingTask.getAssignedTo().getUser().getUserId()
+                    projectId
             );
         }
 

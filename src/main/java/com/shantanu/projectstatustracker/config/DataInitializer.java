@@ -10,6 +10,7 @@ import com.shantanu.projectstatustracker.repositories.ProjectTemplateRepo;
 import com.shantanu.projectstatustracker.repositories.RoleRepo;
 import com.shantanu.projectstatustracker.repositories.UserRepo;
 import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Component;
@@ -26,6 +27,15 @@ public class DataInitializer implements CommandLineRunner {
     private final ProjectTemplateRepo projectTemplateRepository;
     private final ProjectTemplatePhaseRepo projectTemplatePhaseRepository;
 
+    @Value("${app.super-admin.username}")
+    private String superAdminUsername;
+
+    @Value("${app.super-admin.password}")
+    private String superAdminPassword;
+
+    @Value("${app.super-admin.email}")
+    private String superAdminEmail;
+
     @Override
     public void run(String... args) {
 
@@ -40,9 +50,9 @@ public class DataInitializer implements CommandLineRunner {
                     .orElseThrow(() -> new ResourceNotFoundException("SUPER ADMIN role not found"));
 
             User superAdmin = new User();
-            superAdmin.setName("Super Admin");
-            superAdmin.setEmail("superadmin@cybernxt.com");
-            superAdmin.setPassword(passwordEncoder.encode("Admin@123"));
+            superAdmin.setName(superAdminUsername);
+            superAdmin.setEmail(superAdminEmail);
+            superAdmin.setPassword(passwordEncoder.encode(superAdminPassword));
             superAdmin.setRole(superAdminRole);
             //superAdmin.setStatus("ACTIVE");
 

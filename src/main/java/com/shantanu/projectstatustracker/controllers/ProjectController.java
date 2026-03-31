@@ -2,7 +2,6 @@ package com.shantanu.projectstatustracker.controllers;
 
 import com.shantanu.projectstatustracker.dtos.*;
 import com.shantanu.projectstatustracker.services.DelayTrackerService;
-import com.shantanu.projectstatustracker.services.EmailService;
 import com.shantanu.projectstatustracker.services.ProjectService;
 import com.shantanu.projectstatustracker.services.impl.ProjectSummaryServiceImpl;
 import lombok.RequiredArgsConstructor;
@@ -24,7 +23,6 @@ import java.util.Map;
 public class ProjectController {
     private final ProjectService projectService;
     private final ProjectSummaryServiceImpl projectSummaryService;
-    private final EmailService emailService;
     private final DelayTrackerService delayTrackerService;
 
 

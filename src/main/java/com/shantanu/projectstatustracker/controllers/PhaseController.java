@@ -3,7 +3,6 @@ package com.shantanu.projectstatustracker.controllers;
 import com.shantanu.projectstatustracker.dtos.BulkUpdateRequestDTO;
 import com.shantanu.projectstatustracker.dtos.DependencyRequestDTO;
 import com.shantanu.projectstatustracker.dtos.PhaseRequestDTO;
-import com.shantanu.projectstatustracker.dtos.TaskRequestDTO;
 import com.shantanu.projectstatustracker.models.DependencyType;
 import com.shantanu.projectstatustracker.models.PhaseStatus;
 import com.shantanu.projectstatustracker.services.PhaseService;
